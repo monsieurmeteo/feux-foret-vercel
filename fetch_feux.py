@@ -897,7 +897,7 @@ def generate_interactive_map(results, latest_news, output_path):
         .popup-header h3 {{ font-size: 11.5px; font-weight: 900; color: #0F172A; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -0.01em; }}
         .popup-header .time-ago {{ font-size: 8.5px; color: #334155; font-weight: 700; margin-top: 1px; }}
         
-        .popup-grid-layout {{ display: grid; grid-template-columns: 170px 145px; gap: 6px; padding: 6px 7px; align-items: start; }}
+        .popup-grid-layout {{ display: grid; grid-template-columns: 150px 170px; gap: 6px; padding: 6px 7px; align-items: start; }}
         .popup-col-left {{ display: flex; flex-direction: column; gap: 2px; }}
         .popup-col-right {{ display: flex; flex-direction: column; gap: 2px; border-left: 1.5px solid #E2E8F0; padding-left: 5px; }}
         
@@ -912,8 +912,8 @@ def generate_interactive_map(results, latest_news, output_path):
         .info-row .val {{ font-weight: 800; color: #0F172A; max-width: 95px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
         
         .history-table {{ width: 100%; border-collapse: collapse; font-size: 10.5px; background: #FFFFFF; text-align: center; }}
-        .history-table th {{ background: #0F172A; color: white; padding: 3px 2px; font-size: 9px; text-transform: uppercase; position: sticky; top: 0; }}
-        .history-table td {{ padding: 2.5px 2px; border-top: 1px solid #F1F5F9; font-weight: 700; }}
+        .history-table th {{ background: #0F172A; color: white; padding: 3px 2px; font-size: 9px; text-transform: uppercase; position: sticky; top: 0; white-space: nowrap; }}
+        .history-table td {{ padding: 2.5px 2px; border-top: 1px solid #F1F5F9; font-weight: 700; white-space: nowrap; }}
 
         .risk-banner {{ margin-top: 2.5px; padding: 3px 5px; border-radius: 5px; font-weight: 900; font-size: 9px; display: flex; justify-content: space-between; align-items: center; }}
         
@@ -995,7 +995,7 @@ def generate_interactive_map(results, latest_news, output_path):
 
     <div id="sidebar">
         <div class="sidebar-header">
-            <h2>📋 Feux Actifs (<span id="sidebar-count" style="font-size:13px; font-weight:900; color:#DC2626;">{len(results)}</span>)</h2>
+            <h2>📋 Feux Actifs (<span id="sidebar-count" style="font-size:13px; font-weight:900; color:#7C3AED;">{count_attaque}</span> / {len(results)})</h2>
             <div class="count-chip" id="sidebar-chip">MAJEURS EN PREMIER</div>
         </div>
         <div class="fire-list" id="fire-list-container"></div>
@@ -1456,7 +1456,7 @@ def generate_interactive_map(results, latest_news, output_path):
                 `).join('');
 
                 historyHtml = `
-                    <div style="font-size:9.5px; font-weight:900; color:#0F172A; text-transform:uppercase; margin-bottom:4px;">📈 HISTORIQUE OBS (5 MIN)</div>
+                    <div style="font-size:9px; font-weight:900; color:#0F172A; text-transform:uppercase; margin-bottom:4px; white-space:nowrap;">📈 HISTORIQUE OBS (5 MIN)</div>
                     <div style="max-height:230px; overflow-y:auto; border-radius:6px; border:1.5px solid #CBD5E1; box-shadow:inset 0 1px 3px rgba(0,0,0,0.05);">
                         <table class="history-table">
                             <thead>
