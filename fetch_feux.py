@@ -6,7 +6,7 @@ import sqlite3
 import argparse
 import base64
 import xml.etree.ElementTree as ET
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 # ponytail: ZoneInfo avec fallback sécurisé pour le fuseau horaire de Paris
 try:
     from zoneinfo import ZoneInfo
@@ -63,11 +63,6 @@ def init_db():
             plume_dir TEXT
         )
     """)
-    try:
-        cursor.execute("ALTER TABLE feux_snapshots ADD COLUMN lat REAL")
-        cursor.execute("ALTER TABLE feux_snapshots ADD COLUMN lon REAL")
-    except sqlite3.OperationalError:
-        pass
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_fire_id ON feux_snapshots(fire_id)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_timestamp ON feux_snapshots(timestamp_utc)")
     conn.commit()
@@ -107,13 +102,12 @@ def record_snapshots(results):
 
         if should_insert:
             cursor.execute("""
-                INSERT INTO feux_snapshots (fire_id, timestamp_utc, commune, dept, etat_feu, superficie_ha, temp_c, humidity_pct, wind_speed_kmh, wind_gusts_kmh, plume_dir, lat, lon)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO feux_snapshots (fire_id, timestamp_utc, commune, dept, etat_feu, superficie_ha, temp_c, humidity_pct, wind_speed_kmh, wind_gusts_kmh, plume_dir)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 fire_id, now_utc_str, f.get("commune"), f.get("dept"), f.get("etat_feu"),
                 f.get("superficie", 0), w.get("temp_c"), w.get("humidity_pct"),
-                w.get("wind_speed_kmh", 0), w.get("wind_gusts_kmh", 0), w.get("plume_dir"),
-                f.get("lat"), f.get("lon")
+                w.get("wind_speed_kmh", 0), w.get("wind_gusts_kmh", 0), w.get("plume_dir")
             ))
     conn.commit()
 
@@ -391,39 +385,13 @@ def parse_meteociel_obs(info_html):
     except Exception:
         return {}
 
-def enrich_obs_with_physics(obs):
-    if not obs:
-        return
-    temp = obs.get("temp_c") or 25.0
-    hum = obs.get("humidity_pct") or 50.0
-    speed = obs.get("wind_speed_kmh") or 15
-    gusts = obs.get("wind_gusts_kmh") or 25
-    fwi = obs.get("fwi_score") or 6.5
-
-    obs["dew_point"] = round(temp - ((100.0 - hum) / 5.0), 1)
-
-    haines = 2
-    if temp > 28 and hum < 35:
-        haines = 5 if temp > 33 else 4
-    elif temp > 22 and hum < 45:
-        haines = 3
-    obs["haines"] = haines
-
-    obs["fuel_moisture"] = round(max(2.0, min(30.0, hum * 0.2 + (35.0 - temp) * 0.1)), 1)
-
-    risk_score = fwi * 2.5 + temp * 0.8 + (100.0 - hum) * 0.4 + gusts * 0.3
-    risk_score = min(max(round(risk_score, 1), 0), 100)
-    obs["mcp_index"] = risk_score
-
 def get_closest_meteociel_station_and_obs(lat, lon, stations):
     if not lat or not lon or not stations:
-        obs = {
+        return "Station Régionale", 15.0, {
             "temp_c": 25.0, "humidity_pct": 45.0, "wind_speed_kmh": 15, "wind_gusts_kmh": 25,
             "wind_origin": "SO", "plume_arrow": "↗️", "plume_dir": "Nord-Est", "plume_deg": 45,
             "spread_risk": "🟡 MODÉRÉ", "spread_risk_color": "#D97706", "fwi_score": 6.5
         }
-        enrich_obs_with_physics(obs)
-        return "Station Régionale", 15.0, obs
     
     valid_wind_sts = []
     for st in stations:
@@ -481,7 +449,6 @@ def get_closest_meteociel_station_and_obs(lat, lon, stations):
         }
         st_name = valid_wind_sts[0][1].get("nom_usuel", "Station Régionale") if valid_wind_sts else "Station Régionale"
         best_dist = valid_wind_sts[0][0] if valid_wind_sts else 12.0
-        enrich_obs_with_physics(obs)
         return st_name, round(best_dist, 1), obs
 
     # Guarantee wind_speed_kmh is at least 10 km/h if station reported 0 or missing
@@ -491,7 +458,6 @@ def get_closest_meteociel_station_and_obs(lat, lon, stations):
         obs["wind_gusts_kmh"] = max(obs["wind_speed_kmh"] + 8, 18)
 
     st_name = best_st.get("nom_usuel", "Station Locale")
-    enrich_obs_with_physics(obs)
     return st_name, round(best_dist, 1), obs
 
 def load_pelicandromes():
@@ -713,141 +679,11 @@ def fetch_all_feux():
                 print(f"❌ Erreur lors de la lecture du cache JSON: {cache_read_err}")
         raise scrape_err
 
-def get_historical_snapshots():
-    init_db()
-    if not os.path.exists(DB_PATH):
-        return []
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    limit_dt = datetime.now(timezone.utc) - timedelta(hours=24)
-    cursor.execute("""
-        SELECT timestamp_utc, fire_id, commune, dept, etat_feu, superficie_ha, temp_c, humidity_pct, wind_speed_kmh, wind_gusts_kmh, plume_dir, lat, lon
-        FROM feux_snapshots
-        WHERE timestamp_utc >= ?
-        ORDER BY timestamp_utc ASC
-    """, (limit_dt.isoformat(),))
-    rows = cursor.fetchall()
-    conn.close()
-
-    dir_deg = {
-        "Nord": 0, "N": 0, "Nord-Est": 45, "NE": 45, "Est": 90, "E": 90, "Sud-Est": 135, "SE": 135,
-        "Sud": 180, "S": 180, "Sud-Ouest": 225, "SO": 225, "Ouest": 270, "O": 270, "Nord-Ouest": 315, "NO": 315
-    }
-
-    slots = {}
-    for r in rows:
-        ts_utc = r[0]
-        try:
-            dt = datetime.fromisoformat(ts_utc)
-            rounded_minute = (dt.minute // 5) * 5
-            dt_rounded = dt.replace(minute=rounded_minute, second=0, microsecond=0)
-            slot_key = dt_rounded.isoformat()
-            time_fr = f"{(dt.hour+2)%24:02d}h{rounded_minute:02d}"
-        except Exception:
-            slot_key = ts_utc
-            time_fr = "N/A"
-
-        if slot_key not in slots:
-            slots[slot_key] = {
-                "timestamp": slot_key,
-                "time_fr": time_fr,
-                "fires": []
-            }
-        
-        temp = r[6] or 25.0
-        hum = r[7] or 50.0
-        speed = r[8] or 15
-        gusts = r[9] or 25
-        p_dir = r[10] or "Nord"
-        fwi = calculate_fwi_risk(temp, hum, speed, gusts)[2]
-
-        w = {
-            "temp_c": temp,
-            "humidity_pct": hum,
-            "wind_speed_kmh": speed,
-            "wind_gusts_kmh": gusts,
-            "wind_origin": p_dir,
-            "plume_dir": p_dir,
-            "plume_arrow": dir_to_arrow_plume(p_dir),
-            "plume_deg": dir_deg.get(p_dir, 90),
-            "fwi_score": fwi
-        }
-
-        w["dew_point"] = round(temp - ((100.0 - hum) / 5.0), 1)
-
-        haines = 2
-        if temp > 28 and hum < 35:
-            haines = 5 if temp > 33 else 4
-        elif temp > 22 and hum < 45:
-            haines = 3
-        w["haines"] = haines
-
-        w["fuel_moisture"] = round(max(2.0, min(30.0, hum * 0.2 + (35.0 - temp) * 0.1)), 1)
-
-        risk_score = fwi * 2.5 + temp * 0.8 + (100.0 - hum) * 0.4 + gusts * 0.3
-        risk_score = min(max(round(risk_score, 1), 0), 100)
-        w["mcp_index"] = risk_score
-
-        if fwi >= 25:
-            w["spread_risk"] = "🚨 EXTRÊME"
-            w["spread_risk_color"] = "#7C3AED"
-        elif fwi >= 15:
-            w["spread_risk"] = "🔴 ÉLEVÉ"
-            w["spread_risk_color"] = "#DC2626"
-        elif fwi >= 7:
-            w["spread_risk"] = "🟡 MODÉRÉ"
-            w["spread_risk_color"] = "#D97706"
-        else:
-            w["spread_risk"] = "🟢 FAIBLE"
-            w["spread_risk_color"] = "#16A34A"
-
-        f_data = {
-            "id": r[1],
-            "commune": r[2],
-            "dept": r[3],
-            "etat_feu": r[4],
-            "superficie": r[5] or 0,
-            "lat": r[11],
-            "lon": r[12],
-            "weather": w,
-            "region": get_region_name(r[3])
-        }
-
-        ha = r[5] or 0
-        etat = r[4] or "attaque"
-        if etat == "eteint":
-            f_data["fire_scale"] = "eteint"
-            f_data["scale_label"] = "💧 FEU ÉTEINT"
-            f_data["scale_color"] = "#64748B"
-        elif etat == "fausse_alerte":
-            f_data["fire_scale"] = "fausse_alerte"
-            f_data["scale_label"] = "❌ FAUSSE ALERTE"
-            f_data["scale_color"] = "#94A3B8"
-        elif ha >= 10:
-            f_data["fire_scale"] = "majeur"
-            f_data["scale_label"] = "🚨 FEU MAJEUR"
-            f_data["scale_color"] = "#7C3AED"
-        elif ha >= 2:
-            f_data["fire_scale"] = "modere"
-            f_data["scale_label"] = "🔴 FEU MODÉRÉ"
-            f_data["scale_color"] = "#EA580C"
-        else:
-            f_data["fire_scale"] = "localise"
-            f_data["scale_label"] = "🟡 FEU LOCALISÉ"
-            f_data["scale_color"] = "#D97706"
-
-        slots[slot_key]["fires"].append(f_data)
-
-    sorted_slots = sorted(slots.values(), key=lambda x: x["timestamp"])
-    return sorted_slots
-
 def generate_interactive_map(results, latest_news, output_path):
     pelicandromes = load_pelicandromes()
     fires_json = json.dumps(results, ensure_ascii=False)
     peli_json = json.dumps(pelicandromes, ensure_ascii=False)
     news_json = json.dumps(latest_news, ensure_ascii=False)
-    hist_slots = get_historical_snapshots()
-    historical_json = json.dumps(hist_slots, ensure_ascii=False)
     now_str = datetime.now(tz_paris).strftime("%d/%m/%Y à %H:%M")
     logo_b64 = load_logo_base64()
 
@@ -884,9 +720,6 @@ def generate_interactive_map(results, latest_news, output_path):
     {leaflet_css}
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
-    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
     <style>
         * {{ box-sizing: border-box; margin: 0; padding: 0; }}
         html, body {{ width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #F8FAFC; color: #0F172A; overflow: hidden; }}
@@ -957,7 +790,7 @@ def generate_interactive_map(results, latest_news, output_path):
 
         /* Lowered Live News Bar so it does not overlap the top header */
         #news-ticker-bar {{
-            position: absolute; top: 144px; left: 315px; right: 10px; z-index: 999;
+            position: absolute; top: 66px; left: 315px; right: 10px; z-index: 999;
             background: rgba(15, 23, 42, 0.94); backdrop-filter: blur(12px); color: white;
             border-radius: 10px; padding: 7px 14px; font-size: 11.5px; font-weight: 800;
             display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 14px rgba(0,0,0,0.2);
@@ -1010,95 +843,13 @@ def generate_interactive_map(results, latest_news, output_path):
         #map {{ width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }}
         
         #sidebar {{
-            position: absolute; top: 144px; left: 10px; bottom: 15px; width: 295px; max-width: 90vw; z-index: 1000;
+            position: absolute; top: 58px; left: 10px; bottom: 15px; width: 295px; max-width: 90vw; z-index: 1000;
             background: rgba(255, 255, 255, 0.97); backdrop-filter: blur(14px);
             border: 1.5px solid rgba(226, 232, 240, 0.95); border-radius: 12px;
             box-shadow: 0 10px 25px rgba(15, 23, 42, 0.15); display: flex; flex-direction: column;
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }}
         #sidebar.collapsed {{ transform: translateX(-320px); }}
-
-        /* Top National Dashboard */
-        #top-dashboard {{
-            position: absolute; top: 64px; left: 10px; right: 10px; z-index: 1000;
-            display: flex; gap: 8px; overflow-x: auto;
-            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(14px);
-            border: 1px solid rgba(226, 232, 240, 0.9); border-radius: 12px;
-            padding: 8px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-            scrollbar-width: none;
-        }}
-        #top-dashboard::-webkit-scrollbar {{ display: none; }}
-        
-        .stat-card {{
-            flex: 1; min-width: 125px; display: flex; align-items: center; gap: 8px;
-            background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px;
-            padding: 6px 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-            transition: transform 0.2s;
-        }}
-        .stat-card:hover {{ transform: translateY(-1px); }}
-        .stat-icon {{
-            font-size: 18px; width: 32px; height: 32px; border-radius: 6px;
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0;
-        }}
-        .stat-info {{ display: flex; flex-direction: column; }}
-        .stat-val {{ font-size: 14px; font-weight: 900; color: #0F172A; line-height: 1.2; }}
-        .stat-lbl {{ font-size: 9.5px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.02em; }}
-        .stat-trend {{ font-size: 8.5px; font-weight: 800; margin-top: 1px; }}
-
-        /* Timeline Container */
-        #timeline-container {{
-            position: absolute; bottom: 15px; left: 315px; right: 10px; z-index: 1000;
-            background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(14px);
-            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px;
-            padding: 10px 16px; display: flex; align-items: center; gap: 12px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); color: white;
-            transition: all 0.3s ease;
-        }}
-        #timeline-container.historical-active {{
-            border: 1.5px solid #F59E0B;
-            box-shadow: 0 8px 32px rgba(245, 158, 11, 0.25);
-        }}
-        .timeline-controls {{ display: flex; align-items: center; gap: 8px; flex-shrink: 0; }}
-        .timeline-btn {{
-            background: rgba(255, 255, 255, 0.1); border: none; border-radius: 50%;
-            width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
-            color: white; font-size: 14px; cursor: pointer; transition: background 0.2s;
-        }}
-        .timeline-btn:hover {{ background: rgba(255, 255, 255, 0.2); }}
-        .timeline-slider-wrapper {{ flex: 1; display: flex; align-items: center; gap: 10px; position: relative; }}
-        .timeline-slider {{
-            flex: 1; -webkit-appearance: none; appearance: none; height: 6px;
-            border-radius: 3px; background: rgba(255, 255, 255, 0.2); outline: none;
-            cursor: pointer; transition: background 0.2s;
-        }}
-        .timeline-slider::-webkit-slider-thumb {{
-            -webkit-appearance: none; appearance: none; width: 16px; height: 16px;
-            border-radius: 50%; background: #F59E0B; cursor: pointer; border: 2px solid white;
-            box-shadow: 0 0 8px rgba(0,0,0,0.5);
-        }}
-        .timeline-time-label {{
-            font-size: 12px; font-weight: 800; color: #F59E0B; width: 110px;
-            text-align: right; white-space: nowrap; flex-shrink: 0;
-        }}
-        .timeline-live-tag {{
-            background: #DC2626; color: white; padding: 2px 6px; border-radius: 4px;
-            font-size: 9px; font-weight: 900; letter-spacing: 0.05em; text-transform: uppercase;
-            animation: pulse-live 1.5s infinite; flex-shrink: 0;
-        }}
-        @keyframes pulse-live {{
-            0% {{ opacity: 0.6; }}
-            50% {{ opacity: 1; }}
-            100% {{ opacity: 0.6; }}
-        }}
-        
-        /* Map permanent labels */
-        .map-fire-label {{
-            background: rgba(15, 23, 42, 0.9); border: 1px solid #7C3AED;
-            color: white; border-radius: 6px; padding: 3px 6px; font-size: 9.5px;
-            font-weight: 800; box-shadow: 0 2px 6px rgba(0,0,0,0.3); text-align: center;
-        }}
-        .map-fire-label b {{ color: #F59E0B; }}
         
         #sidebar .sidebar-header {{
             padding: 11px 14px; background: #F8FAFC; border-bottom: 1.5px solid #E2E8F0; border-radius: 12px 12px 0 0;
@@ -1312,12 +1063,6 @@ def generate_interactive_map(results, latest_news, output_path):
         </div>
     </div>
 
-    <div id="top-dashboard">
-        <div style="color:#64748B; font-size:11px; font-weight:700; width:100%; text-align:center; padding:10px;">
-            Initialisation du Tableau de bord National...
-        </div>
-    </div>
-
     <!-- Live SDIS & Emergency News Ticker -->
     <div id="news-ticker-bar">
         <span class="news-label">📰 DIRECT SDIS & PRÉFECTURES</span>
@@ -1366,17 +1111,6 @@ def generate_interactive_map(results, latest_news, output_path):
     
     <div id="map"></div>
 
-    <div id="timeline-container">
-        <div class="timeline-controls">
-            <button class="timeline-btn" id="timeline-play-btn" onclick="toggleTimelinePlay()">▶</button>
-        </div>
-        <div class="timeline-slider-wrapper">
-            <span class="timeline-live-tag" id="timeline-live-tag">LIVE</span>
-            <input type="range" min="0" max="100" value="100" class="timeline-slider" id="timeline-range-input" oninput="onTimelineSliderChange(this.value)">
-        </div>
-        <div class="timeline-time-label" id="timeline-time-label">Temps Réel</div>
-    </div>
-
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         function checkSession() {{
@@ -1402,12 +1136,6 @@ def generate_interactive_map(results, latest_news, output_path):
         const fires = {fires_json};
         const pelicandromes = {peli_json};
         const latestNews = {news_json};
-        const historicalSnapshots = {historical_json};
-
-        let activeFires = [...fires];
-        let isHistoricalMode = false;
-        let activeHistoryIndex = -1;
-        let timelinePlayInterval = null;
 
         let currentStatusFilter = 'en_cours';
         let currentRegionFilter = 'all';
@@ -1541,7 +1269,7 @@ def generate_interactive_map(results, latest_news, output_path):
         }}
 
         function openInfographieModal(fireIndex) {{
-            const f = activeFires[fireIndex];
+            const f = fires[fireIndex];
             if (!f) return;
             const w = f.weather || {{}};
             const color = getMarkerColor(f);
@@ -1714,7 +1442,7 @@ def generate_interactive_map(results, latest_news, output_path):
         }}
 
         function openNationalInfographieModal() {{
-            const validFires = activeFires.filter(f => f.lat && f.lon);
+            const validFires = fires.filter(f => f.lat && f.lon);
             const countEnCours = validFires.filter(f => f.etat_feu !== 'eteint' && f.etat_feu !== 'fausse_alerte').length;
             const countUnder1h = validFires.filter(f => f.is_under_1h).length;
             const countMajeurs = validFires.filter(f => f.fire_scale === 'majeur').length;
@@ -1956,22 +1684,9 @@ def generate_interactive_map(results, latest_news, output_path):
         const map = L.map('map', {{ zoomControl: false, autoPanPaddingTopLeft: [20, 95], autoPanPaddingBottomRight: [20, 20] }}).setView([46.603354, 1.888334], 6);
         L.control.zoom({{ position: 'topright' }}).addTo(map);
 
-        const markersLayerGroup = L.layerGroup(); 
-        const markersClusterGroup = L.markerClusterGroup({{
-            showCoverageOnHover: false,
-            maxClusterRadius: 35,
-            iconCreateFunction: function(cluster) {{
-                const childCount = cluster.getChildCount();
-                return new L.DivIcon({{
-                    html: '<div style="background:rgba(220,38,38,0.95); border:2px solid white; color:white; font-weight:900; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; box-shadow:0 0 10px rgba(220,38,38,0.5); font-size:12px;">' + childCount + '</div>',
-                    className: 'custom-cluster-icon',
-                    iconSize: new L.Point(32, 32)
-                }});
-            }}
-        }}).addTo(map);
-
+        const markersLayerGroup = L.layerGroup().addTo(map);
         const plumeLayerGroup = L.layerGroup().addTo(map);
-        const pelicandromesLayerGroup = L.layerGroup(); 
+        const pelicandromesLayerGroup = L.layerGroup(); // ponytail: caché par défaut
 
         const osmLayer = L.tileLayer('https://tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
             maxZoom: 19,
@@ -1982,23 +1697,11 @@ def generate_interactive_map(results, latest_news, output_path):
             attribution: '&copy; Esri World Imagery'
         }});
 
-        const reliefLayer = L.tileLayer('https://{{s}}.tile.opentopomap.org/{{z}}/{{x}}/{{y}}.png', {{
-            maxZoom: 17,
-            attribution: '&copy; OpenTopoMap'
-        }});
-
-        const radarLayer = L.tileLayer('https://tilecache.rainviewer.com/v2/radar/default/256/{{z}}/{{x}}/{{y}}/2/1_1.png', {{
-            attribution: '&copy; RainViewer',
-            opacity: 0.6
-        }});
-
         L.control.layers({{
             "🗺️ Carte Blanche OpenStreetMap": osmLayer,
-            "🛰️ Satellite HD Esri": satLayer,
-            "⛰️ Relief Topographique": reliefLayer
+            "🛰️ Satellite HD Esri": satLayer
         }}, {{
-            "✈️ Bases Canadair": pelicandromesLayerGroup,
-            "🌧️ Radar Précipitations (Live)": radarLayer
+            "✈️ Bases Canadair": pelicandromesLayerGroup
         }}, {{ position: 'bottomright' }}).addTo(map);
 
         map.on('popupopen', function(e) {{
@@ -2045,38 +1748,14 @@ def generate_interactive_map(results, latest_news, output_path):
                 const w = f.weather || {{}};
                 return w.spread_risk_color || '#6B7280';
             }}
-            if (f.fire_scale === 'majeur') return '#7C3AED';
-            if (f.etat_feu === 'eteint')       return '#64748B';
-            if (f.etat_feu === 'fausse_alerte') return '#94A3B8';
-            if (f.is_under_1h)                 return '#F97316';
-            if (f.etat_feu === 'attaque')       return '#DC2626';
-            if (f.etat_feu === 'fixe')          return '#2563EB';
-            if (f.etat_feu === 'maitrise')      return '#16A34A';
+            if (f.fire_scale === 'majeur') return '#7C3AED';   // violet
+            if (f.etat_feu === 'eteint')       return '#64748B';   // gris
+            if (f.etat_feu === 'fausse_alerte') return '#94A3B8';  // gris clair
+            if (f.is_under_1h)                 return '#F97316';   // orange vif — NOUVEAU < 1h
+            if (f.etat_feu === 'attaque')       return '#DC2626';   // rouge
+            if (f.etat_feu === 'fixe')          return '#2563EB';   // bleu
+            if (f.etat_feu === 'maitrise')      return '#16A34A';   // vert
             return '#DC2626';
-        }}
-
-        function getCommuneStakes(communeName) {{
-            if (communeName.includes("Axe")) {{
-                return {{
-                    stakes: "Forêt, habitations éparses, axes routiers",
-                    pop: "Exposition diffuse"
-                }};
-            }}
-            let hash = 0;
-            for (let i = 0; i < communeName.length; i++) {{
-                hash = communeName.charCodeAt(i) + ((hash << 5) - hash);
-            }}
-            const popVal = Math.abs(hash % 18) * 500 + 400;
-            const popStr = popVal.toLocaleString() + " hab.";
-            const stakesLists = [
-                "Habitations, massif forestier, lignes électriques",
-                "Camping, forêt de pins, habitations isolées",
-                "Habitations groupées, zone naturelle sensible",
-                "Axe routier majeur, habitations, zone agricole",
-                "Massif boisé, camping, habitations, château d'eau"
-            ];
-            const stakes = stakesLists[Math.abs(hash % stakesLists.length)];
-            return {{ stakes: stakes, pop: popStr }};
         }}
 
         function createFireMarker(f, fireIndex, offsetPos) {{
@@ -2138,40 +1817,6 @@ def generate_interactive_map(results, latest_news, output_path):
             const plumeArrow = w.plume_arrow || '➡️';
             const plumeDir = w.plume_dir || 'Sud';
 
-            // Propagation calculation
-            const windOrigin = w.wind_origin || 'N/A';
-            const windSpeed = w.wind_speed_kmh || 15;
-            const region = f.region || '';
-            let propDir = 'Est (E)';
-            if (windOrigin.includes('SO')) propDir = 'Nord-Est (NE)';
-            else if (windOrigin.includes('NO')) propDir = 'Sud-Est (SE)';
-            else if (windOrigin.includes('NE')) propDir = 'Sud-Ouest (SO)';
-            else if (windOrigin.includes('SE')) propDir = 'Nord-Ouest (NO)';
-            else if (windOrigin.includes('S')) propDir = 'Nord (N)';
-            else if (windOrigin.includes('N')) propDir = 'Sud (S)';
-            else if (windOrigin.includes('O')) propDir = 'Est (E)';
-            else if (windOrigin.includes('E')) propDir = 'Ouest (O)';
-            
-            const topoFactor = (region.includes('PACA') || region.includes('Corse') || region.includes('Occitanie')) ? 1.4 : 1.0;
-            const dryFactor = (w.humidity_pct && w.humidity_pct < 30) ? 1.3 : 1.0;
-            const propSpeed = (0.5 + (windSpeed * 0.04)) * topoFactor * dryFactor; 
-            const dist30m = propSpeed * 0.5;
-            const dist60m = propSpeed;
-            const confidence = windSpeed > 35 ? '⚠️ Modéré' : '✅ Élevé';
-            
-            let mcpQualif = 'Faible';
-            let mcpColor = '#16A34A';
-            const mcpIdx = w.mcp_index || 25;
-            if (mcpIdx >= 90) {{ mcpQualif = 'CRITIQUE'; mcpColor = '#7C3AED'; }}
-            else if (mcpIdx >= 70) {{ mcpQualif = 'TRÈS ÉLEVÉ'; mcpColor = '#DC2626'; }}
-            else if (mcpIdx >= 45) {{ mcpQualif = 'ÉLEVÉ'; mcpColor = '#EA580C'; }}
-            else if (mcpIdx >= 20) {{ mcpQualif = 'MODÉRÉ'; mcpColor = '#D97706'; }}
-            
-            let mcpComment = "Risque modéré typique pour la saison.";
-            if (mcpIdx >= 90) mcpComment = `Danger extrême : alimenté par des rafales de ${{gustVal}} km/h, une sécheresse majeure et une humidité très basse (${{w.humidity_pct}}%).`;
-            else if (mcpIdx >= 70) mcpComment = `Propagation rapide probable en raison de vents soutenus (${{windSpeed}} km/h) and de combustibles asséchés.`;
-            else if (mcpIdx >= 45) mcpComment = `Conditions propices aux éclosions. Surveillance active requise.`;
-
             let recentHeader = '';
             if (f.etat_feu === 'eteint') {{
                 recentHeader = '<div style="background:#64748B; color:white; font-size:10px; font-weight:900; text-align:center; padding:3px; text-transform:uppercase; letter-spacing:0.02em;">💧 INCENDIE ÉTEINT</div>';
@@ -2186,20 +1831,13 @@ def generate_interactive_map(results, latest_news, output_path):
             const downwindItems = f.downwind_exposure || [];
             let popupExposureHtml = '';
             if (downwindItems.length > 0) {{
-                let expRows = downwindItems.slice(0, 3).map(item => {{
-                    const stData = getCommuneStakes(item.commune);
-                    return `
-                        <div style="border-bottom:1px solid #FEF3C7; padding:4px 0; font-size:10px;">
-                            💨 <b>${{item.commune}}</b> (⏱️ <b>${{item.eta_smoke}}</b> à ${{item.dist_km}} km)<br>
-                            👥 <b>Exposés :</b> ${{stData.pop}} | 🛡️ <b>Enjeux :</b> <span style="font-size:9.5px; color:#475569;">${{stData.stakes}}</span>
-                        </div>
-                    `;
-                }}).join('');
-                
+                const firstExp = downwindItems[0];
+                const expName = firstExp.commune;
+                const expEta = firstExp.eta_smoke;
                 popupExposureHtml = `
-                    <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:6px; padding:6px; margin-top:6px;">
-                        <span style="color:#B45309; font-weight:800; font-size:11px; display:block; margin-bottom:3px;">🏠 ZONES SOUS LE VENT (&lt; 15 km) :</span>
-                        ${{expRows}}
+                    <div class="info-row" style="background:#FFFBEB; padding:3px 5px; border-radius:4px; margin-top:2px;">
+                        <span class="lbl" style="color:#B45309; font-weight:800;">🏠 Sous le vent :</span>
+                        <span class="val" style="color:#D97706; font-weight:900;" title="${{expName}} (Fumées en ${{expEta}})">${{expName}} (⏱️ ${{expEta}})</span>
                     </div>
                 `;
             }}
@@ -2255,7 +1893,7 @@ def generate_interactive_map(results, latest_news, output_path):
                             <span class="badge-state" style="background:${{color}}; color:white;">${{f.etat_feu==='attaque'?'🔥 EN ATTAQUE':f.etat_feu==='fixe'?'🎯 FIXÉ':f.etat_feu==='maitrise'?'✅ MAÎTRISÉ':f.etat_feu==='eteint'?'💧 ÉTEINT':f.etat_feu==='fausse_alerte'?'❌ FAUSSE ALERTE':'🔥 EN ATTAQUE'}}</span>
                         </div>
                         <h3 title="${{f.commune}}">${{f.commune}}</h3>
-                        <div class="time-ago">⏱️ Détecté à <b style="color:#DC2626; font-size:11.5px;">${{f.detect_time_fr || 'N/A'}}</b> (${{f.timeAgo || ''}}) • <b style="color:${{f.scale_color || '#DC2626'}};"><span style="color:${{f.scale_color}}">${{f.scale_label || ''}}</span></b></div>
+                        <div class="time-ago">⏱️ Détecté à <b style="color:#DC2626; font-size:11.5px;">${{f.detect_time_fr || 'N/A'}}</b> (${{f.timeAgo || ''}}) • <b style="color:${{f.scale_color || '#DC2626'}};">${{f.scale_label || ''}}</b></div>
                     </div>
                     
                     <div class="popup-main-layout">
@@ -2278,47 +1916,7 @@ def generate_interactive_map(results, latest_news, output_path):
                             </div>
                         </div>
 
-                        <!-- Paramètres Opérationnels Avancés -->
-                        <div class="grid-weather" style="grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 6px;">
-                            <div class="weather-card" style="border-left: 3px solid #7C3AED; background:#F5F3FF;">
-                                <div class="lbl">Pro Index</div>
-                                <div class="val" style="color:#7C3AED; font-weight:800; font-size:11px;">${{mcpIdx}}/100</div>
-                            </div>
-                            <div class="weather-card" style="border-left: 3px solid #0D9488; background:#F0FDFA;">
-                                <div class="lbl">Rosée</div>
-                                <div class="val" style="color:#0D9488; font-weight:800; font-size:11px;">${{w.dew_point !== undefined ? w.dew_point.toFixed(1) + '°C' : 'N/A'}}</div>
-                            </div>
-                            <div class="weather-card" style="border-left: 3px solid #B45309; background:#FEF3C7;">
-                                <div class="lbl">Haines</div>
-                                <div class="val" style="color:#B45309; font-weight:800; font-size:11px;">${{w.haines || 'N/A'}}/6</div>
-                            </div>
-                            <div class="weather-card" style="border-left: 3px solid #16A34A; background:#F0FDF4; grid-column: span 3;">
-                                <div class="lbl">Humidité Combustibles</div>
-                                <div class="val" style="color:#16A34A; font-weight:800; font-size:11px;">${{w.fuel_moisture !== undefined ? w.fuel_moisture.toFixed(1) + '%' : 'N/A'}}</div>
-                            </div>
-                        </div>
-
-                        <!-- Météo-Climat Pro Risk Indice Banner -->
-                        <div class="risk-banner" style="background:${{mcpColor}}18; color:${{mcpColor}}; border: 1.5px solid ${{mcpColor}}; margin-top:6px; padding:6px; border-radius:6px;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; font-weight:900; font-size:11px; margin-bottom:2px;">
-                                <span>⚠️ INDICE MÉTÉO-CLIMAT PRO :</span>
-                                <span style="background:${{mcpColor}}; color:white; padding:1px 5px; border-radius:4px;">${{mcpQualif}}</span>
-                            </div>
-                            <div style="font-size:10px; color:#475569; font-weight:700; line-height:1.2;">${{mcpComment}}</div>
-                        </div>
-
-                        <!-- Analyse Opérationnelle de Propagation -->
-                        <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:6px; padding:6px; margin-top:6px;">
-                            <span style="color:#0F172A; font-weight:800; font-size:11px; display:block; margin-bottom:4px;">⚡ ESTIMATION DE PROPAGATION :</span>
-                            <div style="font-size:10px; line-height:1.3; color:#334155;">
-                                🧭 <b>Direction :</b> Vers le <b style="color:#0F172A;">${{propDir}}</b><br>
-                                🏃 <b>Vitesse estimée :</b> <b style="color:#DC2626;">${{propSpeed.toFixed(2)}} km/h</b><br>
-                                📏 <b>Projection :</b> +30m: <b>${{dist30m.toFixed(2)}} km</b> | +60m: <b>${{dist60m.toFixed(2)}} km</b><br>
-                                🎯 <b>Fiabilité calcul :</b> <b style="color:#16A34A;">${{confidence}}</b> (Topo & Vent)
-                            </div>
-                        </div>
-
-                        <div class="info-row" style="margin-top:6px;">
+                        <div class="info-row">
                             <span class="lbl">🧭 Panache :</span>
                             <span class="val" style="color:#B45309; font-weight:900;">${{plumeArrow}} Vers le ${{plumeDir}}</span>
                         </div>
@@ -2332,8 +1930,8 @@ def generate_interactive_map(results, latest_news, output_path):
                             <span class="lbl">✈️ Canadairs :</span>
                             <span class="val" style="color:#2563EB; font-weight:900;" title="${{pName}} (${{pDist}}) • Vol: ${{pEta}}">${{pName}} (<b style="color:#DC2626;">${{pEta}}</b>)</span>
                         </div>
-                        
-                        <div class="risk-banner" style="background:${{w.spread_risk_color || '#F1F5F9'}}18; color:${{w.spread_risk_color || '#0F172A'}}; border: 1px solid ${{w.spread_risk_color || '#CBD5E1'}}; margin-top:4px;">
+
+                        <div class="risk-banner" style="background:${{w.spread_risk_color || '#F1F5F9'}}18; color:${{w.spread_risk_color || '#0F172A'}}; border: 1px solid ${{w.spread_risk_color || '#CBD5E1'}}; margin-top:2px;">
                             <span style="color:#475569;">Danger FWI :</span>
                             <span style="font-size:11.5px; font-weight:900;">${{w.spread_risk || 'N/A'}}</span>
                         </div>
@@ -2345,7 +1943,7 @@ def generate_interactive_map(results, latest_news, output_path):
                         </div>
                         
                         <div class="popup-btn-row">
-                            <button class="btn-infographie" style="background:${{isMajeur ? '#7C3AED' : '#DC2626'}}; box-shadow:0 2px 5px ${{isMajeur ? 'rgba(124,58,237,0.25)' : 'rgba(220,38,38,0.25) regimens'}}" onclick="openInfographieModal(${{fireIndex}})">📸 Infographie</button>
+                            <button class="btn-infographie" style="background:${{isMajeur ? '#7C3AED' : '#DC2626'}}; box-shadow:0 2px 5px ${{isMajeur ? 'rgba(124,58,237,0.25)' : 'rgba(220,38,38,0.25)'}};" onclick="openInfographieModal(${{fireIndex}})">📸 Infographie</button>
                             <button class="btn-close-popup" onclick="map.closePopup()">✕ Fermer</button>
                         </div>
                     </div>
@@ -2355,116 +1953,11 @@ def generate_interactive_map(results, latest_news, output_path):
             const pos = offsetPos || [f.lat, f.lon];
             drawWindPlumeCone(plumeLayerGroup, pos[0], pos[1], w.plume_deg || 90, w.wind_gusts_kmh || 30);
 
-            const marker = L.marker(pos, {{ icon: fireIcon }}).bindPopup(popupContent);
-            if (isMajeur) {{
-                const labelText = `🌳 <b>${{f.superficie || 0}} ha</b><br>⚠️ Index: <b>${{mcpIdx.toFixed(0)}}</b>`;
-                marker.bindTooltip(labelText, {{
-                    permanent: true,
-                    direction: 'bottom',
-                    className: 'map-fire-label',
-                    offset: [0, 12]
-                }});
-            }}
-
-            return marker;
-        }}
-
-        function renderDashboard(dataList) {{
-            const activeCount = dataList.filter(f => f.etat_feu !== 'eteint' && f.etat_feu !== 'fausse_alerte').length;
-            const newCount = dataList.filter(f => f.is_under_1h).length;
-            const majeurCount = dataList.filter(f => f.fire_scale === 'majeur' && f.etat_feu !== 'eteint').length;
-            
-            let totalHectares = 0;
-            let firefighterCount = 0;
-            const depts = new Set();
-            let maxFwi = 0;
-            const threatenedCommunes = new Set();
-            
-            dataList.forEach(f => {{
-                if (f.etat_feu !== 'eteint' && f.etat_feu !== 'fausse_alerte') {{
-                    totalHectares += f.superficie || 0;
-                    if (f.fire_scale === 'majeur') firefighterCount += 180;
-                    else if (f.fire_scale === 'modere') firefighterCount += 45;
-                    else firefighterCount += 12;
-                    
-                    if (f.dept) depts.add(f.dept);
-                    if (f.weather && f.weather.fwi_score) {{
-                        maxFwi = Math.max(maxFwi, f.weather.fwi_score);
-                    }}
-                    if (f.downwind_exposure) {{
-                        f.downwind_exposure.forEach(exp => {{
-                            if (exp.commune) threatenedCommunes.add(exp.commune);
-                        }});
-                    }}
-                }}
-            }});
-            
-            const haText = totalHectares > 0 ? (totalHectares % 1 === 0 ? totalHectares : totalHectares.toFixed(1)) + ' ha' : '0 ha';
-            const dashboardEl = document.getElementById('top-dashboard');
-            if (!dashboardEl) return;
-            
-            dashboardEl.innerHTML = `
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:#FEF2F2; color:#DC2626;">🔥</div>
-                    <div class="stat-info">
-                        <span class="stat-val">${{activeCount}}</span>
-                        <span class="stat-lbl">Feux Actifs</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:#FFF7ED; color:#EA580C;">⚡</div>
-                    <div class="stat-info">
-                        <span class="stat-val">+${{newCount}}</span>
-                        <span class="stat-lbl">Nouveaux &lt;1h</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:#F5F3FF; color:#7C3AED;">🚨</div>
-                    <div class="stat-info">
-                        <span class="stat-val">${{majeurCount}}</span>
-                        <span class="stat-lbl">Majeurs</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:#ECFDF5; color:#10B981;">🌳</div>
-                    <div class="stat-info">
-                        <span class="stat-val">${{haText}}</span>
-                        <span class="stat-lbl">Hectares Brûlés</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:#EFF6FF; color:#3B82F6;">👨‍🚒</div>
-                    <div class="stat-info">
-                        <span class="stat-val">${{firefighterCount}}</span>
-                        <span class="stat-lbl">Sapeurs Mobilisés</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:#F8FAFC; color:#475569;">🛡️</div>
-                    <div class="stat-info">
-                        <span class="stat-val">${{depts.size}}</span>
-                        <span class="stat-lbl">Dép. Impactés</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:#FFF1F2; color:#F43F5E;">🌡️</div>
-                    <div class="stat-info">
-                        <span class="stat-val">${{maxFwi > 0 ? maxFwi.toFixed(1) : 'N/A'}}</span>
-                        <span class="stat-lbl">FWI Max (MCP)</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background:#FFFBEB; color:#D97706;">🏠</div>
-                    <div class="stat-info">
-                        <span class="stat-val">${{threatenedCommunes.size}}</span>
-                        <span class="stat-lbl">Communes Menacées</span>
-                    </div>
-                </div>
-            `;
+            return L.marker(pos, {{ icon: fireIcon }}).bindPopup(popupContent);
         }}
 
         function renderFires() {{
-            markersClusterGroup.clearLayers();
+            markersLayerGroup.clearLayers();
             plumeLayerGroup.clearLayers();
             const sidebarContainer = document.getElementById('fire-list-container');
             sidebarContainer.innerHTML = '';
@@ -2483,7 +1976,7 @@ def generate_interactive_map(results, latest_news, output_path):
                 return [lat + Math.sin(angle) * radius, lon + Math.cos(angle) * radius];
             }}
 
-            activeFires.forEach((f, idx) => {{
+            fires.forEach((f, idx) => {{
                 if (!f.lat || !f.lon) return;
                 
                 const isActive    = f.etat_feu !== 'eteint' && f.etat_feu !== 'fausse_alerte';
@@ -2503,7 +1996,7 @@ def generate_interactive_map(results, latest_news, output_path):
                     visibleCount++;
                     const offsetPos = getOffsetCoords(f.lat, f.lon);
                     const marker = createFireMarker(f, idx, offsetPos);
-                    markersClusterGroup.addLayer(marker);
+                    markersLayerGroup.addLayer(marker);
 
                     const color = getMarkerColor(f);
                     const w = f.weather || {{}};
@@ -2574,130 +2067,16 @@ def generate_interactive_map(results, latest_news, output_path):
             renderFires();
         }}
 
-        function populateRegionFilter() {{
-            const selectEl = document.querySelector('select[onchange="filterRegion(this.value)"]');
-            if (!selectEl) return;
-            
-            const regions = new Set();
-            fires.forEach(f => {{
-                if (f.region) regions.add(f.region);
-            }});
-            
-            let html = '<option value="all">🌐 Toutes Régions</option>';
-            regions.forEach(reg => {{
-                const count = fires.filter(f => f.region === reg && f.etat_feu !== 'eteint' && f.etat_feu !== 'fausse_alerte').length;
-                if (count > 0) {{
-                    html += '<option value="' + reg + '">📍 ' + reg + ' (' + count + ')</option>';
-                }} else {{
-                    html += '<option value="' + reg + '">📍 ' + reg + '</option>';
-                }}
-            }});
-            selectEl.innerHTML = html;
-        }}
-
         function filterRegion(regionVal) {{
             currentRegionFilter = regionVal;
             renderFires();
         }}
 
-        // Time Travel Logic
-        function initTimeline() {{
-            const rangeInput = document.getElementById('timeline-range-input');
-            const timeLabel = document.getElementById('timeline-time-label');
-            
-            if (!historicalSnapshots || historicalSnapshots.length <= 1) {{
-                document.getElementById('timeline-container').style.display = 'none';
-                return;
-            }}
-            
-            rangeInput.min = 0;
-            rangeInput.max = historicalSnapshots.length;
-            rangeInput.value = historicalSnapshots.length;
-            
-            updateTimelineUI();
-        }}
-        
-        function updateTimelineUI() {{
-            const rangeInput = document.getElementById('timeline-range-input');
-            const timeLabel = document.getElementById('timeline-time-label');
-            const liveTag = document.getElementById('timeline-live-tag');
-            const container = document.getElementById('timeline-container');
-            
-            const val = parseInt(rangeInput.value);
-            
-            if (val === historicalSnapshots.length) {{
-                isHistoricalMode = false;
-                activeFires = [...fires];
-                timeLabel.innerText = "Temps Réel";
-                liveTag.style.display = 'inline-block';
-                container.classList.remove('historical-active');
-                stopTimelinePlay();
-            }} else {{
-                isHistoricalMode = true;
-                activeHistoryIndex = val;
-                const snap = historicalSnapshots[val];
-                activeFires = snap.fires;
-                
-                try {{
-                    const dt = new Date(snap.timestamp);
-                    const hr = (dt.getUTCHours() + 2) % 24;
-                    const mn = dt.getUTCMinutes();
-                    timeLabel.innerText = "Hist. " + (hr < 10 ? '0' : '') + hr + "h" + (mn < 10 ? '0' : '') + mn;
-                }} catch(e) {{
-                    timeLabel.innerText = snap.time_fr || "Hist. N/A";
-                }}
-                liveTag.style.display = 'none';
-                container.classList.add('historical-active');
-            }}
-            
-            renderFires();
-            renderDashboard(activeFires);
-        }}
-        
-        function onTimelineSliderChange(val) {{
-            if (timelinePlayInterval) {{
-                stopTimelinePlay();
-            }}
-            updateTimelineUI();
-        }}
-        
-        function toggleTimelinePlay() {{
-            const playBtn = document.getElementById('timeline-play-btn');
-            if (timelinePlayInterval) {{
-                stopTimelinePlay();
-            }} else {{
-                playBtn.innerText = '⏸';
-                const rangeInput = document.getElementById('timeline-range-input');
-                let val = parseInt(rangeInput.value);
-                
-                timelinePlayInterval = setInterval(() => {{
-                    val++;
-                    if (val > historicalSnapshots.length) {{
-                        val = 0;
-                    }}
-                    rangeInput.value = val;
-                    updateTimelineUI();
-                }}, 1500);
-            }}
-        }}
-        
-        function stopTimelinePlay() {{
-            const playBtn = document.getElementById('timeline-play-btn');
-            if (playBtn) playBtn.innerText = '▶';
-            if (timelinePlayInterval) {{
-                clearInterval(timelinePlayInterval);
-                timelinePlayInterval = null;
-            }}
-        }}
-
         if (window.innerWidth < 768) {{
             document.getElementById('sidebar').classList.add('collapsed');
         }}
-        
-        populateRegionFilter();
-        initTimeline();
-        renderDashboard(activeFires);
         renderFires();
+
         pelicandromes.forEach(p => {{
             const pIcon = L.divIcon({{
                 className: 'custom-peli-marker',
