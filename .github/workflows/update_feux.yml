@@ -8,6 +8,8 @@ on:
 jobs:
   update-data:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -27,9 +29,12 @@ jobs:
           CI: "true"
 
       - name: Commit and Push Updated Site
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "Feux Bot"
+          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/monsieurmeteo/feux-foret-vercel.git"
           git add index.html Rapport_Feux_de_Foret_Temps_Reel.pdf data/ || true
           git diff --staged --quiet && echo "Rien à committer" && exit 0
           git commit -m "🔥 Auto-refresh feux $(date -u +'%H:%M UTC') [skip ci]"
