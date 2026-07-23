@@ -67,6 +67,12 @@ def init_db():
             plume_dir TEXT
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS feux_alertes_envoyees (
+            fire_id TEXT PRIMARY KEY,
+            sent_at_utc TEXT
+        )
+    """)
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_fire_id ON feux_snapshots(fire_id)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_timestamp ON feux_snapshots(timestamp_utc)")
     conn.commit()
@@ -94,6 +100,10 @@ def record_snapshots(results):
         """, (fire_id,))
         last_row = cursor.fetchone()
         
+        # Check if an email has EVER been sent for this fire
+        cursor.execute("SELECT fire_id FROM feux_alertes_envoyees WHERE fire_id = ?", (fire_id,))
+        already_emailed = cursor.fetchone()
+        
         should_insert = True
         if last_row:
             try:
@@ -104,9 +114,11 @@ def record_snapshots(results):
             except Exception:
                 pass
 
-        # Alerte e-mail envoyée UNIQUEMENT pour les feux nouveaux détectés depuis moins de 1h (< 1h)
-        if not last_row and f.get("is_under_1h") and f.get("etat_feu") not in ("eteint", "fausse_alerte"):
-            send_new_fire_email_alert(f)
+        # Alerte e-mail envoyée STRICTEMENT 1 SEULE FOIS ABSOLUE par feu (et uniquement si < 1h et actif)
+        if not already_emailed and f.get("is_under_1h") and f.get("etat_feu") not in ("eteint", "fausse_alerte"):
+            sent_ok = send_new_fire_email_alert(f)
+            if sent_ok:
+                cursor.execute("INSERT OR REPLACE INTO feux_alertes_envoyees (fire_id, sent_at_utc) VALUES (?, ?)", (fire_id, now_utc_str))
 
         if should_insert:
             cursor.execute("""
