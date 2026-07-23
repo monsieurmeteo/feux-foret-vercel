@@ -1965,10 +1965,11 @@ def generate_interactive_map(results, latest_news, output_path):
                             <span class="val" style="color:#2563EB; font-weight:900;" title="${{pName}} (${{pDist}}) • Vol: ${{pEta}}">${{pName}} (<b style="color:#DC2626;">${{pEta}}</b>)</span>
                         </div>
 
+                        ${{f.superficie > 0 ? `
                         <div class="info-row" style="background:#FFF7ED; padding:3.5px 6px; border-radius:4px; margin-top:3px; border:1px solid #FFEDD5;">
                             <span class="lbl" style="color:#C2410C; font-weight:800;">🌲 Surface :</span>
-                            <span class="val" style="color:#EA580C; font-weight:900;">${{f.superficie > 0 ? (f.superficie % 1 === 0 ? f.superficie : f.superficie.toFixed(1)) + ' ha' : 'En cours d&apos;évaluation'}}</span>
-                        </div>
+                            <span class="val" style="color:#EA580C; font-weight:900;">${{f.superficie % 1 === 0 ? f.superficie : f.superficie.toFixed(1)}} ha</span>
+                        </div>` : ''}}
                         <div class="risk-banner" style="background:${{w.spread_risk_color || '#F1F5F9'}}18; color:${{w.spread_risk_color || '#0F172A'}}; border: 1px solid ${{w.spread_risk_color || '#CBD5E1'}}; margin-top:2px;">
                             <span style="color:#475569;">Danger FWI :</span>
                             <span style="font-size:11.5px; font-weight:900;">${{w.spread_risk || 'N/A'}}</span>
@@ -2079,10 +2080,9 @@ def generate_interactive_map(results, latest_news, output_path):
                         ? `<span style="font-weight:900; color:${{w.spread_risk_color || '#0F172A'}}; font-size:11.5px;">Risque: ${{w.spread_risk || 'N/A'}}</span>`
                         : `<span>💨 <b>Vent Moy:</b> <b style="color:#0F172A;">${{speedVal}} km/h</b> | <b>Raf:</b> <b style="color:#DC2626;">${{gustVal}} km/h</b></span>`;
 
-                    const haVal = (f.superficie !== undefined && f.superficie !== null && f.superficie > 0)
-                        ? (f.superficie % 1 === 0 ? f.superficie : f.superficie.toFixed(1)) + ' ha'
-                        : (f.etat_feu === 'eteint' ? 'Éteint' : 'En cours');
-                    const haInfo = `<span style="background:#FFF7ED; color:#C2410C; border:1px solid #FFEDD5; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:800;">🌲 <b>${{haVal}}</b></span>`;
+                    const haInfo = (f.superficie !== undefined && f.superficie !== null && f.superficie > 0)
+                        ? `<span style="background:#FFF7ED; color:#C2410C; border:1px solid #FFEDD5; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:800;">🌲 <b>${{f.superficie % 1 === 0 ? f.superficie : f.superficie.toFixed(1)}} ha</b></span>`
+                        : '';
 
                     card.innerHTML = `
                         <div class="top-line">
