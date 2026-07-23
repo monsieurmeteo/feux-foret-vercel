@@ -495,17 +495,10 @@ def get_closest_pelicandrome(lat, lon, bases):
     return best_name, round(min_dist, 1), eta_str
 
 def fetch_all_feux():
-    url = "https://feuxdeforet.fr/signalements/"
+    url = "https://feuxdeforet.fr/"
     req = urllib.request.Request(url, headers=ANONYMOUS_HEADERS)
-    try:
-        with urllib.request.urlopen(req, timeout=8) as resp:
-            html = resp.read().decode("utf-8")
-    except Exception:
-        # Fallback sur la page d'accueil si /signalements/ échoue
-        url = "https://feuxdeforet.fr/"
-        req = urllib.request.Request(url, headers=ANONYMOUS_HEADERS)
-        with urllib.request.urlopen(req) as resp:
-            html = resp.read().decode("utf-8")
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        html = resp.read().decode("utf-8")
     
     idx = html.find("window.__INITIAL_DATA__=")
     if idx == -1:
@@ -513,8 +506,8 @@ def fetch_all_feux():
     start = html.find("{", idx)
     data, _ = json.JSONDecoder().raw_decode(html[start:])
     
-    # L'API de /signalements/ renvoie la liste dans 'signalements', l'accueil dans 'feux'
-    all_feux = data.get("data", {}).get("signalements") or data.get("data", {}).get("feux", [])
+    all_feux = data.get("data", {}).get("feux", [])
+    to_enrich = [f for f in all_feux if f.get("enCours")]
     now = datetime.now(timezone.utc)
     pelicandromes = load_pelicandromes()
     meteociel_stations, meteociel_validity = load_meteociel_network()
@@ -523,7 +516,7 @@ def fetch_all_feux():
         fire_url = "https://feuxdeforet.fr" + f["url"]
         try:
             req_p = urllib.request.Request(fire_url, headers=ANONYMOUS_HEADERS)
-            with urllib.request.urlopen(req_p, timeout=3) as r:
+            with urllib.request.urlopen(req_p, timeout=6) as r:
                 h = r.read().decode("utf-8")
             st = h.find("{", h.find("window.__INITIAL_DATA__="))
             d, _ = json.JSONDecoder().raw_decode(h[st:])
@@ -618,7 +611,7 @@ def fetch_all_feux():
         return f
 
     with ThreadPoolExecutor(max_workers=10) as ex:
-        results = list(ex.map(enrich, all_feux))
+        results = list(ex.map(enrich, to_enrich))
 
     latest_news = fetch_firefighter_news()
 
@@ -1374,6 +1367,8 @@ def generate_interactive_map(results, latest_news, output_path):
                 return w.spread_risk_color || '#6B7280';
             }}
             if (f.fire_scale === 'majeur') return '#7C3AED';
+            if (f.etat_feu === 'eteint') return '#64748B';
+            if (f.etat_feu === 'fausse_alerte') return '#94A3B8';
             if (f.is_under_1h) return '#D97706';
             if (f.etat_feu === 'attaque') return '#DC2626';
             if (f.etat_feu === 'fixe') return '#2563EB';
@@ -1398,7 +1393,11 @@ def generate_interactive_map(results, latest_news, output_path):
                 else if (w.spread_risk && w.spread_risk.includes('MODÉRÉ')) emojiIcon = '🟡';
                 else emojiIcon = '🟢';
             }} else {{
-                if (isMajeur) {{
+                if (f.etat_feu === 'eteint') {{
+                    emojiIcon = '💧';
+                }} else if (f.etat_feu === 'fausse_alerte') {{
+                    emojiIcon = '❌';
+                }} else if (isMajeur) {{
                     pulseClass = ' marker-pulse-majeur';
                     emojiIcon = '🚨';
                 }} else if (isUnder1h) {{
@@ -1433,7 +1432,11 @@ def generate_interactive_map(results, latest_news, output_path):
             const plumeDir = w.plume_dir || 'Sud';
 
             let recentHeader = '';
-            if (isMajeur) {{
+            if (f.etat_feu === 'eteint') {{
+                recentHeader = '<div style="background:#64748B; color:white; font-size:10px; font-weight:900; text-align:center; padding:3px; text-transform:uppercase; letter-spacing:0.02em;">💧 INCENDIE ÉTEINT</div>';
+            }} else if (f.etat_feu === 'fausse_alerte') {{
+                recentHeader = '<div style="background:#94A3B8; color:white; font-size:10px; font-weight:900; text-align:center; padding:3px; text-transform:uppercase; letter-spacing:0.02em;">❌ FAUSSE ALERTE</div>';
+            }} else if (isMajeur) {{
                 recentHeader = '<div style="background:#7C3AED; color:white; font-size:10.5px; font-weight:900; text-align:center; padding:3px; text-transform:uppercase; letter-spacing:0.02em;">🚨 INCENDIE MAJEUR EN COURS</div>';
             }} else if (isUnder1h) {{
                 recentHeader = '<div style="background:#D97706; color:white; font-size:10px; font-weight:900; text-align:center; padding:3px; text-transform:uppercase; letter-spacing:0.02em;">⚡ NOUVEAU FEU DÉTECTÉ (' + f.minutes_ago + ' MIN)</div>';
@@ -1598,6 +1601,9 @@ def generate_interactive_map(results, latest_news, output_path):
                     else if (stateLabel === 'eteint') stateLabel = 'Éteint';
                     else if (stateLabel === 'attaque') stateLabel = 'En attaque';
                     else if (stateLabel === 'fixe') stateLabel = 'Fixé';
+
+                    let cardClass = 'fire-card-item';
+                    let scaleTag = '';
 
                     if (f.etat_feu === 'eteint') {{
                         cardClass += ' eteint-card';
