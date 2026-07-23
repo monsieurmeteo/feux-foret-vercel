@@ -1264,6 +1264,10 @@ def generate_interactive_map(results, latest_news, output_path):
             `;
         }}
 
+        function closeInfographieModal() {{
+            document.getElementById('infographie-modal').style.display = 'none';
+        }}
+
         function openInfographieModal(fireIndex) {{
             const f = fires[fireIndex];
             if (!f) return;
