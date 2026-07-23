@@ -167,9 +167,9 @@
 
         .fire-card-item .top-line { display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-bottom: 4px; }
         .fire-card-item .dept-tag { background: #0F172A; color: #FFFFFF; font-weight: 900; padding: 2px 7px; border-radius: 5px; font-size: 10.5px; letter-spacing: 0.02em; }
-        .fire-card-item .scale-badge-majeur { background: #7C3AED; color: white; font-weight: 900; padding: 2px 6px; border-radius: 4px; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.02em; box-shadow: 0 2px 5px rgba(124,58,237,0.3); }
-        .fire-card-item .scale-badge-modere { background: #EA580C; color: white; font-weight: 900; padding: 2px 6px; border-radius: 4px; font-size: 9.5px; text-transform: uppercase; }
-        .fire-card-item .scale-badge-localise { background: #D97706; color: white; font-weight: 800; padding: 2px 6px; border-radius: 4px; font-size: 9.5px; text-transform: uppercase; }
+        .fire-card-item .scale-badge-majeur { background: #6D28D9; color: white; font-weight: 900; padding: 2px 7px; border-radius: 4px; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.04em; box-shadow: 0 2px 6px rgba(109,40,217,0.4); }
+        .fire-card-item .scale-badge-modere { background: #C2410C; color: white; font-weight: 900; padding: 2px 7px; border-radius: 4px; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.03em; }
+        .fire-card-item .scale-badge-localise { background: #92400E; color: white; font-weight: 900; padding: 2px 7px; border-radius: 4px; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.03em; }
         .fire-card-item .state-tag { font-weight: 900; font-size: 10.5px; text-transform: uppercase; }
         .fire-card-item .commune-name { font-weight: 900; font-size: 13.5px; color: #0F172A; margin-bottom: 4px; letter-spacing: -0.01em; }
         .fire-card-item .sub-details { font-size: 10.5px; color: #334155; display: flex; justify-content: space-between; font-weight: 700; flex-direction: column; gap: 2px; }
@@ -235,45 +235,46 @@
             border-radius: 50%;
         }
 
+        /* ── Popup Leaflet ─────────────────────────────────── */
         .leaflet-popup-content-wrapper {
-            background: #FFFFFF !important; color: #0F172A !important; border-radius: 10px !important;
-            border: 1.5px solid #CBD5E1 !important; box-shadow: 0 10px 25px rgba(15, 23, 42, 0.2) !important;
+            background: #0F172A !important; color: #F8FAFC !important; border-radius: 12px !important;
+            border: 1.5px solid #334155 !important; box-shadow: 0 12px 30px rgba(0,0,0,0.4) !important;
             padding: 0 !important; overflow: hidden;
         }
-        .leaflet-popup-tip { background: #FFFFFF !important; }
-        .leaflet-popup-content { margin: 0 !important; line-height: 1.2 !important; width: 340px !important; }
-        
-        .popup-header { padding: 5px 8px; background: #F8FAFC; border-bottom: 1.5px solid #E2E8F0; }
-        .popup-header .top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
-        .popup-header .badge-dept { background: #0F172A; color: white; font-weight: 900; font-size: 9px; padding: 1px 4.5px; border-radius: 4px; }
-        .popup-header .badge-state { display: inline-block; padding: 1px 4.5px; border-radius: 8px; font-size: 8.5px; font-weight: 900; text-transform: uppercase; }
-        .popup-header h3 { font-size: 11.5px; font-weight: 900; color: #0F172A; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -0.01em; }
-        .popup-header .time-ago { font-size: 8.5px; color: #334155; font-weight: 700; margin-top: 1px; }
-        
-        .popup-grid-layout { display: grid; grid-template-columns: 150px 170px; gap: 6px; padding: 6px 7px; align-items: start; }
-        .popup-col-left { display: flex; flex-direction: column; gap: 2px; }
-        .popup-col-right { display: flex; flex-direction: column; gap: 2px; border-left: 1.5px solid #E2E8F0; padding-left: 5px; }
-        
-        .grid-weather { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; margin-bottom: 1.5px; }
-        
-        .weather-card { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 4px; padding: 2px 3px; text-align: center; }
-        .weather-card .lbl { font-size: 6.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.01em; margin-bottom: 0.5px; }
-        .weather-card .val { font-size: 9.5px; font-weight: 900; }
-        
-        .info-row { display: flex; justify-content: space-between; align-items: center; padding: 1.5px 0; border-top: 1px solid #F1F5F9; font-size: 8.5px; }
-        .info-row .lbl { color: #475569; font-weight: 700; }
-        .info-row .val { font-weight: 800; color: #0F172A; max-width: 95px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        
-        .history-table { width: 100%; border-collapse: collapse; font-size: 10.5px; background: #FFFFFF; text-align: center; }
-        .history-table th { background: #0F172A; color: white; padding: 3px 2px; font-size: 9px; text-transform: uppercase; position: sticky; top: 0; white-space: nowrap; }
-        .history-table td { padding: 2.5px 2px; border-top: 1px solid #F1F5F9; font-weight: 700; white-space: nowrap; }
+        .leaflet-popup-tip { background: #0F172A !important; }
+        .leaflet-popup-content { margin: 0 !important; line-height: 1.3 !important; width: 340px !important; }
 
-        .risk-banner { margin-top: 2.5px; padding: 3px 5px; border-radius: 5px; font-weight: 900; font-size: 9px; display: flex; justify-content: space-between; align-items: center; }
-        
-        .popup-btn-row { display: flex; gap: 4px; margin-top: 3.5px; }
-        button.btn-infographie { flex: 1; background: #DC2626; color: white; border: none; padding: 5px; border-radius: 5px; font-size: 9px; font-weight: 900; cursor: pointer; box-shadow: 0 2px 5px rgba(220, 38, 38, 0.25); transition: background 0.2s; }
+        .popup-header { padding: 8px 10px 6px; background: #1E293B; border-bottom: 1px solid #334155; }
+        .popup-header .top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .popup-header .badge-dept { background: #334155; color: #CBD5E1; font-weight: 900; font-size: 9.5px; padding: 2px 6px; border-radius: 4px; letter-spacing: 0.05em; }
+        .popup-header .badge-state { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; }
+        .popup-header h3 { font-size: 13px; font-weight: 900; color: #FFFFFF; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -0.01em; }
+        .popup-header .time-ago { font-size: 9px; color: #94A3B8; font-weight: 600; margin-top: 2px; }
+
+        .popup-grid-layout { display: grid; grid-template-columns: 155px 165px; gap: 0; padding: 7px 8px; align-items: start; background: #0F172A; }
+        .popup-col-left { display: flex; flex-direction: column; gap: 3px; padding-right: 8px; }
+        .popup-col-right { display: flex; flex-direction: column; gap: 3px; border-left: 1px solid #1E293B; padding-left: 8px; }
+
+        .grid-weather { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; margin-bottom: 3px; }
+        .weather-card { background: #1E293B; border: 1px solid #334155; border-radius: 6px; padding: 4px 5px; text-align: center; }
+        .weather-card .lbl { font-size: 7px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 1px; }
+        .weather-card .val { font-size: 11px; font-weight: 900; color: #F8FAFC; }
+
+        .info-row { display: flex; justify-content: space-between; align-items: center; padding: 2.5px 0; border-top: 1px solid #1E293B; font-size: 8.5px; }
+        .info-row .lbl { color: #64748B; font-weight: 600; }
+        .info-row .val { font-weight: 800; color: #CBD5E1; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .history-table { width: 100%; border-collapse: collapse; font-size: 9.5px; background: transparent; text-align: center; }
+        .history-table th { background: #1E293B; color: #94A3B8; padding: 3px 2px; font-size: 8px; text-transform: uppercase; position: sticky; top: 0; white-space: nowrap; letter-spacing: 0.04em; }
+        .history-table td { padding: 2.5px 2px; border-top: 1px solid #1E293B; font-weight: 700; white-space: nowrap; color: #CBD5E1; }
+
+        .risk-banner { margin-top: 3px; padding: 4px 7px; border-radius: 6px; font-weight: 900; font-size: 9.5px; display: flex; justify-content: space-between; align-items: center; }
+
+        .popup-btn-row { display: flex; gap: 5px; margin-top: 5px; }
+        button.btn-infographie { flex: 1; background: #DC2626; color: white; border: none; padding: 6px; border-radius: 6px; font-size: 9.5px; font-weight: 900; cursor: pointer; box-shadow: 0 2px 6px rgba(220,38,38,0.35); transition: background 0.2s; }
         button.btn-infographie:hover { background: #B91C1C; }
-        button.btn-infographie:hover { background: #B91C1C; }
+        button.btn-close-popup { background: #334155 !important; color: #CBD5E1 !important; border: none; padding: 6px 10px; border-radius: 6px; font-size: 9.5px; font-weight: 900; cursor: pointer; transition: background 0.2s; }
+        button.btn-close-popup:hover { background: #475569 !important; }
     </style>
 </head>
 <body>
@@ -430,7 +431,7 @@
         const pelicandromes = [{"name": "Aix-les-Milles", "lon": 5.367778, "lat": 43.505556}, {"name": "Ajaccio", "lon": 8.802778, "lat": 41.923611}, {"name": "Alès", "lon": 4.092778, "lat": 44.069722}, {"name": "Aubenas", "lon": 4.372222, "lat": 44.598889}, {"name": "Bastia", "lon": 9.483611, "lat": 42.550833}, {"name": "Béziers", "lon": 3.353056, "lat": 43.323889}, {"name": "Bordeaux-Mérignac", "lon": -0.715278, "lat": 44.828333}, {"name": "Cahors", "lon": 1.475278, "lat": 44.351389}, {"name": "Calvi", "lon": 8.793056, "lat": 42.530556}, {"name": "Cannes-Mandelieu", "lon": 6.953056, "lat": 43.542222}, {"name": "Carcassonne", "lon": 2.306389, "lat": 43.216389}, {"name": "Figari", "lon": 9.097778, "lat": 41.500833}, {"name": "Hyères", "lon": 6.146389, "lat": 43.097222}, {"name": "Le Luc", "lon": 6.387222, "lat": 43.384722}, {"name": "Limoges", "lon": 1.179722, "lat": 45.862778}, {"name": "Marseille-Provence", "lon": 5.221389, "lat": 43.438889}, {"name": "Nîmes-Garons", "lon": 4.416389, "lat": 43.757778}, {"name": "Perpignan", "lon": 2.870556, "lat": 42.740833}, {"name": "Saint-Pierre (La Réunion)", "lon": 55.423333, "lat": -21.320556}, {"name": "Solenzara", "lon": 9.406111, "lat": 41.924444}, {"name": "Valence-Chabeuil", "lon": 4.969722, "lat": 44.921389}, {"name": "Vannes-Meucon", "lon": -2.718056, "lat": 47.723333}, {"name": "Mont-de-Marsan BA118", "lon": -0.5075, "lat": 43.9117}, {"name": "Pau-Pyrénées", "lon": -0.418611, "lat": 43.38}, {"name": "Niort-Marais Poitevin", "lon": -0.402778, "lat": 46.311389}];
         const latestNews = [{"title": "Pour lutter contre les incendies, l'avion militaire A400M sera déployé \"d'ici fin juillet\", annonce Maud Bregeon", "source": "BFM", "date": "Thu, 23 Jul 2026 06:55:11 GMT", "link": "https://news.google.com/rss/articles/CBMihgJBVV95cUxOcXFHblg1Q1JNc3VtZkVNb2ZYVWFadGUxTFByeVphM3BULWE2aHc0RGQ5LXhRcnNkajhYcWFYMGtGOWF5dldoS0xiM21fNWU1TjhmQkVWcEdKVDZrUGVsSnl6cU1JN2VYSkpzQ2gxdV9rSzBsZGhTYXpMeGpxM2dJeE8tamk2aDdvcXRoZHpGYmtqdGdKQV9qNGhFRlRXLTJVVXVfMklVMXdCZWRrdTYtNFBuS2Mwb2QtTm45LVdINzlzZ093LXNESTBfOVZhcHZmdzI5VE55ZjRPRmQ0ZjJvYVgyUVhDVXNkcGZ2bkRPRGhZbm56WVRNS3R5N2dpc0RLRUxvT0hB?oc=5"}, {"title": "Risque feux de forêt : restriction de l’emploi de moteurs thermiques et électriques", "source": "Les services de l'État en Gironde", "date": "Thu, 23 Jul 2026 09:01:52 GMT", "link": "https://news.google.com/rss/articles/CBMijwJBVV95cUxPMHV4cjhUQlpHdktpQkNhNWxtUDk5YnRmSjJtMS1YNl9HZnFScVIwREpNY213a1VqVWNjNmxkQ3hLdXY2S0NEQXlHSkRWcmpvWG5RMXV4VnVubm1jdVVXSW80TDFZeHlmdl84S0FteURweXZLV2JnMk1fWWVJX1BITkVoN0RHZkpXeW55djhDQ2NHM2ZLSXFVR2hGNDRmdjJsU0RIdUZUNDhXSk5pTU5nd3ljbTNoVDNXX24zZFJiM2JzSmszNkJhbkZOd1lNTGQ1TF9Qdk9teWVKLVlSbmNfcmRWUEtUQUxpUUJYczRpbzd2Qmc4WUdzRkt4b2xXZkVaQzhEa3M1M0tnb01xWDk4?oc=5"}, {"title": "Violents feux de forêt dans le sud de l’Europe: des milliers de personnes évacuées", "source": "Noovo Info", "date": "Thu, 23 Jul 2026 09:18:50 GMT", "link": "https://news.google.com/rss/articles/CBMi0gFBVV95cUxQLUxaUFg5R1pkZ2I4cFJndHhIWG9TQXYxcm1PSU9GSTg2ZDNUejlCMXQtZ1FDYnpFTG1RR25jTUQ5M0VfcjJHZTFKZkhBb1ktd25zLTFkdGpsWkc5Zy14WG44UUQxdGx2QTJudTVUTEJRY3lTR3RqR0diTXVZUGlWeG0xSVNpc3JhMmpmbEZzMEF4QnNtNnJqX3BCUE9hd3dpVHAtVGFGQ1kzbEFFNWFvYUJLYkNqSVJiN3g2OHpsd3p1akZkUTJKd0JhQWpRV1BSQ1E?oc=5"}, {"title": "Incendies : les sapeurs-pompiers de l’Aveyron en renfort dans deux départements, des feux parfois très virulents frappent plusieurs secteurs en France", "source": "Centre Presse Aveyron", "date": "Thu, 23 Jul 2026 06:55:00 GMT", "link": "https://news.google.com/rss/articles/CBMirgJBVV95cUxQZ1I1a3pqLTBMMGtPTm14eVdBZ2pyWnI5dEF3aTVqSUl4MTRZSW5oTjFibmxRM1ZLbEtfWEIyMXVEbm1Wc2lqanIxWlBSQ0hCSEFQb19DbEZ3Y1BNVVRNdVBiVUNDSVN3RlNVMnhKZWV3WGZhNHNNdkZCTXlVREtSRmYwYVpISXhFRXgwejNxdVlzbDNpZ18xaEV3R2Q5Z1ZTRmV4WER3M3dibzh1clctcGV1WnRBaGwzbGktZHM0RHlTaHBiUmJRUUJtUDA4eFFLYXRuTFpxSHFyaUJoRVJOTWcwNWF1b05Ydm9Say1XbzFQZTBDUk8wNElrWllKRXA4VWZNT1h2b0ZCWTRjTkFjbU15Rnd1VmdQdEFONllON1BLNmh1N2ljTkRZVFpEQQ?oc=5"}, {"title": "La solidarité des Européens à la peine face aux grands feux de forêt et aux carences en matériel", "source": "Ouest-France", "date": "Thu, 23 Jul 2026 11:11:51 GMT", "link": "https://news.google.com/rss/articles/CBMihAJBVV95cUxOUTNvN0xhbnFueGhiNmhBWXBackpHcGViNWVuUUM2RG80d2lSanBJcnpLX00ydHZhTkpteXdwNmI2eXFEcVZaVTV2YXpDZlIxZmlTSENfdVNXakVwSmJvYVVxaGRWOXhxX3ZPTUFWSkRzaFYyWnBteGdSdDNqbGgtS3drcjd6NlNfM2VFUy0yT18ycHlUdUxwT3Zoc2xNMFROYWdqdGtOWXA3M1lkTG5kMzZwb1Z0d3dPNlUwVm5aY2pUZ0E1Qkl2cXlyWEhOdEpiejVoRXB2bzhBMXVrQUp5bjVOT3RUZmlENkIxdTZOb0l0RHpaVHRkYjNJdGFDUkFTdWtxTA?oc=5"}, {"title": "Feux de forêt : quatre sapeurs-pompiers vosgiens partent en renfort dans le Sud", "source": "Vosges Info", "date": "Thu, 23 Jul 2026 09:03:41 GMT", "link": "https://news.google.com/rss/articles/CBMivgFBVV95cUxNZHZmUEQ5ckI1NjUwSzc3eUJSbFFTX1Ffd3pKRVFaVTlfdFVsNVFaanJUdG9TaUFIalF1dlh5Yl9CWElGY0VRa1VGU09EQ29nUk9wZUJVa1hnUzVLSU5sa2IxdWRmOGFBWHUyNVhTM2pUcDV5dnptaFJ3ZjlHRzl2a3gxMjFUc0V6d2o5NWF6UTlrVXpxT2lFU1NqUDN3T0xLeVNCQUVPWkxSeEZwZGVBRkdUeDlXYWpaRWV4RUhn?oc=5"}, {"title": "Comment la France réapprend à combattre les feux de forêt", "source": "Courrier international", "date": "Thu, 23 Jul 2026 07:31:46 GMT", "link": "https://news.google.com/rss/articles/CBMixwFBVV95cUxNYnVvdXBERWx4eWU1SVVCSWpHREhObVAwRlNJM1hNYWVMS1JRREYwejFHS2FFbHIzUVN0ZkhTMFBQbHVhTmF2bjk2ZmgybFBINlhfUS14Q0ttSVRCQXRVVmxFcXZXVTVCZmd6ODdVZVA2TFUzMmNVVWNlN0dDYm5mOWlMdS12MlVkTmY3Q1FBbUtwNE9KQmVzUEZhSUhTYWhsbXo0dlo0YWhMU0xraG1Xa0dIcEQ5RTVhQWVfQmEyY2lSX01MZFJZ?oc=5"}, {"title": "La Creuse placée en vigilance orange pour risque sévère de feux de forêt", "source": "ici.fr", "date": "Thu, 23 Jul 2026 09:00:38 GMT", "link": "https://news.google.com/rss/articles/CBMixwFBVV95cUxNWm5jLTRpT1ZhcnY5Q2gyTXZoclYzbGZFZzRlVmliWi1McnA3REVScVpzcnRsSi1YYjNsUWVqYmY5MGVDVWJPc0g4V0FQREdjTURDQkY4Q1E0aDhaRHpMdi1VQzdlbk9jbl9Ua3BwRDJFZDZmTWxoNE1yTlBWUmVFLXFsSnZLZGJveEgtNW9aZlR0amkyMnJzdkVJZ1d2aF9oZUFRcjVtQnJpTVo2X3pkaVhXckstU0t6YzhIQWk1ekNJalZMV2pv?oc=5"}, {"title": "Incendie en Gironde : plus de 2000 hectares dévorés par les flammes, des milliers de personnes évacuées", "source": "Public Sénat", "date": "Thu, 23 Jul 2026 08:47:02 GMT", "link": "https://news.google.com/rss/articles/CBMi5wFBVV95cUxON3lWT3FFekpTMWthVFBFZnQ2ZHdhd3JGWDVaRGpHVzQxZFdzWU40M2hOQzBzSFRSdUVaaUtwdjFkdVJhS3BGRGNOdDM1WklZMFZoSURvX3RVcjdFNEFidnZIV1hvSm9wMjFBNFRRdE1BaVhkZGprNGJaWG1XR1lnZ2V6ZVI4TVBlWEVsU3FCRDBjZWRGT2dPMDR2dG8tTkhReEFhTmJCbGFkY0lEMVA2eVJPVkpidTQ1Z1VNdm12cF9Bejh6aVMwU1h0M3hGMC1tZUNtX2p6MkFPaW95d0NyT3hnS0xkS0k?oc=5"}, {"title": "Équivalent de trois Canadair, avion militaire, formations en cours : ce que l’on sait de l’A400M bientôt déployé sur les incendies", "source": "La Montagne", "date": "Thu, 23 Jul 2026 08:14:00 GMT", "link": "https://news.google.com/rss/articles/CBMilAJBVV95cUxPQmNnQWhXd0pMaHI2emphcFlDejJ5ajN2NlFzQTJkTHgydDl2X0IyVjFHblJLcDFXMFpnU2R1eVA1TlVBdlRMY0pSNGJGMkw0OXoxai1MT3EwWEVvYnNkSXNVaTdvOXhSbThvNy1lTDJWMEQ2all6OWhhR0pRZXh1SlFoZVo4eTZWREFiZVhDYnh2SC1JTE5PWW5kWUZRMkljRVpRUjZCbHpPeUFyOExUM1NPeElmZGpqSkQ2UklNeGFQNzZQZkY2ZlhGaXRqRkRYV2NCRXlBdXpGaXJjR2gzanlDdFFzRlpUZHhfUkFkaXNwSlkzUkFyRTZqUVRUYXVFdjlkUU0ta2J6NzJrbUt5T0QzUG8?oc=5"}, {"title": "Feux de forêt en France : Gironde et Var sous tension avant le retour des fortes chaleurs", "source": "La Chaîne Météo", "date": "Thu, 23 Jul 2026 08:25:16 GMT", "link": "https://news.google.com/rss/articles/CBMi7AFBVV95cUxPU1lES3k1SE03TGVfN1o3elRDMXNZWGJIQTZXdVhVXzVQMHVLdG4ya1Q0eE96VUVtUU5scEY3OWg5Z2JtSlkxYjk2QTcwc3FlRmNtSDNPVjVYSHBDbllDYWxrSG9Cb0ZLblRQemN4UlR1ZU5hWFpOUUl4dl8xamRHVVVvcG9sT2JiRXM4YW1YWGtGcE9fZWhYcG14dklvM2huenpHSGF0QUJFOXhHblV1andwNjhxR216cUVLSHNUenVpY3ZlbmZKQk5LbFNKem9fdTJpa1RvUUVhVmJqUmZIME5nUTJYelpPSlRXbw?oc=5"}, {"title": "Incendie : en Gironde, plusieurs milliers de personnes évacuées et d’hectares brûlés, 500 sapeurs-pompiers mobilisés", "source": "L'Humanité", "date": "Thu, 23 Jul 2026 08:30:20 GMT", "link": "https://news.google.com/rss/articles/CBMi9gFBVV95cUxOTUdRY0p1WkxQVmFKSzZwR2NLRUFiLVZLQ2JPT1RnRDZfV3lQRHF2b3VGbC13RFZEYTZnME92MnQxaWNVRUdOLU43cklLMko2NjRrc1FBYWE4Q3V2ajU0SmVUMTh1ZDJjYTVVblVsWjFnN3JNUzdtbE1rb2otZFdaeVVPUkJULTJjUjcyY2lmWXhlQ1Mybi01a0RkdDZxLWI0Z1N3dWR3QlJLR1JsQUNDRjVnc3U0UFBKcXJSV1k0ekJVbTJZS1R6emN5b2ZDdlFkc1d5N3A4QmtPeVhHRlNkSXBNOUp0bjJSYjJpY1lMUGRRd3ZmU3c?oc=5"}, {"title": "Quels sont les Canadair les plus mobiles d’Europe ?", "source": "Avionslegendaires.net", "date": "Thu, 23 Jul 2026 09:29:08 GMT", "link": "https://news.google.com/rss/articles/CBMinAFBVV95cUxPX3dxbmItQnRlUWlpQW16TmVCcm04VTFud3RzVG4zek43Vkc1aTJidnVxTDZ5dUVMSU5IQ0FSbUZzZjhmWnRjMkxBVVoxODZGV3RDX1lOZE90UnViVkMzSGwxQi1tbEFMclZIakF6RzhkWno0cEJqUTVMQTNKcXJaTXJFSEFnWGZ4eVNPaEVmSW1wek9wMW1mWDFaVWI?oc=5"}, {"title": "Le département de l'Aude placé en alerte rouge feux de forêt ce jeudi", "source": "L'Indépendant", "date": "Thu, 23 Jul 2026 09:07:00 GMT", "link": "https://news.google.com/rss/articles/CBMivAFBVV95cUxQMmhUQ3IzalYxZzJrc0l3UWF0cTUwWW1NbWV1STVOQzRkR2lEOGRvNEkzQk9COTM5R2hHajIydERvVGczVTFjUG5xOFRCQzRqakZmcU5aTUF1Nm4tdkVvR0hKcXJ2OVIxWFQ0MllPaU01d1B2LWoxclUxeXc3MTB1Q2tLRzVtVDdmZ0pyTnZjWVJqVFZwVUg0Nm1qbm5KZk5pazk2QUQxZWF4WWxSS202SG9GTlMwV1RKZ2pYMQ?oc=5"}, {"title": "Visualisez en cartes les feux de forêt en cours en France", "source": "Le Figaro", "date": "Thu, 23 Jul 2026 07:34:00 GMT", "link": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxQM0VzaWh5NzBBeW5qWm02T0syOVdqUU9CVnpQaU12QUI5Mkdfd3JUY185Q25VQ3dIM3pqQUF6UE4yUjg3Ri1rMXFwZUlLTDMtUWhGNXNXNGZRdUNBZ2xfWDlzOVZhbEFKWUlpeWFvZ0NoamVqOFNTUVluNU9Pei1YNXZraXNFNTR1aXY4a25qU0V1bVFkMk9VekJQZ0djRDUwOVd1Ynk5QmNIMDQ?oc=5"}];
 
-        let currentStatusFilter = 'all';
+        let currentStatusFilter = 'en_cours';
         let currentRegionFilter = 'all';
         let currentViewMode = 'status';
         let modalMiniMapInstance = null;
@@ -843,7 +844,7 @@
                     <div class="popup-header">
                         <div class="top-row">
                             <span class="badge-dept">DEP ${f.dept}</span>
-                            <span class="badge-state" style="background:${color}; color:white;">${f.etat_feu || 'Attaque'}</span>
+                            <span class="badge-state" style="background:${color}; color:white;">${f.etat_feu==='attaque'?'🔥 EN ATTAQUE':f.etat_feu==='fixe'?'🎯 FIXÉ':f.etat_feu==='maitrise'?'✅ MAÎTRISÉ':f.etat_feu==='eteint'?'💧 ÉTEINT':f.etat_feu==='fausse_alerte'?'❌ FAUSSE ALERTE':'🔥 EN ATTAQUE'}</span>
                         </div>
                         <h3 title="${f.commune}">${f.commune}</h3>
                         <div class="time-ago">⏱️ Détecté à <b style="color:#DC2626; font-size:11.5px;">${f.detect_time_fr || 'N/A'}</b> (${f.timeAgo || ''}) • <b style="color:${f.scale_color || '#DC2626'};">${f.scale_label || ''}</b></div>
@@ -918,10 +919,13 @@
             fires.forEach((f, idx) => {
                 if (!f.lat || !f.lon) return;
                 
-                const matchStatus = (currentStatusFilter === 'all' || 
+                const matchStatus = (currentStatusFilter === 'all' ||
+                                     (currentStatusFilter === 'en_cours' && f.etat_feu !== 'eteint' && f.etat_feu !== 'fausse_alerte') ||
                                      (currentStatusFilter === 'majeur' && f.fire_scale === 'majeur') ||
+                                     (currentStatusFilter === 'modere' && f.fire_scale === 'modere') ||
+                                     (currentStatusFilter === 'localise' && f.fire_scale === 'localise') ||
                                      (currentStatusFilter === 'under1h' && f.is_under_1h) ||
-                                     (currentStatusFilter === 'recent' && f.is_recent) || 
+                                     (currentStatusFilter === 'recent' && f.is_recent) ||
                                      f.etat_feu === currentStatusFilter);
                 const matchRegion = (currentRegionFilter === 'all' || f.region === currentRegionFilter);
                 

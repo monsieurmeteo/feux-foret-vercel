@@ -671,6 +671,9 @@ def generate_interactive_map(results, latest_news, output_path):
     count_maitrise = sum(1 for f in valid_fires if f.get("etat_feu") == "maitrise")
     count_eteint = sum(1 for f in valid_fires if f.get("etat_feu") == "eteint")
     count_fausse_alerte = sum(1 for f in valid_fires if f.get("etat_feu") == "fausse_alerte")
+    count_en_cours = sum(1 for f in valid_fires if f.get("etat_feu") not in ("eteint", "fausse_alerte"))
+    count_modere = sum(1 for f in valid_fires if f.get("fire_scale") == "modere")
+    count_localise = sum(1 for f in valid_fires if f.get("fire_scale") == "localise")
     majeur_pulse_class = "marker-pulse-majeur" if count_majeurs > 0 else ""
 
     # ponytail: CDN direct — plus fiable que l'embed local sur GitHub Actions runner
@@ -848,9 +851,9 @@ def generate_interactive_map(results, latest_news, output_path):
 
         .fire-card-item .top-line {{ display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-bottom: 4px; }}
         .fire-card-item .dept-tag {{ background: #0F172A; color: #FFFFFF; font-weight: 900; padding: 2px 7px; border-radius: 5px; font-size: 10.5px; letter-spacing: 0.02em; }}
-        .fire-card-item .scale-badge-majeur {{ background: #7C3AED; color: white; font-weight: 900; padding: 2px 6px; border-radius: 4px; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.02em; box-shadow: 0 2px 5px rgba(124,58,237,0.3); }}
-        .fire-card-item .scale-badge-modere {{ background: #EA580C; color: white; font-weight: 900; padding: 2px 6px; border-radius: 4px; font-size: 9.5px; text-transform: uppercase; }}
-        .fire-card-item .scale-badge-localise {{ background: #D97706; color: white; font-weight: 800; padding: 2px 6px; border-radius: 4px; font-size: 9.5px; text-transform: uppercase; }}
+        .fire-card-item .scale-badge-majeur {{ background: #6D28D9; color: white; font-weight: 900; padding: 2px 7px; border-radius: 4px; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.04em; box-shadow: 0 2px 6px rgba(109,40,217,0.4); }}
+        .fire-card-item .scale-badge-modere {{ background: #C2410C; color: white; font-weight: 900; padding: 2px 7px; border-radius: 4px; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.03em; }}
+        .fire-card-item .scale-badge-localise {{ background: #92400E; color: white; font-weight: 900; padding: 2px 7px; border-radius: 4px; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.03em; }}
         .fire-card-item .state-tag {{ font-weight: 900; font-size: 10.5px; text-transform: uppercase; }}
         .fire-card-item .commune-name {{ font-weight: 900; font-size: 13.5px; color: #0F172A; margin-bottom: 4px; letter-spacing: -0.01em; }}
         .fire-card-item .sub-details {{ font-size: 10.5px; color: #334155; display: flex; justify-content: space-between; font-weight: 700; flex-direction: column; gap: 2px; }}
@@ -916,45 +919,46 @@ def generate_interactive_map(results, latest_news, output_path):
             border-radius: 50%;
         }}
 
+        /* ── Popup Leaflet ─────────────────────────────────── */
         .leaflet-popup-content-wrapper {{
-            background: #FFFFFF !important; color: #0F172A !important; border-radius: 10px !important;
-            border: 1.5px solid #CBD5E1 !important; box-shadow: 0 10px 25px rgba(15, 23, 42, 0.2) !important;
+            background: #0F172A !important; color: #F8FAFC !important; border-radius: 12px !important;
+            border: 1.5px solid #334155 !important; box-shadow: 0 12px 30px rgba(0,0,0,0.4) !important;
             padding: 0 !important; overflow: hidden;
         }}
-        .leaflet-popup-tip {{ background: #FFFFFF !important; }}
-        .leaflet-popup-content {{ margin: 0 !important; line-height: 1.2 !important; width: 340px !important; }}
-        
-        .popup-header {{ padding: 5px 8px; background: #F8FAFC; border-bottom: 1.5px solid #E2E8F0; }}
-        .popup-header .top-row {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }}
-        .popup-header .badge-dept {{ background: #0F172A; color: white; font-weight: 900; font-size: 9px; padding: 1px 4.5px; border-radius: 4px; }}
-        .popup-header .badge-state {{ display: inline-block; padding: 1px 4.5px; border-radius: 8px; font-size: 8.5px; font-weight: 900; text-transform: uppercase; }}
-        .popup-header h3 {{ font-size: 11.5px; font-weight: 900; color: #0F172A; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -0.01em; }}
-        .popup-header .time-ago {{ font-size: 8.5px; color: #334155; font-weight: 700; margin-top: 1px; }}
-        
-        .popup-grid-layout {{ display: grid; grid-template-columns: 150px 170px; gap: 6px; padding: 6px 7px; align-items: start; }}
-        .popup-col-left {{ display: flex; flex-direction: column; gap: 2px; }}
-        .popup-col-right {{ display: flex; flex-direction: column; gap: 2px; border-left: 1.5px solid #E2E8F0; padding-left: 5px; }}
-        
-        .grid-weather {{ display: grid; grid-template-columns: 1fr 1fr; gap: 2px; margin-bottom: 1.5px; }}
-        
-        .weather-card {{ background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 4px; padding: 2px 3px; text-align: center; }}
-        .weather-card .lbl {{ font-size: 6.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.01em; margin-bottom: 0.5px; }}
-        .weather-card .val {{ font-size: 9.5px; font-weight: 900; }}
-        
-        .info-row {{ display: flex; justify-content: space-between; align-items: center; padding: 1.5px 0; border-top: 1px solid #F1F5F9; font-size: 8.5px; }}
-        .info-row .lbl {{ color: #475569; font-weight: 700; }}
-        .info-row .val {{ font-weight: 800; color: #0F172A; max-width: 95px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
-        
-        .history-table {{ width: 100%; border-collapse: collapse; font-size: 10.5px; background: #FFFFFF; text-align: center; }}
-        .history-table th {{ background: #0F172A; color: white; padding: 3px 2px; font-size: 9px; text-transform: uppercase; position: sticky; top: 0; white-space: nowrap; }}
-        .history-table td {{ padding: 2.5px 2px; border-top: 1px solid #F1F5F9; font-weight: 700; white-space: nowrap; }}
+        .leaflet-popup-tip {{ background: #0F172A !important; }}
+        .leaflet-popup-content {{ margin: 0 !important; line-height: 1.3 !important; width: 340px !important; }}
 
-        .risk-banner {{ margin-top: 2.5px; padding: 3px 5px; border-radius: 5px; font-weight: 900; font-size: 9px; display: flex; justify-content: space-between; align-items: center; }}
-        
-        .popup-btn-row {{ display: flex; gap: 4px; margin-top: 3.5px; }}
-        button.btn-infographie {{ flex: 1; background: #DC2626; color: white; border: none; padding: 5px; border-radius: 5px; font-size: 9px; font-weight: 900; cursor: pointer; box-shadow: 0 2px 5px rgba(220, 38, 38, 0.25); transition: background 0.2s; }}
+        .popup-header {{ padding: 8px 10px 6px; background: #1E293B; border-bottom: 1px solid #334155; }}
+        .popup-header .top-row {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }}
+        .popup-header .badge-dept {{ background: #334155; color: #CBD5E1; font-weight: 900; font-size: 9.5px; padding: 2px 6px; border-radius: 4px; letter-spacing: 0.05em; }}
+        .popup-header .badge-state {{ display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; }}
+        .popup-header h3 {{ font-size: 13px; font-weight: 900; color: #FFFFFF; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -0.01em; }}
+        .popup-header .time-ago {{ font-size: 9px; color: #94A3B8; font-weight: 600; margin-top: 2px; }}
+
+        .popup-grid-layout {{ display: grid; grid-template-columns: 155px 165px; gap: 0; padding: 7px 8px; align-items: start; background: #0F172A; }}
+        .popup-col-left {{ display: flex; flex-direction: column; gap: 3px; padding-right: 8px; }}
+        .popup-col-right {{ display: flex; flex-direction: column; gap: 3px; border-left: 1px solid #1E293B; padding-left: 8px; }}
+
+        .grid-weather {{ display: grid; grid-template-columns: 1fr 1fr; gap: 3px; margin-bottom: 3px; }}
+        .weather-card {{ background: #1E293B; border: 1px solid #334155; border-radius: 6px; padding: 4px 5px; text-align: center; }}
+        .weather-card .lbl {{ font-size: 7px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 1px; }}
+        .weather-card .val {{ font-size: 11px; font-weight: 900; color: #F8FAFC; }}
+
+        .info-row {{ display: flex; justify-content: space-between; align-items: center; padding: 2.5px 0; border-top: 1px solid #1E293B; font-size: 8.5px; }}
+        .info-row .lbl {{ color: #64748B; font-weight: 600; }}
+        .info-row .val {{ font-weight: 800; color: #CBD5E1; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
+
+        .history-table {{ width: 100%; border-collapse: collapse; font-size: 9.5px; background: transparent; text-align: center; }}
+        .history-table th {{ background: #1E293B; color: #94A3B8; padding: 3px 2px; font-size: 8px; text-transform: uppercase; position: sticky; top: 0; white-space: nowrap; letter-spacing: 0.04em; }}
+        .history-table td {{ padding: 2.5px 2px; border-top: 1px solid #1E293B; font-weight: 700; white-space: nowrap; color: #CBD5E1; }}
+
+        .risk-banner {{ margin-top: 3px; padding: 4px 7px; border-radius: 6px; font-weight: 900; font-size: 9.5px; display: flex; justify-content: space-between; align-items: center; }}
+
+        .popup-btn-row {{ display: flex; gap: 5px; margin-top: 5px; }}
+        button.btn-infographie {{ flex: 1; background: #DC2626; color: white; border: none; padding: 6px; border-radius: 6px; font-size: 9.5px; font-weight: 900; cursor: pointer; box-shadow: 0 2px 6px rgba(220,38,38,0.35); transition: background 0.2s; }}
         button.btn-infographie:hover {{ background: #B91C1C; }}
-        button.btn-infographie:hover {{ background: #B91C1C; }}
+        button.btn-close-popup {{ background: #334155 !important; color: #CBD5E1 !important; border: none; padding: 6px 10px; border-radius: 6px; font-size: 9.5px; font-weight: 900; cursor: pointer; transition: background 0.2s; }}
+        button.btn-close-popup:hover {{ background: #475569 !important; }}
     </style>
 </head>
 <body>
@@ -997,14 +1001,17 @@ def generate_interactive_map(results, latest_news, output_path):
                 <button class="view-mode-btn" onclick="toggleViewMode('risk', this)">📊 Risque FWI</button>
             </div>
 
-            <select class="clean-select" onchange="filterFires(this.value)">
-                <option value="all">🔥 Tous les Feux ({len(results)})</option>
-                <option value="majeur">🚨 Feux Majeurs ({count_majeurs})</option>
-                <option value="under1h">⚡ Nouveaux < 1h ({count_under_1h})</option>
-                <option value="recent">🕒 Récents < 4h ({count_recent})</option>
+            <select class="clean-select" id="status-filter-select" onchange="filterFires(this.value)">
+                <option value="en_cours" selected>🔥 Feux en Cours ({count_en_cours})</option>
+                <option value="all">🌐 Tous ({len(results)})</option>
+                <option value="majeur">🚨 Majeurs ({count_majeurs})</option>
+                <option value="modere">🔶 Modérés 2-10ha ({count_modere})</option>
+                <option value="localise">🟡 Localisés &lt;2ha ({count_localise})</option>
+                <option value="under1h">⚡ Nouveaux &lt; 1h ({count_under_1h})</option>
+                <option value="recent">🕒 Récents &lt; 4h ({count_recent})</option>
                 <option value="attaque">🔥 En Attaque ({count_attaque})</option>
                 <option value="fixe">🎯 Fixés ({count_fixe})</option>
-                <option value="maitrise">🟡 Maîtrisés ({count_maitrise})</option>
+                <option value="maitrise">✅ Maîtrisés ({count_maitrise})</option>
                 <option value="eteint">💧 Éteints ({count_eteint})</option>
                 <option value="fausse_alerte">❌ Fausses Alertes ({count_fausse_alerte})</option>
             </select>
@@ -1031,7 +1038,7 @@ def generate_interactive_map(results, latest_news, output_path):
 
     <div id="sidebar">
         <div class="sidebar-header">
-            <h2>📋 Feux Actifs (<span id="sidebar-count" style="font-size:13px; font-weight:900; color:#7C3AED;">{count_attaque}</span> / {len(results)})</h2>
+            <h2>🔥 Feux en Cours (<span id="sidebar-count" style="font-size:13px; font-weight:900; color:#7C3AED;">{count_en_cours}</span> / {len(results)})</h2>
             <div class="count-chip" id="sidebar-chip">MAJEURS EN PREMIER</div>
         </div>
         <div class="fire-list" id="fire-list-container"></div>
@@ -1111,7 +1118,7 @@ def generate_interactive_map(results, latest_news, output_path):
         const pelicandromes = {peli_json};
         const latestNews = {news_json};
 
-        let currentStatusFilter = 'all';
+        let currentStatusFilter = 'en_cours';
         let currentRegionFilter = 'all';
         let currentViewMode = 'status';
         let modalMiniMapInstance = null;
@@ -1524,7 +1531,7 @@ def generate_interactive_map(results, latest_news, output_path):
                     <div class="popup-header">
                         <div class="top-row">
                             <span class="badge-dept">DEP ${{f.dept}}</span>
-                            <span class="badge-state" style="background:${{color}}; color:white;">${{f.etat_feu || 'Attaque'}}</span>
+                            <span class="badge-state" style="background:${{color}}; color:white;">${{f.etat_feu==='attaque'?'🔥 EN ATTAQUE':f.etat_feu==='fixe'?'🎯 FIXÉ':f.etat_feu==='maitrise'?'✅ MAÎTRISÉ':f.etat_feu==='eteint'?'💧 ÉTEINT':f.etat_feu==='fausse_alerte'?'❌ FAUSSE ALERTE':'🔥 EN ATTAQUE'}}</span>
                         </div>
                         <h3 title="${{f.commune}}">${{f.commune}}</h3>
                         <div class="time-ago">⏱️ Détecté à <b style="color:#DC2626; font-size:11.5px;">${{f.detect_time_fr || 'N/A'}}</b> (${{f.timeAgo || ''}}) • <b style="color:${{f.scale_color || '#DC2626'}};">${{f.scale_label || ''}}</b></div>
@@ -1599,10 +1606,13 @@ def generate_interactive_map(results, latest_news, output_path):
             fires.forEach((f, idx) => {{
                 if (!f.lat || !f.lon) return;
                 
-                const matchStatus = (currentStatusFilter === 'all' || 
+                const matchStatus = (currentStatusFilter === 'all' ||
+                                     (currentStatusFilter === 'en_cours' && f.etat_feu !== 'eteint' && f.etat_feu !== 'fausse_alerte') ||
                                      (currentStatusFilter === 'majeur' && f.fire_scale === 'majeur') ||
+                                     (currentStatusFilter === 'modere' && f.fire_scale === 'modere') ||
+                                     (currentStatusFilter === 'localise' && f.fire_scale === 'localise') ||
                                      (currentStatusFilter === 'under1h' && f.is_under_1h) ||
-                                     (currentStatusFilter === 'recent' && f.is_recent) || 
+                                     (currentStatusFilter === 'recent' && f.is_recent) ||
                                      f.etat_feu === currentStatusFilter);
                 const matchRegion = (currentRegionFilter === 'all' || f.region === currentRegionFilter);
                 
