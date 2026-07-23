@@ -1466,8 +1466,9 @@ def generate_interactive_map(results, latest_news, output_path):
                                 </div>
                                 <div>${{logoHtml}}</div>
                             </div>
-                            <h2 style="font-size:20px; font-weight:900; text-transform:uppercase; margin:0 0 4px 0; color:#0F172A; letter-spacing:-0.02em;">${{f.commune.toUpperCase()}}</h2>
-                            <div style="font-size:11px; color:#64748B; font-weight:700;">⏱️ Détection : <b style="color:#D97706; font-size:12px;">${{f.detect_time_fr || 'N/A'}}</b> <span style="color:#94A3B8;">(${{f.timeAgo || ''}})</span></div>
+                            <div style="font-size:11px; font-weight:900; color:#DC2626; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:2px;">🔥 FEU DE FORÊT EN COURS</div>
+                            <h2 style="font-size:22px; font-weight:900; text-transform:uppercase; margin:0 0 4px 0; color:#0F172A; letter-spacing:-0.02em;">${{f.commune.toUpperCase()}}</h2>
+                            <div style="font-size:11px; color:#64748B; font-weight:700;">⏱️ Détection par les secours : <b style="color:#D97706; font-size:12px;">${{f.detect_time_fr || 'N/A'}}</b> <span style="color:#94A3B8;">(${{f.timeAgo || ''}})</span></div>
                         </div>
                         <div style="background:#E2E8F0; border-radius:12px; flex:1; min-height:340px; overflow:hidden; border:2px solid #0F172A; position:relative; box-shadow:0 10px 30px rgba(0,0,0,0.15);">
                             <div id="infographic-mini-map" style="width:100%; height:100%;"></div>
