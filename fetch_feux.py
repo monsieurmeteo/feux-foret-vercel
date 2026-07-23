@@ -1113,7 +1113,17 @@ def generate_interactive_map(results, latest_news, output_path):
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        const APP_VERSION = '{now_str}';
+        
         function checkSession() {{
+            const savedVer = localStorage.getItem('feux_app_ver');
+            if (savedVer && savedVer !== APP_VERSION) {{
+                localStorage.setItem('feux_app_ver', APP_VERSION);
+                location.reload(true);
+                return;
+            }}
+            localStorage.setItem('feux_app_ver', APP_VERSION);
+
             if (sessionStorage.getItem('feux_auth_ok') === 'true') {{
                 document.getElementById('auth-modal').style.display = 'none';
             }}
