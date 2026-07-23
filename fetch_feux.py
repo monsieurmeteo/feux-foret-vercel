@@ -1267,7 +1267,9 @@ def generate_interactive_map(results, latest_news, output_path):
 
             const logoHtml = '{logo_b64}' 
                 ? `<img src="{logo_b64}" style="height:38px; object-fit:contain;" alt="Météo Climat Pro" />`
-                : `<div style="background:#            const html = `
+                : `<div style="background:#F59E0B; color:#0F172A; padding:4px 10px; border-radius:6px; font-weight:900; font-size:11px;">🌤️ MÉTÉO CLIMAT PRO</div>`;
+
+            const html = `
                 <div class="infographie-layout" style="display:flex; gap:16px; padding:4px; font-family:-apple-system, BlinkMacSystemFont, sans-serif; color:#0F172A;">
                     <!-- Left Column: Map and Header -->
                     <div style="flex: 1.3; display:flex; flex-direction:column; gap:10px;">
@@ -1415,6 +1417,14 @@ def generate_interactive_map(results, latest_news, output_path):
                     html: '<div class="fire-marker-icon' + pulseClass + '" style="background:' + markerColor + '; width:26px; height:26px; border-radius:50%; border:2px solid white; display:flex; align-items:center; justify-content:center; font-size:13px; box-shadow:0 0 12px rgba(0,0,0,0.4); color:white;">' + emojiIcon + '</div>',
                     iconSize: [26, 26], iconAnchor: [13, 13]
                 }});
+
+                L.marker([f.lat, f.lon], {{ icon: miniIcon }}).addTo(modalMiniMapInstance);
+                
+                setTimeout(() => {{
+                    modalMiniMapInstance.invalidateSize();
+                }}, 50);
+            }}, 200);
+        }}
 
         function openNationalInfographieModal() {{
             const validFires = fires.filter(f => f.lat && f.lon);
