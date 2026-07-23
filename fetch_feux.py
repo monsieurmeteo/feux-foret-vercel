@@ -1606,13 +1606,16 @@ def generate_interactive_map(results, latest_news, output_path):
             fires.forEach((f, idx) => {{
                 if (!f.lat || !f.lon) return;
                 
+                const isActive    = f.etat_feu !== 'eteint' && f.etat_feu !== 'fausse_alerte';
+                const isEteint24h = f.etat_feu === 'eteint'        && (f.minutes_ago || 99999) <= 1440;
+                const isFausse2h  = f.etat_feu === 'fausse_alerte' && (f.minutes_ago || 99999) <= 120;
                 const matchStatus = (currentStatusFilter === 'all' ||
-                                     (currentStatusFilter === 'en_cours' && f.etat_feu !== 'eteint' && f.etat_feu !== 'fausse_alerte') ||
-                                     (currentStatusFilter === 'majeur' && f.fire_scale === 'majeur') ||
-                                     (currentStatusFilter === 'modere' && f.fire_scale === 'modere') ||
+                                     (currentStatusFilter === 'en_cours' && (isActive || isEteint24h || isFausse2h)) ||
+                                     (currentStatusFilter === 'majeur'   && f.fire_scale === 'majeur') ||
+                                     (currentStatusFilter === 'modere'   && f.fire_scale === 'modere') ||
                                      (currentStatusFilter === 'localise' && f.fire_scale === 'localise') ||
-                                     (currentStatusFilter === 'under1h' && f.is_under_1h) ||
-                                     (currentStatusFilter === 'recent' && f.is_recent) ||
+                                     (currentStatusFilter === 'under1h'  && f.is_under_1h) ||
+                                     (currentStatusFilter === 'recent'   && f.is_recent) ||
                                      f.etat_feu === currentStatusFilter);
                 const matchRegion = (currentRegionFilter === 'all' || f.region === currentRegionFilter);
                 
