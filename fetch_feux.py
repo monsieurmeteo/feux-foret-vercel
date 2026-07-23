@@ -503,7 +503,9 @@ def fetch_all_feux():
 
     idx = html.find("window.__INITIAL_DATA__=")
     if idx == -1:
-        return [], []
+        if "cloudflare" in html.lower() or "challenge-platform" in html.lower():
+            raise RuntimeError("Scraper bloqué par le challenge Cloudflare !")
+        raise RuntimeError("Impossible de trouver window.__INITIAL_DATA__ sur la page d'accueil !")
     start = html.find("{", idx)
     data, _ = json.JSONDecoder().raw_decode(html[start:])
 
@@ -1034,6 +1036,7 @@ def generate_interactive_map(results, latest_news, output_path):
 
             <button class="btn-sidebar-toggle" onclick="toggleSidebar()">📋 Liste</button>
             <a href="Rapport_Feux_de_Foret_Temps_Reel.pdf" target="_blank" class="btn-pdf-download">📥 PDF</a>
+            <button onclick="openNationalInfographieModal()" class="btn-national-infographie" style="background:#7C3AED; color:white; border:none; padding:5px 12px; border-radius:20px; font-size:11.5px; font-weight:800; cursor:pointer; outline:none; transition:background 0.2s; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(124,58,237,0.3);">📸 Bilan</button>
         </div>
     </div>
 
@@ -1323,6 +1326,144 @@ def generate_interactive_map(results, latest_news, output_path):
 
         function closeInfographieModal() {{
             document.getElementById('infographie-modal').style.display = 'none';
+        }}
+
+        function openNationalInfographieModal() {{
+            const validFires = fires.filter(f => f.lat && f.lon);
+            const countEnCours = validFires.filter(f => f.etat_feu !== 'eteint' && f.etat_feu !== 'fausse_alerte').length;
+            const countUnder1h = validFires.filter(f => f.is_under_1h).length;
+            const countMajeurs = validFires.filter(f => f.fire_scale === 'majeur').length;
+            const countModere = validFires.filter(f => f.fire_scale === 'modere').length;
+            const countLocalise = validFires.filter(f => f.fire_scale === 'localise').length;
+
+            const logoHtml = '{logo_b64}'
+                ? `<img src="{logo_b64}" style="height:38px; object-fit:contain;" alt="Météo Climat Pro" />`
+                : `<div style="background:#F59E0B; color:#0F172A; padding:4px 10px; border-radius:6px; font-weight:900; font-size:11px;">🌤️ MÉTÉO CLIMAT PRO</div>`;
+
+            const dateStr = new Date().toLocaleDateString('fr-FR', {{
+                day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
+            }});
+
+            const html = `
+                <div style="background:#0F172A; color:white; border-radius:10px; padding:14px 16px; margin-bottom:12px; box-shadow:0 8px 16px rgba(0,0,0,0.25);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #334155; padding-bottom:8px; margin-bottom:8px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="background:#DC2626; color:white; padding:3px 8px; border-radius:5px; font-weight:900; font-size:11.5px;">🔥 DIRECT NATIONAL</span>
+                            <span style="background:#334155; color:white; padding:3px 8px; border-radius:5px; font-weight:900; font-size:11px;">BILAN FEUX DE FORÊT</span>
+                        </div>
+                        <div>${{logoHtml}}</div>
+                    </div>
+                    <h2 style="font-size:18px; font-weight:900; color:white; text-transform:uppercase; margin-bottom:4px;">SITUATION EN FRANCE</h2>
+                    <div style="font-size:11px; color:#E2E8F0; font-weight:700;">Situation arrêtée le : <b style="color:#F59E0B; font-size:12px;">${{dateStr}}</b></div>
+                </div>
+
+                <div style="background:#AAD3DF; border-radius:10px; height:360px; margin-bottom:12px; overflow:hidden; border:1.5px solid #CBD5E1; position:relative;">
+                    <div id="infographic-national-map" style="width:100%; height:100%;"></div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:12px;">
+                    <div style="background:#FFF5F5; border:1.5px solid #FECDD3; border-radius:8px; padding:8px; text-align:center;">
+                        <div style="font-size:9.5px; font-weight:900; color:#E11D48; text-transform:uppercase;">🚨 FEUX EN COURS</div>
+                        <div style="font-size:20px; font-weight:900; color:#DC2626; margin-top:2px;">${{countEnCours}}</div>
+                    </div>
+                    <div style="background:#FEF3C7; border:1.5px solid #FDE68A; border-radius:8px; padding:8px; text-align:center;">
+                        <div style="font-size:9.5px; font-weight:900; color:#D97706; text-transform:uppercase;">⚡ NOUVEAUX &lt; 1H</div>
+                        <div style="font-size:20px; font-weight:900; color:#B45309; margin-top:2px;">${{countUnder1h}}</div>
+                    </div>
+                    <div style="background:#F5F3FF; border:1.5px solid #DDD6FE; border-radius:8px; padding:8px; text-align:center;">
+                        <div style="font-size:9.5px; font-weight:900; color:#7C3AED; text-transform:uppercase;">🚨 HAUTE INTENSITÉ</div>
+                        <div style="font-size:20px; font-weight:900; color:#6D28D9; margin-top:2px;">${{countMajeurs}}</div>
+                    </div>
+                </div>
+
+                <div style="background:#F8FAFC; border:1.5px solid #E2E8F0; border-radius:8px; padding:10px 12px; font-size:11px; margin-bottom:12px; display:flex; justify-content:space-around; align-items:center; font-weight:800;">
+                    <span style="color:#7C3AED;">🚨 Majeurs : <b>${{countMajeurs}}</b></span>
+                    <span style="color:#C2410C;">🔶 Modérés : <b>${{countModere}}</b></span>
+                    <span style="color:#92400E;">🟡 Localisés : <b>${{countLocalise}}</b></span>
+                </div>
+
+                <button class="download-png-btn" onclick="downloadInfographiePNG('Bilan_National')">📸 Télécharger le Bilan National PNG</button>
+            `;
+
+            document.getElementById('infographie-modal-content').innerHTML = html;
+            document.getElementById('infographie-modal').style.display = 'flex';
+
+            setTimeout(() => {{
+                if (modalMiniMapInstance) {{
+                    try {{ modalMiniMapInstance.remove(); }} catch(e) {{}}
+                }}
+                modalMiniMapInstance = L.map('infographic-national-map', {{ 
+                    zoomControl: false, 
+                    dragging: false, 
+                    scrollWheelZoom: false, 
+                    attributionControl: false 
+                }}).setView([46.5, 2.2], 5.15);
+
+                L.tileLayer('https://tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
+                    crossOrigin: true
+                }}).addTo(modalMiniMapInstance);
+
+                validFires.forEach(f => {{
+                    const isActive = f.etat_feu !== 'eteint' && f.etat_feu !== 'fausse_alerte';
+                    const isEteint24h = f.etat_feu === 'eteint' && (f.minutes_ago || 99999) <= 1440;
+                    const isFausse2h = f.etat_feu === 'fausse_alerte' && (f.minutes_ago || 99999) <= 120;
+                    
+                    const matchStatus = (currentStatusFilter === 'all' ||
+                                         (currentStatusFilter === 'en_cours' && (isActive || isEteint24h || isFausse2h)) ||
+                                         (currentStatusFilter === 'majeur'   && f.fire_scale === 'majeur') ||
+                                         (currentStatusFilter === 'modere'   && f.fire_scale === 'modere') ||
+                                         (currentStatusFilter === 'localise' && f.fire_scale === 'localise') ||
+                                         (currentStatusFilter === 'under1h'  && f.is_under_1h) ||
+                                         (currentStatusFilter === 'recent'   && f.is_recent) ||
+                                         f.etat_feu === currentStatusFilter);
+                                         
+                    const matchRegion = (currentRegionFilter === 'all' || f.region === currentRegionFilter);
+
+                    if (matchStatus && matchRegion) {{
+                        const markerColor = getMarkerColor(f);
+                        const isMajeur = (f.fire_scale === 'majeur');
+                        const isUnder1h = f.is_under_1h;
+                        const isAttaque = (f.etat_feu === 'attaque');
+                        const w = f.weather || {{}};
+                        
+                        let pulseClass = '';
+                        let emojiIcon = '🔥';
+                        
+                        if (currentViewMode === 'risk') {{
+                            if (w.spread_risk && w.spread_risk.includes('EXTRÊME')) emojiIcon = '🚨';
+                            else if (w.spread_risk && w.spread_risk.includes('ÉLEVÉ')) emojiIcon = '🔴';
+                            else if (w.spread_risk && w.spread_risk.includes('MODÉRÉ')) emojiIcon = '🟡';
+                            else emojiIcon = '🟢';
+                        }} else {{
+                            if (f.etat_feu === 'eteint') {{
+                                emojiIcon = '💧';
+                            }} else if (f.etat_feu === 'fausse_alerte') {{
+                                emojiIcon = '❌';
+                            }} else if (isMajeur) {{
+                                pulseClass = ' marker-pulse-majeur';
+                                emojiIcon = '🚨';
+                            }} else if (isUnder1h) {{
+                                pulseClass = ' marker-pulse-new';
+                                emojiIcon = '⚡';
+                            }} else if (isAttaque) {{
+                                pulseClass = ' marker-pulse-attaque';
+                                emojiIcon = '🔥';
+                            }} else {{
+                                emojiIcon = '🔥';
+                            }}
+                        }}
+                        
+                        const miniIcon = L.divIcon({{
+                            html: '<div class="fire-marker-icon' + pulseClass + '" style="background:' + markerColor + '; width:16px; height:16px; border-radius:50%; border:2px solid white; display:flex; align-items:center; justify-content:center; font-size:8.5px; box-shadow:0 0 6px rgba(0,0,0,0.35); color:white;">' + emojiIcon + '</div>',
+                            iconSize: [16, 16],
+                            iconAnchor: [8, 8]
+                        }});
+                        L.marker([f.lat, f.lon], {{ icon: miniIcon }}).addTo(modalMiniMapInstance);
+                    }}
+                }});
+                
+                modalMiniMapInstance.invalidateSize();
+            }}, 200);
         }}
 
         function drawWindPlumeCone(targetLayer, lat, lon, plumeDeg, gustSpeedKmh) {{
