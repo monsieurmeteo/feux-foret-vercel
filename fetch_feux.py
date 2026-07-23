@@ -7,6 +7,13 @@ import argparse
 import base64
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
+# ponytail: ZoneInfo avec fallback sécurisé pour le fuseau horaire de Paris
+try:
+    from zoneinfo import ZoneInfo
+    tz_paris = ZoneInfo("Europe/Paris")
+except ImportError:
+    from datetime import timedelta
+    tz_paris = timezone(timedelta(hours=2))
 from concurrent.futures import ThreadPoolExecutor
 from bs4 import BeautifulSoup
 
@@ -549,7 +556,7 @@ def fetch_all_feux():
         if ha >= 10 or avions > 0 or helico > 0:
             f["fire_scale"] = "majeur"
             f["scale_label"] = "🚨 FEU MAJEUR"
-            f["scale_color"] = "#DC2626"
+            f["scale_color"] = "#7C3AED" # Violet clignotant
             f["marker_size"] = 34
         elif ha >= 2:
             f["fire_scale"] = "modere"
@@ -617,7 +624,7 @@ def generate_interactive_map(results, latest_news, output_path):
     fires_json = json.dumps(results, ensure_ascii=False)
     peli_json = json.dumps(pelicandromes, ensure_ascii=False)
     news_json = json.dumps(latest_news, ensure_ascii=False)
-    now_str = datetime.now().strftime("%d/%m/%Y à %H:%M")
+    now_str = datetime.now(tz_paris).strftime("%d/%m/%Y à %H:%M")
     logo_b64 = load_logo_base64()
 
     valid_fires = [f for f in results if f.get("lat") and f.get("lon")]
@@ -639,6 +646,9 @@ def generate_interactive_map(results, latest_news, output_path):
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Supervision Nationale Feux de Forêt — Météo Climat Pro</title>
     <style>
     {leaflet_css}
@@ -780,7 +790,7 @@ def generate_interactive_map(results, latest_news, output_path):
             display: flex; justify-content: space-between; align-items: center;
         }}
         #sidebar .sidebar-header h2 {{ font-size: 12px; font-weight: 900; text-transform: uppercase; color: #0F172A; letter-spacing: 0.04em; }}
-        #sidebar .sidebar-header .count-chip {{ background: #DC2626; color: white; font-weight: 900; font-size: 10.5px; padding: 3px 8px; border-radius: 10px; }}
+        #sidebar .sidebar-header .count-chip {{ background: #7C3AED; color: white; font-weight: 900; font-size: 10.5px; padding: 3px 8px; border-radius: 10px; }}
 
         #sidebar .fire-list {{ flex: 1; overflow-y: auto; padding: 8px; }}
         
@@ -788,8 +798,8 @@ def generate_interactive_map(results, latest_news, output_path):
             background: #FFFFFF; border: 1.5px solid #E2E8F0; border-radius: 10px; padding: 10px 12px; margin-bottom: 7px;
             cursor: pointer; transition: all 0.15s ease; position: relative;
         }}
-        .fire-card-item:hover {{ border-color: #DC2626; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }}
-        .fire-card-item.majeur-card {{ border-left: 6px solid #DC2626; background: #FFF5F5; border-color: #FECDD3; }}
+        .fire-card-item:hover {{ border-color: #7C3AED; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(124,58,237,0.12); }}
+        .fire-card-item.majeur-card {{ border-left: 6px solid #7C3AED; background: #F5F3FF; border-color: #DDD6FE; }}
         .fire-card-item.under-1h-card {{ border-left: 5px solid #D97706; background: #FEF3C7; animation: pulse-card 1.2s infinite ease-in-out; }}
         
         @keyframes pulse-card {{
@@ -800,7 +810,7 @@ def generate_interactive_map(results, latest_news, output_path):
 
         .fire-card-item .top-line {{ display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-bottom: 4px; }}
         .fire-card-item .dept-tag {{ background: #0F172A; color: #FFFFFF; font-weight: 900; padding: 2px 7px; border-radius: 5px; font-size: 10.5px; letter-spacing: 0.02em; }}
-        .fire-card-item .scale-badge-majeur {{ background: #DC2626; color: white; font-weight: 900; padding: 2px 6px; border-radius: 4px; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.02em; box-shadow: 0 2px 5px rgba(220,38,38,0.3); }}
+        .fire-card-item .scale-badge-majeur {{ background: #7C3AED; color: white; font-weight: 900; padding: 2px 6px; border-radius: 4px; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.02em; box-shadow: 0 2px 5px rgba(124,58,237,0.3); }}
         .fire-card-item .scale-badge-modere {{ background: #EA580C; color: white; font-weight: 900; padding: 2px 6px; border-radius: 4px; font-size: 9.5px; text-transform: uppercase; }}
         .fire-card-item .scale-badge-localise {{ background: #D97706; color: white; font-weight: 800; padding: 2px 6px; border-radius: 4px; font-size: 9.5px; text-transform: uppercase; }}
         .fire-card-item .state-tag {{ font-weight: 900; font-size: 10.5px; text-transform: uppercase; }}
@@ -808,13 +818,23 @@ def generate_interactive_map(results, latest_news, output_path):
         .fire-card-item .sub-details {{ font-size: 10.5px; color: #334155; display: flex; justify-content: space-between; font-weight: 700; flex-direction: column; gap: 2px; }}
 
         @media (max-width: 768px) {{
-            #header {{ padding: 6px 10px; font-size: 12px; }}
-            #header h1 {{ font-size: 12px; }}
-            #header .subtitle {{ display: none; }}
-            #news-ticker-bar {{ left: 10px; top: 108px; font-size: 10.5px; padding: 5px 10px; }}
-            #sidebar {{ top: 145px; bottom: 10px; width: 88vw; }}
-            #legend {{ width: 185px; font-size: 10px; padding: 8px 10px; bottom: 15px; right: 10px; }}
-            .leaflet-popup-content {{ width: 250px !important; }}
+            #header {{
+                position: absolute; top: 8px; left: 8px; right: 8px;
+                padding: 6px 10px; font-size: 11px; flex-direction: column; align-items: stretch; gap: 4px;
+            }}
+            #header .brand {{ justify-content: space-between; }}
+            #header .controls-group {{ justify-content: space-between; gap: 4px; }}
+            #news-ticker-bar {{
+                left: 8px; right: 8px; top: auto; bottom: 8px; z-index: 1001;
+                font-size: 10px; padding: 4.5px 10px;
+            }}
+            #sidebar {{
+                top: 90px; bottom: 45px; left: 8px; width: calc(100% - 16px); max-width: none;
+            }}
+            #legend {{
+                display: none !important;
+            }}
+            .leaflet-popup-content {{ width: 270px !important; }}
         }}
 
         #legend {{
@@ -830,9 +850,9 @@ def generate_interactive_map(results, latest_news, output_path):
         #legend .symbol {{ width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 900; color: white; flex-shrink: 0; }}
 
         @keyframes pulse-fire-majeur {{
-            0% {{ transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.9); }}
-            70% {{ transform: scale(1.3); box-shadow: 0 0 0 16px rgba(220, 38, 38, 0); }}
-            100% {{ transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }}
+            0% {{ transform: scale(1); box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.9); }}
+            70% {{ transform: scale(1.3); box-shadow: 0 0 0 16px rgba(124, 58, 237, 0); }}
+            100% {{ transform: scale(1); box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); }}
         }}
         @keyframes pulse-fire-attaque {{
             0% {{ transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.85); }}
@@ -864,37 +884,37 @@ def generate_interactive_map(results, latest_news, output_path):
             padding: 0 !important; overflow: hidden;
         }}
         .leaflet-popup-tip {{ background: #FFFFFF !important; }}
-        .leaflet-popup-content {{ margin: 0 !important; line-height: 1.2 !important; width: 385px !important; }}
+        .leaflet-popup-content {{ margin: 0 !important; line-height: 1.2 !important; width: 340px !important; }}
         
-        .popup-header {{ padding: 6px 9px; background: #F8FAFC; border-bottom: 1.5px solid #E2E8F0; }}
+        .popup-header {{ padding: 5px 8px; background: #F8FAFC; border-bottom: 1.5px solid #E2E8F0; }}
         .popup-header .top-row {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }}
-        .popup-header .badge-dept {{ background: #0F172A; color: white; font-weight: 900; font-size: 9.5px; padding: 1.5px 5px; border-radius: 4px; }}
-        .popup-header .badge-state {{ display: inline-block; padding: 1.5px 5px; border-radius: 8px; font-size: 9px; font-weight: 900; text-transform: uppercase; }}
-        .popup-header h3 {{ font-size: 12.5px; font-weight: 900; color: #0F172A; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -0.01em; }}
-        .popup-header .time-ago {{ font-size: 9px; color: #334155; font-weight: 700; margin-top: 1px; }}
+        .popup-header .badge-dept {{ background: #0F172A; color: white; font-weight: 900; font-size: 9px; padding: 1px 4.5px; border-radius: 4px; }}
+        .popup-header .badge-state {{ display: inline-block; padding: 1px 4.5px; border-radius: 8px; font-size: 8.5px; font-weight: 900; text-transform: uppercase; }}
+        .popup-header h3 {{ font-size: 11.5px; font-weight: 900; color: #0F172A; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -0.01em; }}
+        .popup-header .time-ago {{ font-size: 8.5px; color: #334155; font-weight: 700; margin-top: 1px; }}
         
-        .popup-grid-layout {{ display: grid; grid-template-columns: 195px 165px; gap: 7px; padding: 7px 8px; align-items: start; }}
-        .popup-col-left {{ display: flex; flex-direction: column; gap: 2.5px; }}
-        .popup-col-right {{ display: flex; flex-direction: column; gap: 2.5px; border-left: 1.5px solid #E2E8F0; padding-left: 6px; }}
+        .popup-grid-layout {{ display: grid; grid-template-columns: 170px 145px; gap: 6px; padding: 6px 7px; align-items: start; }}
+        .popup-col-left {{ display: flex; flex-direction: column; gap: 2px; }}
+        .popup-col-right {{ display: flex; flex-direction: column; gap: 2px; border-left: 1.5px solid #E2E8F0; padding-left: 5px; }}
         
-        .grid-weather {{ display: grid; grid-template-columns: 1fr 1fr; gap: 2.5px; margin-bottom: 2px; }}
+        .grid-weather {{ display: grid; grid-template-columns: 1fr 1fr; gap: 2px; margin-bottom: 1.5px; }}
         
-        .weather-card {{ background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 4px; padding: 2.5px 3.5px; text-align: center; }}
-        .weather-card .lbl {{ font-size: 7px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.01em; margin-bottom: 1px; }}
-        .weather-card .val {{ font-size: 10.5px; font-weight: 900; }}
+        .weather-card {{ background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 4px; padding: 2px 3px; text-align: center; }}
+        .weather-card .lbl {{ font-size: 6.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.01em; margin-bottom: 0.5px; }}
+        .weather-card .val {{ font-size: 9.5px; font-weight: 900; }}
         
-        .info-row {{ display: flex; justify-content: space-between; align-items: center; padding: 2px 0; border-top: 1px solid #F1F5F9; font-size: 9px; }}
+        .info-row {{ display: flex; justify-content: space-between; align-items: center; padding: 1.5px 0; border-top: 1px solid #F1F5F9; font-size: 8.5px; }}
         .info-row .lbl {{ color: #475569; font-weight: 700; }}
-        .info-row .val {{ font-weight: 800; color: #0F172A; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
+        .info-row .val {{ font-weight: 800; color: #0F172A; max-width: 95px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
         
-        .history-table {{ width: 100%; border-collapse: collapse; font-size: 8.5px; background: #FFFFFF; text-align: center; }}
-        .history-table th {{ background: #0F172A; color: white; padding: 2px 3px; font-size: 7.5px; text-transform: uppercase; position: sticky; top: 0; }}
-        .history-table td {{ padding: 1.5px 2px; border-top: 1px solid #F1F5F9; font-weight: 700; }}
+        .history-table {{ width: 100%; border-collapse: collapse; font-size: 8px; background: #FFFFFF; text-align: center; }}
+        .history-table th {{ background: #0F172A; color: white; padding: 1.5px 2px; font-size: 7px; text-transform: uppercase; position: sticky; top: 0; }}
+        .history-table td {{ padding: 1px 1.5px; border-top: 1px solid #F1F5F9; font-weight: 700; }}
 
-        .risk-banner {{ margin-top: 3px; padding: 3.5px 6px; border-radius: 5px; font-weight: 900; font-size: 10px; display: flex; justify-content: space-between; align-items: center; }}
+        .risk-banner {{ margin-top: 2.5px; padding: 3px 5px; border-radius: 5px; font-weight: 900; font-size: 9px; display: flex; justify-content: space-between; align-items: center; }}
         
-        .popup-btn-row {{ display: flex; gap: 4px; margin-top: 4px; }}
-        button.btn-infographie {{ flex: 1; background: #DC2626; color: white; border: none; padding: 5.5px; border-radius: 5px; font-size: 9.5px; font-weight: 900; cursor: pointer; box-shadow: 0 2px 5px rgba(220, 38, 38, 0.25); transition: background 0.2s; }}
+        .popup-btn-row {{ display: flex; gap: 4px; margin-top: 3.5px; }}
+        button.btn-infographie {{ flex: 1; background: #DC2626; color: white; border: none; padding: 5px; border-radius: 5px; font-size: 9px; font-weight: 900; cursor: pointer; box-shadow: 0 2px 5px rgba(220, 38, 38, 0.25); transition: background 0.2s; }}
         button.btn-infographie:hover {{ background: #B91C1C; }}
         button.btn-infographie:hover {{ background: #B91C1C; }}
     </style>
@@ -981,7 +1001,7 @@ def generate_interactive_map(results, latest_news, output_path):
         <div id="legend-status">
             <div class="legend-title">📍 Légende : Ampleur des Feux</div>
             <div class="legend-row">
-                <div class="symbol marker-pulse-majeur" style="background:#DC2626; border:2px solid white; width:22px; height:22px;">🚨</div>
+                <div class="symbol marker-pulse-majeur" style="background:#7C3AED; border:2px solid white; width:22px; height:22px;">🚨</div>
                 <span><b>Feu Majeur / Important</b></span>
             </div>
             <div class="legend-row">
@@ -1056,9 +1076,9 @@ def generate_interactive_map(results, latest_news, output_path):
         let currentViewMode = 'status';
         let modalMiniMapInstance = null;
         let newsIdx = 0;
-        let refreshSeconds = 600;
+        let refreshSeconds = 300; // ponytail: 5 minutes refresh interval
 
-        // Auto Refresh Timer 10 minutes
+        // Auto Refresh Timer 5 minutes
         setInterval(() => {{
             refreshSeconds--;
             if (refreshSeconds <= 0) {{
@@ -1066,7 +1086,7 @@ def generate_interactive_map(results, latest_news, output_path):
             }} else {{
                 const m = Math.floor(refreshSeconds / 60);
                 const s = refreshSeconds % 60;
-                document.getElementById('refresh-timer-badge').innerText = '🔄 Auto 10m: ' + m + ':' + (s < 10 ? '0' : '') + s;
+                document.getElementById('refresh-timer-badge').innerText = '🔄 Auto 5m: ' + m + ':' + (s < 10 ? '0' : '') + s;
             }}
         }}, 1000);
 
@@ -1297,6 +1317,7 @@ def generate_interactive_map(results, latest_news, output_path):
 
         const markersLayerGroup = L.layerGroup().addTo(map);
         const plumeLayerGroup = L.layerGroup().addTo(map);
+        const pelicandromesLayerGroup = L.layerGroup(); // ponytail: caché par défaut
 
         const osmLayer = L.tileLayer('https://tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
             maxZoom: 19,
@@ -1310,7 +1331,9 @@ def generate_interactive_map(results, latest_news, output_path):
         L.control.layers({{
             "🗺️ Carte Blanche OpenStreetMap": osmLayer,
             "🛰️ Satellite HD Esri": satLayer
-        }}, null, {{ position: 'bottomright' }}).addTo(map);
+        }}, {{
+            "✈️ Bases Canadair": pelicandromesLayerGroup
+        }}, {{ position: 'bottomright' }}).addTo(map);
 
         function toggleSidebar() {{
             document.getElementById('sidebar').classList.toggle('collapsed');
@@ -1321,7 +1344,7 @@ def generate_interactive_map(results, latest_news, output_path):
                 const w = f.weather || {{}};
                 return w.spread_risk_color || '#6B7280';
             }}
-            if (f.fire_scale === 'majeur') return '#DC2626';
+            if (f.fire_scale === 'majeur') return '#7C3AED';
             if (f.is_under_1h) return '#D97706';
             if (f.etat_feu === 'attaque') return '#DC2626';
             if (f.etat_feu === 'fixe') return '#2563EB';
@@ -1382,7 +1405,7 @@ def generate_interactive_map(results, latest_news, output_path):
 
             let recentHeader = '';
             if (isMajeur) {{
-                recentHeader = '<div style="background:#DC2626; color:white; font-size:10.5px; font-weight:900; text-align:center; padding:3px; text-transform:uppercase; letter-spacing:0.02em;">🚨 INCENDIE MAJEUR EN COURS</div>';
+                recentHeader = '<div style="background:#7C3AED; color:white; font-size:10.5px; font-weight:900; text-align:center; padding:3px; text-transform:uppercase; letter-spacing:0.02em;">🚨 INCENDIE MAJEUR EN COURS</div>';
             }} else if (isUnder1h) {{
                 recentHeader = '<div style="background:#D97706; color:white; font-size:10px; font-weight:900; text-align:center; padding:3px; text-transform:uppercase; letter-spacing:0.02em;">⚡ NOUVEAU FEU DÉTECTÉ (< 1h)</div>';
             }}
@@ -1496,8 +1519,9 @@ def generate_interactive_map(results, latest_news, output_path):
                                 <span style="font-size:11.5px;">${{w.spread_risk || 'N/A'}}</span>
                             </div>
                             
-                            <div class="popup-btn-row" style="margin-top:4px;">
-                                <button class="btn-infographie" onclick="openInfographieModal(${{fireIndex}})">📸 Infographie HD</button>
+                            <div class="popup-btn-row" style="margin-top:4px; display:flex; gap:4px;">
+                                <button class="btn-infographie" style="background:${{isMajeur ? '#7C3AED' : '#DC2626'}}; box-shadow:0 2px 5px ${{isMajeur ? 'rgba(124,58,237,0.25)' : 'rgba(220,38,38,0.25)'}};" onclick="openInfographieModal(${{fireIndex}})">📸 Infographie</button>
+                                <button class="btn-close-popup" onclick="map.closePopup()" style="background:#64748B; color:white; border:none; padding:5px 8px; border-radius:5px; font-size:9px; font-weight:900; cursor:pointer;">✕ Fermer</button>
                             </div>
                         </div>
 
@@ -1596,6 +1620,9 @@ def generate_interactive_map(results, latest_news, output_path):
             renderFires();
         }}
 
+        if (window.innerWidth < 768) {{
+            document.getElementById('sidebar').classList.add('collapsed');
+        }}
         renderFires();
 
         pelicandromes.forEach(p => {{
@@ -1606,7 +1633,7 @@ def generate_interactive_map(results, latest_news, output_path):
                 iconAnchor: [9, 9]
             }});
             const safeName = p.name ? p.name.replace(/'/g, "&apos;") : '';
-            L.marker([p.lat, p.lon], {{ icon: pIcon }}).addTo(map).bindPopup('<div style="padding:6px 8px; font-weight:900; font-size:11px; color:#0F172A;">✈️ Base Canadair : ' + safeName + '</div>');
+            L.marker([p.lat, p.lon], {{ icon: pIcon }}).addTo(pelicandromesLayerGroup).bindPopup('<div style="padding:6px 8px; font-weight:900; font-size:11px; color:#0F172A;">✈️ Base Canadair : ' + safeName + '</div>');
         }});
     </script>
 </body>
@@ -1642,7 +1669,7 @@ def export_pdf(results, latest_news, output_path):
     cell_bold = ParagraphStyle('CellBold', parent=styles['Normal'], fontSize=8.5, leading=11, fontName='Helvetica-Bold')
     header_cell = ParagraphStyle('HeaderCell', parent=styles['Normal'], fontSize=8.5, leading=11, fontName='Helvetica-Bold', textColor=colors.white)
 
-    now_str = datetime.now().strftime("%d/%m/%Y à %H:%M")
+    now_str = datetime.now(tz_paris).strftime("%d/%m/%Y à %H:%M")
     
     count_under_1h = sum(1 for f in results if f.get("is_under_1h"))
     count_majeurs = sum(1 for f in results if f.get("fire_scale") == "majeur")
