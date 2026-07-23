@@ -886,7 +886,7 @@
                             <span style="font-size:11.5px; font-weight:900;">${w.spread_risk || 'N/A'}</span>
                         </div>
 
-                        <button class="history-toggle-btn" onclick="const container = document.getElementById('hist-container-${fireIndex}'); container.style.display = container.style.display === 'block' ? 'none' : 'block'; this.innerText = container.style.display === 'block' ? '📊 Masquer' : '📊 Voir (Obs)'; if (map._popup) map._popup.update();">📊 Voir (Obs)</button>
+                        <button class="history-toggle-btn" onclick="event.stopPropagation(); const container = document.getElementById('hist-container-${fireIndex}'); container.style.display = container.style.display === 'block' ? 'none' : 'block'; this.innerText = container.style.display === 'block' ? '📊 Masquer' : '📊 Voir (Obs)'; if (map._popup) map._popup.update();">📊 Voir (Obs)</button>
                         
                         <div id="hist-container-${fireIndex}" class="history-container">
                             ${historyHtml}
