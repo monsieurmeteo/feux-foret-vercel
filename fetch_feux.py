@@ -24,8 +24,8 @@ PELICANDROMES_PATH = os.path.join(DATA_DIR, "pelicandromes.json")
 LEAFLET_CSS_PATH = os.path.join(DATA_DIR, "leaflet.css")
 LEAFLET_JS_PATH = os.path.join(DATA_DIR, "leaflet.js")
 
-AUTH_USER = "feux"
-AUTH_PASS = "feux59283"
+AUTH_USER = "feux59"
+AUTH_PASS = "mto59"
 
 import random as _random
 _USER_AGENTS = [
