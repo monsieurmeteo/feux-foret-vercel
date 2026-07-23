@@ -348,21 +348,20 @@ def send_new_fire_email_alert(fire):
     </body>
     </html>"""
 
+    from email.utils import make_msgid, formatdate
+
     try:
-        msg = MIMEMultipart('alternative')
-        msg['From'] = f"Gregory Langlet <{smtp_user}>"
-        msg['To'] = target_email
-        msg['Reply-To'] = smtp_user
-        msg['Sender'] = smtp_user
+        msg = MIMEMultipart('mixed')
+        display_name = "Gregory LANGLET"
+        msg['From'] = f"{display_name} <{smtp_user}>"
+        msg['To'] = f"{display_name} <{target_email}>"
         msg['Subject'] = subject
-        msg['X-Mailer'] = "Python/MeteoClimatPro"
-        msg['Message-ID'] = f"<{datetime.now().timestamp()}@{smtp_user.split('@')[-1]}>"
+        msg['Message-ID'] = make_msgid()
+        msg['Date'] = formatdate(localtime=True)
+        msg['MIME-Version'] = '1.0'
+        msg['X-Mailer'] = 'Python/smtplib (Windows)'
 
-        part1 = MIMEText(body_text, 'plain', 'utf-8')
-        part2 = MIMEText(body_html, 'html', 'utf-8')
-
-        msg.attach(part1)
-        msg.attach(part2)
+        msg.attach(MIMEText(body_html, 'html', 'utf-8'))
 
         context = ssl.create_default_context()
         with smtplib.SMTP_SSL(smtp_server, smtp_port, context=context, timeout=15) as server:
