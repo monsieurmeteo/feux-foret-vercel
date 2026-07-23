@@ -1321,16 +1321,16 @@ def generate_interactive_map(results, latest_news, output_path):
                 <div class="infographie-layout" style="display:flex; gap:16px; padding:4px; font-family:-apple-system, BlinkMacSystemFont, sans-serif; color:#0F172A;">
                     <!-- Left Column: Map and Header -->
                     <div style="flex: 1.3; display:flex; flex-direction:column; gap:10px;">
-                        <div style="background:#0F172A; color:white; border-radius:12px; padding:12px 16px; box-shadow:0 6px 20px rgba(15,23,42,0.25); border:1.5px solid #1E293B;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px solid #334155; padding-bottom:8px; margin-bottom:8px;">
+                        <div style="background:#FFFFFF; color:#0F172A; border-radius:12px; padding:12px 16px; box-shadow:0 4px 16px rgba(15,23,42,0.08); border:1.5px solid #E2E8F0;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px solid #F1F5F9; padding-bottom:8px; margin-bottom:8px;">
                                 <div style="display:flex; align-items:center; gap:6px;">
                                     <span style="background:${{f.scale_color || '#DC2626'}}; color:white; padding:3px 8px; border-radius:6px; font-weight:900; font-size:11px; letter-spacing:0.03em;">${{f.scale_label || '🚨 FEU MAJEUR'}}</span>
-                                    <span style="background:#334155; color:white; padding:3px 8px; border-radius:6px; font-weight:900; font-size:11px;">DEP ${{f.dept}}</span>
+                                    <span style="background:#F1F5F9; color:#475569; border:1px solid #CBD5E1; padding:3px 8px; border-radius:6px; font-weight:900; font-size:11px;">DEP ${{f.dept}}</span>
                                 </div>
                                 <div>${{logoHtml}}</div>
                             </div>
-                            <h2 style="font-size:18px; font-weight:900; text-transform:uppercase; margin:0 0 4px 0; letter-spacing:-0.02em;">${{f.commune.toUpperCase()}}</h2>
-                            <div style="font-size:11px; color:#94A3B8; font-weight:700;">⏱️ Détection : <b style="color:#F59E0B; font-size:12px;">${{f.detect_time_fr || 'N/A'}}</b> <span style="color:#64748B;">(${{f.timeAgo || ''}})</span></div>
+                            <h2 style="font-size:20px; font-weight:900; text-transform:uppercase; margin:0 0 4px 0; color:#0F172A; letter-spacing:-0.02em;">${{f.commune.toUpperCase()}}</h2>
+                            <div style="font-size:11px; color:#64748B; font-weight:700;">⏱️ Détection : <b style="color:#D97706; font-size:12px;">${{f.detect_time_fr || 'N/A'}}</b> <span style="color:#94A3B8;">(${{f.timeAgo || ''}})</span></div>
                         </div>
                         <div style="background:#E2E8F0; border-radius:12px; flex:1; min-height:340px; overflow:hidden; border:2px solid #0F172A; position:relative; box-shadow:0 10px 30px rgba(0,0,0,0.15);">
                             <div id="infographic-mini-map" style="width:100%; height:100%;"></div>
@@ -1500,16 +1500,16 @@ def generate_interactive_map(results, latest_news, output_path):
                 <div class="infographie-layout" style="display:flex; gap:16px; padding:4px; font-family:-apple-system, BlinkMacSystemFont, sans-serif; color:#0F172A;">
                     <!-- Left Column: Map and Header -->
                     <div style="flex: 1.3; display:flex; flex-direction:column; gap:10px;">
-                        <div style="background:#0F172A; color:white; border-radius:12px; padding:12px 16px; box-shadow:0 6px 20px rgba(15,23,42,0.25); border:1.5px solid #1E293B;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px solid #334155; padding-bottom:8px; margin-bottom:8px;">
+                        <div style="background:#FFFFFF; color:#0F172A; border-radius:12px; padding:12px 16px; box-shadow:0 4px 16px rgba(15,23,42,0.08); border:1.5px solid #E2E8F0;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px solid #F1F5F9; padding-bottom:8px; margin-bottom:8px;">
                                 <div style="display:flex; align-items:center; gap:6px;">
                                     <span style="background:#DC2626; color:white; padding:3px 8px; border-radius:6px; font-weight:900; font-size:11px; letter-spacing:0.03em;">🔥 DIRECT NATIONAL</span>
-                                    <span style="background:#334155; color:white; padding:3px 8px; border-radius:6px; font-weight:900; font-size:11px;">BILAN FEUX DE FORÊT</span>
+                                    <span style="background:#F1F5F9; color:#475569; border:1px solid #CBD5E1; padding:3px 8px; border-radius:6px; font-weight:900; font-size:11px;">BILAN FEUX DE FORÊT</span>
                                 </div>
                                 <div>${{logoHtml}}</div>
                             </div>
-                            <h2 style="font-size:18px; font-weight:900; text-transform:uppercase; margin:0 0 4px 0; letter-spacing:-0.02em;">SITUATION EN FRANCE</h2>
-                            <div style="font-size:11px; color:#94A3B8; font-weight:700;">Situation arrêtée le : <b>${{dateStr}}</b></div>
+                            <h2 style="font-size:20px; font-weight:900; text-transform:uppercase; margin:0 0 4px 0; color:#0F172A; letter-spacing:-0.02em;">SUPERVISION FRANCE EN TEMPS RÉEL</h2>
+                            <div style="font-size:11px; color:#64748B; font-weight:700;">⏱️ Situation arrêtée au : <b style="color:#D97706; font-size:12px;">${{dateStr}}</b></div>
                         </div>
                         <div style="background:#AAD3DF; border-radius:12px; flex:1; min-height:340px; overflow:hidden; border:2px solid #0F172A; position:relative; box-shadow:0 10px 30px rgba(0,0,0,0.15);">
                             <div id="infographic-national-map" style="width:100%; height:100%;"></div>
