@@ -552,10 +552,29 @@ def fetch_all_feux():
                 f["lon"] = det.get("longitude")
                 f["avions"] = det.get("moyen_aerien_avions", 0)
                 f["helico"] = det.get("moyen_aerien_helicoptere", 0)
-                f["superficie"] = det.get("superficie", 0)
+                sup_val = det.get("superficie") or 0
+                if not sup_val or sup_val == 0:
+                    text_to_search = f"{f.get('title', '')} {det.get('titre', '')} {det.get('contenu', '')} {det.get('description', '')}"
+                    m_ha = re.search(r'(\d+(?:[\.,]\d+)?)\s*(?:ha|hectare|hectares)', text_to_search, re.IGNORECASE)
+                    if m_ha:
+                        try: sup_val = float(m_ha.group(1).replace(',', '.'))
+                        except Exception: pass
+                    else:
+                        m_m2 = re.search(r'(\d+(?:[\.,]\d+)?)\s*(?:m²|m2|mètres carrés)', text_to_search, re.IGNORECASE)
+                        if m_m2:
+                            try: sup_val = round(float(m_m2.group(1).replace(',', '.')) / 10000.0, 2)
+                            except Exception: pass
+                f["superficie"] = sup_val
                 f["hero"] = det.get("hero_image") or det.get("og_image") or ""
             except Exception:
                 pass
+
+            # Backup search in title if det failed
+            if not f.get("superficie"):
+                m_title = re.search(r'(\d+(?:[\.,]\d+)?)\s*(?:ha|hectare|hectares)', f.get("title", ""), re.IGNORECASE)
+                if m_title:
+                    try: f["superficie"] = float(m_title.group(1).replace(',', '.'))
+                    except Exception: pass
             
             f["region"] = get_region_name(f.get("dept", ""))
 
@@ -652,6 +671,11 @@ def fetch_all_feux():
                 t_low = n["title"].lower()
                 if (f_dept and f_dept in t_low) or (f_commune and f_commune in t_low):
                     matched_n.append(n)
+                    if not f.get("superficie"):
+                        m_n = re.search(r'(\d+(?:[\.,]\d+)?)\s*(?:ha|hectare|hectares)', n["title"], re.IGNORECASE)
+                        if m_n:
+                            try: f["superficie"] = float(m_n.group(1).replace(',', '.'))
+                            except Exception: pass
             f["news_items"] = matched_n[:2]
 
         results.sort(key=lambda x: (0 if x.get("fire_scale") == "majeur" else 1, x.get('minutes_ago', 99999)))
