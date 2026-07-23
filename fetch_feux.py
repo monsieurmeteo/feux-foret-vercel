@@ -1377,6 +1377,41 @@ def generate_interactive_map(results, latest_news, output_path):
             "✈️ Bases Canadair": pelicandromesLayerGroup
         }}, {{ position: 'bottomright' }}).addTo(map);
 
+        map.on('popupopen', function(e) {{
+            console.log('POPUP OPENED', e.popup);
+            const popupNode = e.popup.getElement();
+            if (!popupNode) {{
+                console.log('No popupNode found');
+                return;
+            }}
+            const btn = popupNode.querySelector('.history-toggle-btn');
+            if (btn) {{
+                console.log('Toggle button found inside popup', btn);
+                // Prevent map clicks from closing the popup or triggering map actions
+                L.DomEvent.disableClickPropagation(btn);
+                L.DomEvent.disableScrollPropagation(btn);
+                
+                btn.onclick = function(event) {{
+                    console.log('Toggle button CLICKED!');
+                    event.preventDefault();
+                    event.stopPropagation();
+                    
+                    const containerId = btn.getAttribute('data-container-id');
+                    const container = document.getElementById(containerId);
+                    if (container) {{
+                        const isHidden = container.style.display === 'none' || container.style.display === '';
+                        container.style.display = isHidden ? 'block' : 'none';
+                        btn.innerText = isHidden ? '📊 Masquer' : '📊 Voir (Obs)';
+                        console.log('Toggled container display to', container.style.display);
+                    }} else {{
+                        console.log('Container not found:', containerId);
+                    }}
+                }};
+            }} else {{
+                console.log('No toggle button found in popup');
+            }}
+        }});
+
         function toggleSidebar() {{
             document.getElementById('sidebar').classList.toggle('collapsed');
         }}
@@ -1570,7 +1605,7 @@ def generate_interactive_map(results, latest_news, output_path):
                             <span style="font-size:11.5px; font-weight:900;">${{w.spread_risk || 'N/A'}}</span>
                         </div>
 
-                        <button class="history-toggle-btn" onclick="event.stopPropagation(); const container = document.getElementById('hist-container-${{fireIndex}}'); container.style.display = container.style.display === 'block' ? 'none' : 'block'; this.innerText = container.style.display === 'block' ? '📊 Masquer' : '📊 Voir (Obs)'; if (map._popup) map._popup.update();">📊 Voir (Obs)</button>
+                        <button class="history-toggle-btn" data-container-id="hist-container-${{fireIndex}}">📊 Voir (Obs)</button>
                         
                         <div id="hist-container-${{fireIndex}}" class="history-container">
                             ${{historyHtml}}
