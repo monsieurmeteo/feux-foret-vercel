@@ -3,11 +3,21 @@ name: Auto Update Feux de Forêt — Temps Réel
 on:
   workflow_dispatch:           # déclenché par cron-job.org toutes les 5 min
 
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
 jobs:
   update-data:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -38,3 +48,15 @@ jobs:
           git diff --staged --quiet && echo "Rien à committer" && exit 0
           git commit -m "🔥 Auto-refresh feux $(date -u +'%H:%M UTC') [skip ci]"
           git push
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
