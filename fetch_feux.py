@@ -495,18 +495,26 @@ def get_closest_pelicandrome(lat, lon, bases):
     return best_name, round(min_dist, 1), eta_str
 
 def fetch_all_feux():
-    url = "https://feuxdeforet.fr/"
+    url = "https://feuxdeforet.fr/signalements/"
     req = urllib.request.Request(url, headers=ANONYMOUS_HEADERS)
-    with urllib.request.urlopen(req) as resp:
-        html = resp.read().decode("utf-8")
+    try:
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            html = resp.read().decode("utf-8")
+    except Exception:
+        # Fallback sur la page d'accueil si /signalements/ échoue
+        url = "https://feuxdeforet.fr/"
+        req = urllib.request.Request(url, headers=ANONYMOUS_HEADERS)
+        with urllib.request.urlopen(req) as resp:
+            html = resp.read().decode("utf-8")
     
     idx = html.find("window.__INITIAL_DATA__=")
     if idx == -1:
         return [], []
     start = html.find("{", idx)
     data, _ = json.JSONDecoder().raw_decode(html[start:])
-    all_feux = data.get("data", {}).get("feux", [])
-    encours = [f for f in all_feux if f.get("enCours")]
+    
+    # L'API de /signalements/ renvoie la liste dans 'signalements', l'accueil dans 'feux'
+    all_feux = data.get("data", {}).get("signalements") or data.get("data", {}).get("feux", [])
     now = datetime.now(timezone.utc)
     pelicandromes = load_pelicandromes()
     meteociel_stations, meteociel_validity = load_meteociel_network()
@@ -551,12 +559,23 @@ def fetch_all_feux():
         f["is_under_1h"] = (f.get("minutes_ago", 99999) <= 60)
         f["is_recent"] = (f.get("minutes_ago", 99999) <= 240)
 
-        # Classification Feu Majeur vs Feu Localisé
+        # Classification Feu Majeur vs Feu Localisé vs Résolu
         ha = f.get("superficie") or 0
         avions = f.get("avions") or 0
         helico = f.get("helico") or 0
+        etat = f.get("etat_feu", "attaque")
 
-        if ha >= 10 or avions > 0 or helico > 0:
+        if etat == "eteint":
+            f["fire_scale"] = "eteint"
+            f["scale_label"] = "💧 FEU ÉTEINT"
+            f["scale_color"] = "#64748B"
+            f["marker_size"] = 20
+        elif etat == "fausse_alerte":
+            f["fire_scale"] = "fausse_alerte"
+            f["scale_label"] = "❌ FAUSSE ALERTE"
+            f["scale_color"] = "#94A3B8"
+            f["marker_size"] = 20
+        elif ha >= 10 or avions > 0 or helico > 0:
             f["fire_scale"] = "majeur"
             f["scale_label"] = "🚨 FEU MAJEUR"
             f["scale_color"] = "#7C3AED" # Violet clignotant
@@ -599,7 +618,7 @@ def fetch_all_feux():
         return f
 
     with ThreadPoolExecutor(max_workers=10) as ex:
-        results = list(ex.map(enrich, encours))
+        results = list(ex.map(enrich, all_feux))
 
     latest_news = fetch_firefighter_news()
 
@@ -637,6 +656,8 @@ def generate_interactive_map(results, latest_news, output_path):
     count_attaque = sum(1 for f in valid_fires if f.get("etat_feu") == "attaque")
     count_fixe = sum(1 for f in valid_fires if f.get("etat_feu") == "fixe")
     count_maitrise = sum(1 for f in valid_fires if f.get("etat_feu") == "maitrise")
+    count_eteint = sum(1 for f in valid_fires if f.get("etat_feu") == "eteint")
+    count_fausse_alerte = sum(1 for f in valid_fires if f.get("etat_feu") == "fausse_alerte")
     majeur_pulse_class = "marker-pulse-majeur" if count_majeurs > 0 else ""
 
     # ponytail: CDN direct — plus fiable que l'embed local sur GitHub Actions runner
@@ -971,6 +992,8 @@ def generate_interactive_map(results, latest_news, output_path):
                 <option value="attaque">🔥 En Attaque ({count_attaque})</option>
                 <option value="fixe">🎯 Fixés ({count_fixe})</option>
                 <option value="maitrise">🟡 Maîtrisés ({count_maitrise})</option>
+                <option value="eteint">💧 Éteints ({count_eteint})</option>
+                <option value="fausse_alerte">❌ Fausses Alertes ({count_fausse_alerte})</option>
             </select>
 
             <select class="clean-select" onchange="filterRegion(this.value)">
@@ -1127,115 +1150,7 @@ def generate_interactive_map(results, latest_news, output_path):
             renderFires();
         }}
 
-        function toggleHistView(viewType, fireIndex) {{
-            const graphContainer = document.getElementById('hist-graph-container-' + fireIndex);
-            const tableContainer = document.getElementById('hist-table-container-' + fireIndex);
-            const btnGraph = document.getElementById('btn-hist-graph-' + fireIndex);
-            const btnTable = document.getElementById('btn-hist-table-' + fireIndex);
-            
-            if (viewType === 'graph') {{
-                graphContainer.style.display = 'block';
-                tableContainer.style.display = 'none';
-                
-                btnGraph.style.background = '#FFFFFF';
-                btnGraph.style.color = '#0F172A';
-                btnGraph.style.boxShadow = '0 1px 2px rgba(0,0,0,0.08)';
-                
-                btnTable.style.background = 'transparent';
-                btnTable.style.color = '#64748B';
-                btnTable.style.boxShadow = 'none';
-            }} else {{
-                graphContainer.style.display = 'none';
-                tableContainer.style.display = 'block';
-                
-                btnTable.style.background = '#FFFFFF';
-                btnTable.style.color = '#0F172A';
-                btnTable.style.boxShadow = '0 1px 2px rgba(0,0,0,0.08)';
-                
-                btnGraph.style.background = 'transparent';
-                btnGraph.style.color = '#64748B';
-                btnGraph.style.boxShadow = 'none';
-            }}
-        }}
 
-        function generateSvgGraph(pts) {{
-            if (!pts || pts.length === 0) return '';
-            const data = [...pts].reverse();
-            
-            const width = 160;
-            const height = 180;
-            const padTop = 15;
-            const padBot = 22;
-            const padLeft = 18;
-            const padRight = 5;
-            
-            const plotW = width - padLeft - padRight;
-            const plotH = height - padTop - padBot;
-            
-            const temps = data.map(p => p.temp || 0);
-            const winds = data.map(p => p.wind || 0);
-            const gusts = data.map(p => p.gusts || 0);
-            
-            const maxVal = Math.max(30, ...temps, ...winds, ...gusts);
-            
-            const getX = (idx) => padLeft + (idx * plotW) / (data.length - 1);
-            const getY = (val) => height - padBot - ((val / maxVal) * plotH);
-            
-            let tempPoints = [];
-            let windPoints = [];
-            let gustPoints = [];
-            
-            data.forEach((p, idx) => {{
-                const x = getX(idx);
-                tempPoints.push(x + ',' + getY(p.temp || 0));
-                windPoints.push(x + ',' + getY(p.wind || 0));
-                gustPoints.push(x + ',' + getY(p.gusts || 0));
-            }});
-            
-            const tempPath = 'M ' + tempPoints.join(' L ');
-            const windPath = 'M ' + windPoints.join(' L ');
-            const gustPath = 'M ' + gustPoints.join(' L ');
-            
-            const midVal = Math.round(maxVal / 2);
-            const topVal = Math.round(maxVal);
-            
-            let gridHtml = '<line x1="' + padLeft + '" y1="' + getY(0) + '" x2="' + (width - padRight) + '" y2="' + getY(0) + '" stroke="#E2E8F0" stroke-width="1"/>' +
-                '<line x1="' + padLeft + '" y1="' + getY(midVal) + '" x2="' + (width - padRight) + '" y2="' + getY(midVal) + '" stroke="#F1F5F9" stroke-width="1" stroke-dasharray="2,2"/>' +
-                '<line x1="' + padLeft + '" y1="' + getY(topVal) + '" x2="' + (width - padRight) + '" y2="' + getY(topVal) + '" stroke="#F1F5F9" stroke-width="1" stroke-dasharray="2,2"/>' +
-                '<text x="' + (padLeft - 4) + '" y="' + (getY(0) + 3) + '" text-anchor="end" font-size="8px" fill="#64748B" font-weight="bold">0</text>' +
-                '<text x="' + (padLeft - 4) + '" y="' + (getY(midVal) + 3) + '" text-anchor="end" font-size="8px" fill="#64748B" font-weight="bold">' + midVal + '</text>' +
-                '<text x="' + (padLeft - 4) + '" y="' + (getY(topVal) + 3) + '" text-anchor="end" font-size="8px" fill="#64748B" font-weight="bold">' + topVal + '</text>';
-            
-            if (data.length > 1) {{
-                const firstTime = data[0].time;
-                const lastTime = data[data.length - 1].time;
-                gridHtml += '<text x="' + padLeft + '" y="' + (height - 12) + '" text-anchor="start" font-size="7.5px" fill="#64748B" font-weight="bold">' + firstTime + '</text>' +
-                    '<text x="' + (width - padRight) + '" y="' + (height - 12) + '" text-anchor="end" font-size="7.5px" fill="#64748B" font-weight="bold">' + lastTime + '</text>';
-            }}
-            
-            let dotsHtml = '';
-            data.forEach((p, idx) => {{
-                const x = getX(idx);
-                dotsHtml += '<circle cx="' + x + '" cy="' + getY(p.temp || 0) + '" r="2" fill="#EF4444"/>' +
-                    '<circle cx="' + x + '" cy="' + getY(p.wind || 0) + '" r="1.8" fill="#3B82F6"/>' +
-                    '<circle cx="' + x + '" cy="' + getY(p.gusts || 0) + '" r="1.8" fill="#F59E0B"/>';
-            }});
-            
-            return \'<svg width="100%" height="\' + height + \'" viewBox="0 0 \' + width + \' \' + height + \'" style="background:#FFFFFF; overflow:visible;">\' +
-                gridHtml +
-                \'<path d="\' + tempPath + \'" fill="none" stroke="#EF4444" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>\' +
-                \'<path d="\' + gustPath + \'" fill="none" stroke="#F59E0B" stroke-width="1.5" stroke-dasharray="3,2" stroke-linecap="round" stroke-linejoin="round"/>\' +
-                \'<path d="\' + windPath + \'" fill="none" stroke="#3B82F6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>\' +
-                dotsHtml +
-                \'<g transform="translate(6, \' + (height - 4) + \')">\' +
-                \'<circle cx="5" cy="0" r="2.5" fill="#EF4444"/>\' +
-                \'<text x="10" y="2.5" font-size="8px" font-weight="bold" fill="#0F172A">T°C</text>\' +
-                \'<circle cx="45" cy="0" r="2.5" fill="#3B82F6"/>\' +
-                \'<text x="50" y="2.5" font-size="8px" font-weight="bold" fill="#0F172A">Moy</text>\' +
-                \'<circle cx="85" cy="0" r="2.5" fill="#F59E0B"/>\' +
-                \'<text x="90" y="2.5" font-size="8px" font-weight="bold" fill="#0F172A">Raf</text>\' +
-                \'</g></svg>\';
-        }}
 
         function downloadInfographiePNG(communeName) {{
             const card = document.querySelector('.infographie-card');
@@ -1565,22 +1480,9 @@ def generate_interactive_map(results, latest_news, output_path):
                     </tr>
                 `).join('');
 
-                const svgGraph = generateSvgGraph(histPts);
-
                 historyHtml = `
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; padding-right:2px;">
-                        <div style="font-size:9px; font-weight:900; color:#0F172A; text-transform:uppercase; white-space:nowrap;">📈 HISTORIQUE OBS</div>
-                        <div style="display:flex; background:#F1F5F9; border-radius:6px; padding:1.5px; gap:2px; border:1px solid #E2E8F0;">
-                            <button onclick="toggleHistView('graph', ${{fireIndex}})" id="btn-hist-graph-${{fireIndex}}" class="hist-toggle-btn active-tab" style="background:#FFFFFF; border:none; padding:2px 5px; border-radius:4px; font-size:9px; cursor:pointer; font-weight:800; box-shadow:0 1px 2px rgba(0,0,0,0.08); outline:none;">📊 Graphe</button>
-                            <button onclick="toggleHistView('table', ${{fireIndex}})" id="btn-hist-table-${{fireIndex}}" class="hist-toggle-btn" style="background:transparent; border:none; padding:2px 5px; border-radius:4px; font-size:9px; cursor:pointer; font-weight:700; color:#64748B; outline:none;">📋 Table</button>
-                        </div>
-                    </div>
-                    
-                    <div id="hist-graph-container-${{fireIndex}}" style="border:1.5px solid #CBD5E1; border-radius:6px; padding:4px; background:#FFFFFF; box-shadow:inset 0 1px 3px rgba(0,0,0,0.02); height:200px; display:block;">
-                        ${{svgGraph}}
-                    </div>
-                    
-                    <div id="hist-table-container-${{fireIndex}}" style="display:none; max-height:200px; overflow-y:auto; border-radius:6px; border:1.5px solid #CBD5E1; box-shadow:inset 0 1px 3px rgba(0,0,0,0.05);">
+                    <div style="font-size:9px; font-weight:900; color:#0F172A; text-transform:uppercase; margin-bottom:4px; white-space:nowrap;">📈 HISTORIQUE OBS (5 MIN)</div>
+                    <div style="max-height:230px; overflow-y:auto; border-radius:6px; border:1.5px solid #CBD5E1; box-shadow:inset 0 1px 3px rgba(0,0,0,0.05);">
                         <table class="history-table">
                             <thead>
                                 <tr><th>Heure</th><th>Temp</th><th>Moy.</th><th>Raf.</th></tr>
@@ -1690,10 +1592,20 @@ def generate_interactive_map(results, latest_news, output_path):
                     const w = f.weather || {{}};
                     const card = document.createElement('div');
                     
-                    let cardClass = 'fire-card-item';
-                    let scaleTag = '';
+                    let stateLabel = f.etat_feu || 'Attaque';
+                    if (stateLabel === 'fausse_alerte') stateLabel = 'Fausse alerte';
+                    else if (stateLabel === 'maitrise') stateLabel = 'Maîtrisé';
+                    else if (stateLabel === 'eteint') stateLabel = 'Éteint';
+                    else if (stateLabel === 'attaque') stateLabel = 'En attaque';
+                    else if (stateLabel === 'fixe') stateLabel = 'Fixé';
 
-                    if (f.fire_scale === 'majeur') {{
+                    if (f.etat_feu === 'eteint') {{
+                        cardClass += ' eteint-card';
+                        scaleTag = '<span class="scale-badge-eteint" style="background:#64748B; color:white; font-size:7.5px; font-weight:900; padding:1.5px 3.5px; border-radius:3px; text-transform:uppercase; margin-left:4px;">💧 ÉTEINT</span>';
+                    }} else if (f.etat_feu === 'fausse_alerte') {{
+                        cardClass += ' fausse-alerte-card';
+                        scaleTag = '<span class="scale-badge-fausse-alerte" style="background:#94A3B8; color:white; font-size:7.5px; font-weight:900; padding:1.5px 3.5px; border-radius:3px; text-transform:uppercase; margin-left:4px;">❌ ALERTE</span>';
+                    }} else if (f.fire_scale === 'majeur') {{
                         cardClass += ' majeur-card';
                         scaleTag = '<span class="scale-badge-majeur">🚨 MAJEUR</span>';
                     }} else if (f.is_under_1h) {{
@@ -1722,7 +1634,7 @@ def generate_interactive_map(results, latest_news, output_path):
                                 <span class="dept-tag">DEP ${{f.dept}}</span>
                                 ${{scaleTag}}
                             </div>
-                            <span class="state-tag" style="color:${{color}};">${{f.etat_feu || 'Attaque'}}</span>
+                            <span class="state-tag" style="color:${{color}}; text-transform: uppercase; font-weight: 900;">${{stateLabel}}</span>
                         </div>
                         <div class="commune-name">${{f.commune}}</div>
                         <div class="sub-details">
