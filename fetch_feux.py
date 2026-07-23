@@ -1933,7 +1933,7 @@ def generate_interactive_map(results, latest_news, output_path):
 
                         <div class="info-row" style="background:#FFF7ED; padding:3.5px 6px; border-radius:4px; margin-top:3px; border:1px solid #FFEDD5;">
                             <span class="lbl" style="color:#C2410C; font-weight:800;">🌲 Surface :</span>
-                            <span class="val" style="color:#EA580C; font-weight:900;">${{f.superficie > 0 ? (f.superficie % 1 === 0 ? f.superficie : f.superficie.toFixed(1)) + ' ha' : 'En cours d\'évaluation'}}</span>
+                            <span class="val" style="color:#EA580C; font-weight:900;">${{f.superficie > 0 ? (f.superficie % 1 === 0 ? f.superficie : f.superficie.toFixed(1)) + ' ha' : 'En cours d&apos;évaluation'}}</span>
                         </div>
                         <div class="risk-banner" style="background:${{w.spread_risk_color || '#F1F5F9'}}18; color:${{w.spread_risk_color || '#0F172A'}}; border: 1px solid ${{w.spread_risk_color || '#CBD5E1'}}; margin-top:2px;">
                             <span style="color:#475569;">Danger FWI :</span>
