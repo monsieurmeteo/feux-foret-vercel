@@ -20,6 +20,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from concurrent.futures import ThreadPoolExecutor
 import re
+from bs4 import BeautifulSoup
 
 # ponytail: chemin relatif — fonctionne aussi bien en local qu'sur GitHub Actions runner Ubuntu
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
