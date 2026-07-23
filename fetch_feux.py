@@ -137,7 +137,10 @@ def record_snapshots(results):
 
     history_by_fire = {}
     for f in results:
-        fire_id = f"fire_{f.get('dept')}_{f.get('commune')}".lower().replace(" ", "_")
+        raw_id = str(f.get("id", "")).strip()
+        dept_str = str(f.get('dept', '')).strip()
+        comm_str = str(f.get('commune', '')).strip().lower().replace(" ", "_")
+        fire_id = f"fire_{raw_id}_{dept_str}_{comm_str}" if raw_id else f"fire_{dept_str}_{comm_str}"
         cursor.execute("""
             SELECT timestamp_utc, wind_speed_kmh, wind_gusts_kmh, temp_c, humidity_pct
             FROM feux_snapshots
