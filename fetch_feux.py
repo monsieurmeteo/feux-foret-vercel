@@ -471,7 +471,7 @@ def load_meteociel_network():
     url = "https://meteo-npdc.fr/api/v2/obs/getCachedData?field=t&includeAmateur=true"
     req = urllib.request.Request(url, headers=ANONYMOUS_HEADERS)
     try:
-        with urllib.request.urlopen(req, timeout=5) as resp:
+        with urllib.request.urlopen(req, timeout=20) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             return data.get("data", []), data.get("meta", {}).get("most_recent_validity_time", "")
     except Exception:
