@@ -14,8 +14,11 @@ try:
 except ImportError:
     from datetime import timedelta
     tz_paris = timezone(timedelta(hours=2))
-from concurrent.futures import ThreadPoolExecutor
-from bs4 import BeautifulSoup
+import smtplib
+import ssl
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import re
 
 # ponytail: chemin relatif — fonctionne aussi bien en local qu'sur GitHub Actions runner Ubuntu
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
@@ -99,6 +102,10 @@ def record_snapshots(results):
                     should_insert = False
             except Exception:
                 pass
+
+        # If fire has never been recorded in the database and is currently active (< 1h or in attack)
+        if not last_row and f.get("etat_feu") not in ("eteint", "fausse_alerte"):
+            send_new_fire_email_alert(f)
 
         if should_insert:
             cursor.execute("""
@@ -259,6 +266,85 @@ def fetch_firefighter_news():
     except Exception as e:
         print(f"Erreur actualités pompiers : {e}")
     return news_list
+
+def send_new_fire_email_alert(fire):
+    smtp_user = os.environ.get("SMTP_USER", "gregory.langlet@sfr.fr")
+    smtp_pass = os.environ.get("SMTP_PASS")
+    smtp_server = os.environ.get("SMTP_SERVER", "smtp.sfr.fr")
+    smtp_port = int(os.environ.get("SMTP_PORT", 465))
+    target_email = "gregory.langlet@sfr.fr"
+
+    if not smtp_pass:
+        print("⚠️ Pas de mot de passe SMTP configuré — alerte e-mail ignorée.")
+        return False
+
+    commune = fire.get("commune", "Inconnue").upper()
+    dept = fire.get("dept", "N/A")
+    detect_time = fire.get("detect_time_fr", "N/A")
+    etat = fire.get("etat_feu", "Attaque").capitalize()
+    w = fire.get("weather", {})
+    temp = f"{w.get('temp_c', 25)} °C"
+    hum = f"{w.get('humidity_pct', 45)} %"
+    speed = f"{w.get('wind_speed_kmh', 15)} km/h"
+    gusts = f"{w.get('wind_gusts_kmh', 25)} km/h"
+    plume_dir = w.get("plume_dir", "Sud")
+    station = fire.get("meteociel_station", "Station locale")
+
+    subject = f"🚨 ALERTE NOUVEAU FEU — {commune} (Dépt. {dept})"
+
+    body_html = f"""
+    <!DOCTYPE html>
+    <html lang="fr">
+    <head><meta charset="UTF-8"></head>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #F8FAFC; color: #0F172A; margin: 0; padding: 20px;">
+        <div style="max-width: 600px; margin: 0 auto; background: #FFFFFF; border-radius: 12px; border: 1.5px solid #E2E8F0; overflow: hidden; box-shadow: 0 10px 25px rgba(15,23,42,0.08);">
+            <div style="background: #DC2626; color: white; padding: 16px 20px; font-weight: 900; font-size: 16px; display: flex; justify-content: space-between; align-items: center;">
+                <span>🔥 MÉTÉO CLIMAT PRO — ALERTE FEU</span>
+                <span style="background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 4px; font-size: 11px;">DÉPT {dept}</span>
+            </div>
+            
+            <div style="padding: 20px;">
+                <h2 style="font-size: 22px; font-weight: 900; color: #0F172A; margin-top: 0; margin-bottom: 6px; text-transform: uppercase;">{commune}</h2>
+                <div style="font-size: 13px; color: #64748B; font-weight: 700; margin-bottom: 16px;">⏱️ Détection secours : <b style="color: #DC2626;">{detect_time}</b> • Statut : <b>{etat}</b></div>
+
+                <div style="background: #FFF7ED; border: 1.5px solid #FFEDD5; border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+                    <div style="font-size: 11px; font-weight: 900; color: #C2410C; text-transform: uppercase; margin-bottom: 8px;">🌡️ MÉTÉO SUR ZONE (STATION : {station})</div>
+                    <table style="width: 100%; font-size: 12px; font-weight: 700; color: #334155;">
+                        <tr><td>Température : <b>{temp}</b></td><td>Humidité : <b>{hum}</b></td></tr>
+                        <tr><td>Vent Moyen : <b>{speed}</b></td><td>Rafales : <b style="color: #DC2626;">{gusts}</b></td></tr>
+                        <tr><td colspan="2" style="padding-top: 4px; color: #B45309;">🧭 Dispersion des fumées : <b>Vers le {plume_dir}</b></td></tr>
+                    </table>
+                </div>
+
+                <div style="text-align: center; margin-top: 20px;">
+                    <a href="https://monsieurmeteo.github.io/feux-foret-vercel/" style="display: inline-block; background: #0F172A; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 900; font-size: 13px;">🗺️ Ouvrir la Carte de Supervision en Direct</a>
+                </div>
+            </div>
+
+            <div style="background: #F1F5F9; border-top: 1px solid #E2E8F0; padding: 10px 20px; font-size: 10.5px; color: #64748B; text-align: center;">
+                Alerte automatique générée par Météo Climat Pro • Surveillance feux de forêt 24h/7j
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = smtp_user
+        msg['To'] = target_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body_html, 'html', 'utf-8'))
+
+        context = ssl.create_default_context()
+        with smtplib.SMTP_SSL(smtp_server, smtp_port, context=context, timeout=15) as server:
+            server.login(smtp_user, smtp_pass)
+            server.sendmail(smtp_user, [target_email], msg.as_string())
+        print(f"📧 ALERTE E-MAIL ENVOYÉE À {target_email} POUR LE FEU DE {commune} !")
+        return True
+    except Exception as e:
+        print(f"⚠️ Erreur lors de l'envoi de l'alerte e-mail : {e}")
+        return False
 
 def calculate_downwind_exposure(fire_lat, fire_lon, plume_deg, wind_speed_kmh, all_fires, fire_commune):
     if not fire_lat or not fire_lon:
