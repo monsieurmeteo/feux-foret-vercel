@@ -505,7 +505,12 @@ def parse_meteociel_obs(info_html):
         wind_dir = rows.get('Direction du vent', 'N/A')
         
         arrow, plume_dir, plume_deg = dir_to_arrow_plume(wind_dir)
-        risk_label, risk_color, fwi_score = calculate_fwi_risk(temp, hum, speed, gusts)
+        risk_label, risk_color, fwi_score = calculate_fwi_risk(
+            temp if temp is not None else 25.0,
+            hum if hum is not None else 45.0,
+            speed if speed is not None else 12,
+            gusts if gusts is not None else 22
+        )
         
         return {
             "temp_c": temp,
@@ -551,22 +556,36 @@ def get_closest_meteociel_station_and_obs(lat, lon, stations):
 
     all_sts_with_dist.sort(key=lambda x: x[0])
     
-    # 2. Prendre LA STATION LA PLUS PROCHE ABSOLUE du feu pour la température / humidité
-    nearest_dist, nearest_st = all_sts_with_dist[0]
-    nearest_html = nearest_st.get("info_html", "")
-    primary_obs = parse_meteociel_obs(nearest_html) if nearest_html else {}
+    # 2. Trouver la 1ère station qui contient au moins des données de température/humidité OU de vent
+    best_st = None
+    best_dist = 15.0
+    final_obs = {}
 
-    # 3. Si la station la plus proche mesure le vent, on garde TOUT d'elle
-    w_spd = primary_obs.get("wind_speed_kmh", 0) or 0
-    w_gst = primary_obs.get("wind_gusts_kmh", 0) or 0
-    
-    final_obs = dict(primary_obs)
-    st_name = nearest_st.get("nom_usuel", "Station Locale")
-    final_dist = nearest_dist
+    for dist, st in all_sts_with_dist[:25]:
+        st_html = st.get("info_html", "")
+        parsed = parse_meteociel_obs(st_html) if st_html else {}
+        if parsed.get("temp_c") is not None or parsed.get("wind_speed_kmh", 0) > 0:
+            best_st = st
+            best_dist = dist
+            final_obs = dict(parsed)
+            break
 
-    # 4. Si la station la plus proche NE MESURE PAS le vent, trouver la 1ère station voisine la plus proche qui mesure le vent !
+    if not best_st:
+        best_st = all_sts_with_dist[0][1]
+        best_dist = all_sts_with_dist[0][0]
+
+    # Compléter les champs manquants avec des valeurs par défaut si absents
+    if final_obs.get("temp_c") is None:
+        final_obs["temp_c"] = 25.0
+    if final_obs.get("humidity_pct") is None:
+        final_obs["humidity_pct"] = 45.0
+
+    # 3. Si la station la plus proche NE MESURE PAS le vent, chercher la 1ère station voisine qui le mesure
+    w_spd = final_obs.get("wind_speed_kmh", 0) or 0
+    w_gst = final_obs.get("wind_gusts_kmh", 0) or 0
+
     if w_spd == 0 and w_gst == 0:
-        for dist_w, st_w in all_sts_with_dist[1:20]:
+        for dist_w, st_w in all_sts_with_dist[:30]:
             w_html = st_w.get("info_html", "")
             parsed_w = parse_meteociel_obs(w_html) if w_html else {}
             spd_val = parsed_w.get("wind_speed_kmh", 0) or 0
@@ -574,23 +593,12 @@ def get_closest_meteociel_station_and_obs(lat, lon, stations):
             if spd_val > 0 or gst_val > 0:
                 final_obs["wind_speed_kmh"] = spd_val
                 final_obs["wind_gusts_kmh"] = gst_val if gst_val > 0 else spd_val
-                final_obs["wind_origin"] = parsed_w.get("wind_origin", "N/A")
+                final_obs["wind_origin"] = parsed_w.get("wind_origin", "SO")
                 final_obs["plume_arrow"] = parsed_w.get("plume_arrow", "↗️")
                 final_obs["plume_dir"] = parsed_w.get("plume_dir", "Nord-Est")
                 final_obs["plume_deg"] = parsed_w.get("plume_deg", 45)
-                # Recalculer le FWI avec la température de la station proche + le vent de la station voisine
-                risk_label, risk_color, fwi_score = calculate_fwi_risk(
-                    final_obs.get("temp_c", 25.0),
-                    final_obs.get("humidity_pct", 45.0),
-                    spd_val,
-                    final_obs["wind_gusts_kmh"]
-                )
-                final_obs["spread_risk"] = risk_label
-                final_obs["spread_risk_color"] = risk_color
-                final_obs["fwi_score"] = fwi_score
                 break
 
-    # Si malgré tout aucun vent n'est capté, appliquer le plancher réaliste (jamais 0 km/h)
     if (final_obs.get("wind_speed_kmh") or 0) < 5:
         final_obs["wind_speed_kmh"] = 12
         final_obs["wind_gusts_kmh"] = 22
@@ -600,7 +608,8 @@ def get_closest_meteociel_station_and_obs(lat, lon, stations):
             final_obs["plume_dir"] = "Nord-Est"
             final_obs["plume_deg"] = 45
 
-    return st_name, round(final_dist, 1), final_obs
+    st_name = best_st.get("nom_usuel", "Station Locale")
+    return st_name, round(best_dist, 1), final_obs
 
 def load_pelicandromes():
     if not os.path.exists(PELICANDROMES_PATH):
