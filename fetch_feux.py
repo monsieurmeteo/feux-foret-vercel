@@ -2186,7 +2186,6 @@ def export_pdf(results, latest_news, output_path):
             Paragraph('Commune', header_cell),
             Paragraph('Ampleur & Détection', header_cell),
             Paragraph('Statut', header_cell),
-            Paragraph('Superficie (ha)', header_cell),
             Paragraph('Vent Moy. / Rafales Obs.', header_cell),
             Paragraph('Danger FWI', header_cell),
             Paragraph('Canadair Proche & Vol', header_cell)
@@ -2202,7 +2201,6 @@ def export_pdf(results, latest_news, output_path):
             det_time = f"{recent_prefix}{f.get('detect_time_fr', 'N/A')} {anc}"
             w = f.get('weather', {})
             
-            ha_txt = f"<b>{f.get('superficie', 0)} ha</b>" if f.get('superficie') else "En cours"
             v_raf_txt = f"Moy. <b>{w.get('wind_speed_kmh', 15)}</b> / Raf. <font color=\"#DC2626\"><b>{w.get('wind_gusts_kmh', 25)} km/h</b></font>"
             r_txt = f"<font color=\"{w.get('spread_risk_color', '#000')}\"><b>{w.get('spread_risk', 'N/A')}</b></font>"
             
@@ -2216,14 +2214,13 @@ def export_pdf(results, latest_news, output_path):
                 Paragraph(f"<b>{f.get('commune', '')}</b>", cell_bold),
                 Paragraph(det_time, cell_style),
                 Paragraph(f.get('etat_feu', 'Attaque').capitalize(), cell_bold),
-                Paragraph(ha_txt, cell_style),
                 Paragraph(v_raf_txt, cell_style),
                 Paragraph(r_txt, cell_style),
                 Paragraph(p_txt, cell_style)
             ]
             table_data.append(row)
 
-        col_widths = [24, 32, 125, 95, 70, 75, 135, 90, 120]
+        col_widths = [24, 35, 150, 130, 85, 155, 105, 150]
         t = Table(table_data, colWidths=col_widths, repeatRows=1)
         t.setStyle(TableStyle([
             ('BACKGROUND', (0,0), (-1,0), header_bg_color),
