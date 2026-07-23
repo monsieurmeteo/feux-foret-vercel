@@ -10,7 +10,8 @@ from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor
 from bs4 import BeautifulSoup
 
-DATA_DIR = r"C:\Users\grego\.gemini\config\skills\feux\data"
+# ponytail: chemin relatif — fonctionne aussi bien en local qu'sur GitHub Actions runner Ubuntu
+DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 DB_PATH = os.path.join(DATA_DIR, "feux_historique.db")
 PELICANDROMES_PATH = os.path.join(DATA_DIR, "pelicandromes.json")
 LEAFLET_CSS_PATH = os.path.join(DATA_DIR, "leaflet.css")
