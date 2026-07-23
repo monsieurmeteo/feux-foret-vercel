@@ -1213,6 +1213,15 @@ def generate_interactive_map(results, latest_news, output_path):
                 modalMiniMapInstance.invalidateSize();
             }}
 
+            const restoreUI = () => {{
+                card.style.maxHeight = origMaxHeight;
+                card.style.overflow = origOverflow;
+                card.style.width = origWidth;
+                card.style.maxWidth = origMaxWidth;
+                if (closeBtn) closeBtn.style.display = 'inline-block';
+                if (dlBtn) dlBtn.style.display = 'block';
+            }};
+
             setTimeout(() => {{
                 html2canvas(card, {{
                     scale: 2,
@@ -1222,18 +1231,16 @@ def generate_interactive_map(results, latest_news, output_path):
                     scrollX: 0,
                     scrollY: 0
                 }}).then(canvas => {{
-                    card.style.maxHeight = origMaxHeight;
-                    card.style.overflow = origOverflow;
-                    card.style.width = origWidth;
-                    card.style.maxWidth = origMaxWidth;
-                    if (closeBtn) closeBtn.style.display = 'block';
-                    if (dlBtn) dlBtn.style.display = 'block';
+                    restoreUI();
 
                     const link = document.createElement('a');
                     const safeName = (communeName || 'Feu_de_Foret').replace(/[^a-zA-Z0-9_-]/g, '_');
                     link.download = 'Infographie_' + safeName + '.png';
                     link.href = canvas.toDataURL('image/png');
                     link.click();
+                }}).catch(err => {{
+                    console.error("html2canvas error:", err);
+                    restoreUI();
                 }});
             }}, 300);
         }}
@@ -1417,6 +1424,7 @@ def generate_interactive_map(results, latest_news, output_path):
                     }}
                 }}
                 const miniIcon = L.divIcon({{
+                    className: 'custom-fire-marker',
                     html: '<div class="fire-marker-icon' + pulseClass + '" style="background:' + markerColor + '; width:26px; height:26px; border-radius:50%; border:2px solid white; display:flex; align-items:center; justify-content:center; font-size:13px; box-shadow:0 0 12px rgba(0,0,0,0.4); color:white;">' + emojiIcon + '</div>',
                     iconSize: [26, 26], iconAnchor: [13, 13]
                 }});
@@ -1615,6 +1623,7 @@ def generate_interactive_map(results, latest_news, output_path):
                         
                         const offsetPos = getOffsetCoords(f.lat, f.lon);
                         const miniIcon = L.divIcon({{
+                            className: 'custom-fire-marker',
                             html: '<div class="fire-marker-icon' + pulseClass + '" style="background:' + markerColor + '; width:20px; height:20px; border-radius:50%; border:2px solid white; display:flex; align-items:center; justify-content:center; font-size:10.5px; box-shadow:0 3px 8px rgba(0,0,0,0.45); color:white;">' + emojiIcon + '</div>',
                             iconSize: [20, 20],
                             iconAnchor: [10, 10]
