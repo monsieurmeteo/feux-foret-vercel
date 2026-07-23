@@ -1097,7 +1097,7 @@ def generate_interactive_map(results, latest_news, output_path):
             e.preventDefault();
             const u = document.getElementById('username').value.trim();
             const p = document.getElementById('password').value.trim();
-            if (u === '{AUTH_USER}' && p === '{AUTH_PASS}') {{
+            if (u.toLowerCase() === '{AUTH_USER}'.toLowerCase() && p === '{AUTH_PASS}') {{
                 sessionStorage.setItem('feux_auth_ok', 'true');
                 document.getElementById('auth-modal').style.display = 'none';
             }} else {{
