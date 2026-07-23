@@ -733,7 +733,7 @@ def generate_interactive_map(results, latest_news, output_path):
         }}
 
         .infographie-card {{
-            background: #FFFFFF; border-radius: 16px; width: 860px; max-width: 95vw; max-height: 90vh; overflow-y: auto;
+            background: #FFFFFF; border-radius: 16px; width: 960px; max-width: 95vw; max-height: 90vh; overflow-y: auto;
             box-shadow: 0 30px 60px rgba(0,0,0,0.3); border: 2px solid #0F172A; padding: 18px; position: relative;
         }}
         .infographie-card .close-btn {{
@@ -1183,7 +1183,7 @@ def generate_interactive_map(results, latest_news, output_path):
             
             card.style.maxHeight = 'none';
             card.style.overflow = 'visible';
-            card.style.width = '840px';
+            card.style.width = '960px';
             card.style.maxWidth = 'none';
 
             if (modalMiniMapInstance) {{
@@ -1244,72 +1244,87 @@ def generate_interactive_map(results, latest_news, output_path):
 
             const logoHtml = '{logo_b64}' 
                 ? `<img src="{logo_b64}" style="height:38px; object-fit:contain;" alt="Météo Climat Pro" />`
-                : `<div style="background:#F59E0B; color:#0F172A; padding:4px 10px; border-radius:6px; font-weight:900; font-size:11px;">🌤️ MÉTÉO CLIMAT PRO</div>`;
-
-            const exposureHtml = buildDownwindExposureHTML(f.downwind_exposure);
-
-            const speedVal = (w.wind_speed_kmh !== undefined) ? w.wind_speed_kmh : 0;
-            const gustVal = (w.wind_gusts_kmh !== undefined) ? w.wind_gusts_kmh : 0;
-
-            const html = `
+                : `<div style="background:#            const html = `
                 <div class="infographie-layout" style="display:flex; gap:16px; padding:4px; font-family:-apple-system, BlinkMacSystemFont, sans-serif; color:#0F172A;">
                     <!-- Left Column: Map and Header -->
-                    <div style="flex: 1.1; display:flex; flex-direction:column; gap:8px;">
-                        <div style="background:#0F172A; color:white; border-radius:10px; padding:10px 14px; box-shadow:0 4px 8px rgba(0,0,0,0.15);">
-                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #334155; padding-bottom:6px; margin-bottom:6px;">
+                    <div style="flex: 1.3; display:flex; flex-direction:column; gap:10px;">
+                        <div style="background:#0F172A; color:white; border-radius:12px; padding:12px 16px; box-shadow:0 6px 20px rgba(15,23,42,0.25); border:1.5px solid #1E293B;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px solid #334155; padding-bottom:8px; margin-bottom:8px;">
                                 <div style="display:flex; align-items:center; gap:6px;">
-                                    <span style="background:${{f.scale_color || '#DC2626'}}; color:white; padding:2px 6px; border-radius:4px; font-weight:900; font-size:10px;">${{f.scale_label || '🚨 FEU MAJEUR'}}</span>
-                                    <span style="background:#334155; color:white; padding:2px 6px; border-radius:4px; font-weight:900; font-size:10px;">DEP ${{f.dept}}</span>
+                                    <span style="background:${{f.scale_color || '#DC2626'}}; color:white; padding:3px 8px; border-radius:6px; font-weight:900; font-size:11px; letter-spacing:0.03em;">${{f.scale_label || '🚨 FEU MAJEUR'}}</span>
+                                    <span style="background:#334155; color:white; padding:3px 8px; border-radius:6px; font-weight:900; font-size:11px;">DEP ${{f.dept}}</span>
                                 </div>
                                 <div>${{logoHtml}}</div>
                             </div>
-                            <h2 style="font-size:16px; font-weight:900; text-transform:uppercase; margin-bottom:2px;">${{f.commune.toUpperCase()}}</h2>
-                            <div style="font-size:10px; color:#E2E8F0; font-weight:700;">Détection : <b style="color:#F59E0B;">${{f.detect_time_fr || 'N/A'}}</b> (${{f.timeAgo || ''}})</div>
+                            <h2 style="font-size:18px; font-weight:900; text-transform:uppercase; margin:0 0 4px 0; letter-spacing:-0.02em;">${{f.commune.toUpperCase()}}</h2>
+                            <div style="font-size:11px; color:#94A3B8; font-weight:700;">⏱️ Détection : <b style="color:#F59E0B; font-size:12px;">${{f.detect_time_fr || 'N/A'}}</b> <span style="color:#64748B;">(${{f.timeAgo || ''}})</span></div>
                         </div>
-                        <div style="background:#E2E8F0; border-radius:10px; flex:1; min-height:280px; overflow:hidden; border:1.5px solid #CBD5E1; position:relative;">
+                        <div style="background:#E2E8F0; border-radius:12px; flex:1; min-height:340px; overflow:hidden; border:2px solid #0F172A; position:relative; box-shadow:0 10px 30px rgba(0,0,0,0.15);">
                             <div id="infographic-mini-map" style="width:100%; height:100%;"></div>
                         </div>
                     </div>
 
                     <!-- Right Column: Stats, Weather, Legend -->
-                    <div style="flex: 0.9; display:flex; flex-direction:column; gap:8px;">
-                        <div style="display:grid; grid-template-columns:1fr; gap:6px;">
-                            <div style="background:#FFF5F5; border:1.5px solid #FECDD3; border-radius:8px; padding:6px 10px; display:flex; justify-content:space-between; align-items:center;">
-                                <span style="font-size:9.5px; font-weight:900; color:#E11D48; text-transform:uppercase;">🌡️ TEMP. & HUMIDITÉ</span>
-                                <span style="font-size:12.5px; font-weight:900; color:#DC2626;">
-                                    ${{w.temp_c !== undefined ? w.temp_c + ' °C' : 'N/A'}} 
-                                    <span style="font-size:9.5px; color:#0284C7; font-weight:700;">(HR: ${{w.humidity_pct !== undefined ? w.humidity_pct + '%' : 'N/A'}})</span>
+                    <div style="flex: 0.7; display:flex; flex-direction:column; gap:10px;">
+                        <!-- Weather & Wind grid -->
+                        <div style="background:#F8FAFC; border:1.5px solid #E2E8F0; border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:10px; box-shadow:0 4px 15px rgba(15,23,42,0.04);">
+                            <!-- Temp & Hum -->
+                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #E2E8F0; padding-bottom:8px;">
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    <span style="font-size:16px;">🌡️</span>
+                                    <span style="font-size:10px; font-weight:900; color:#475569; text-transform:uppercase;">TEMP & HUM</span>
+                                </div>
+                                <span style="font-size:16px; font-weight:900; color:#DC2626;">
+                                    ${{w.temp_c !== undefined ? w.temp_c + '°C' : 'N/A'}} 
+                                    <span style="font-size:11px; color:#0284C7; font-weight:800; margin-left:4px;">(HR: ${{w.humidity_pct !== undefined ? w.humidity_pct + '%' : 'N/A'}})</span>
                                 </span>
                             </div>
-                            <div style="background:#FEF3C7; border:1.5px solid #FDE68A; border-radius:8px; padding:6px 10px; display:flex; justify-content:space-between; align-items:center;">
-                                <span style="font-size:9.5px; font-weight:900; color:#D97706; text-transform:uppercase;">💨 VENT & RAFALES</span>
-                                <span style="font-size:11px; font-weight:800; color:#0F172A;">
-                                    Moy: <b>${{speedVal}}</b> • Raf: <b style="color:#DC2626;">${{gustVal}} km/h</b> 
-                                    <span style="font-size:9.5px; color:#B45309;">(${{w.plume_arrow || '➡️'}} Vers ${{w.plume_dir || 'Sud'}})</span>
-                                </span>
+
+                            <!-- Wind graphical widget -->
+                            <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #E2E8F0; padding-bottom:8px;">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <div style="width:28px; height:28px; border-radius:50%; border:2px solid #D97706; background:#FEF3C7; display:flex; align-items:center; justify-content:center; transform: rotate(${{w.plume_deg ? w.plume_deg - 90 : 0}}deg); box-shadow:0 2px 4px rgba(217,119,6,0.25);">➡️</div>
+                                    <div style="display:flex; flex-direction:column;">
+                                        <span style="font-size:8px; font-weight:900; color:#B45309; text-transform:uppercase;">💨 DANGER VENT</span>
+                                        <span style="font-size:9.5px; font-weight:800; color:#0F172A;">Propagation vers le ${{w.plume_dir || 'Sud'}}</span>
+                                    </div>
+                                </div>
+                                <div style="text-align:right;">
+                                    <div style="font-size:13px; font-weight:900; color:#0F172A;">Moy: ${{speedVal}} <span style="font-size:9px; font-weight:700;">km/h</span></div>
+                                    <div style="font-size:11px; font-weight:900; color:#DC2626;">Raf: ${{gustVal}} <span style="font-size:9px; font-weight:700;">km/h</span></div>
+                                </div>
                             </div>
-                            <div style="background:${{w.spread_risk_color || '#F1F5F9'}}18; border:1.5px solid ${{w.spread_risk_color || '#CBD5E1'}}; border-radius:8px; padding:6px 10px; display:flex; justify-content:space-between; align-items:center;">
-                                <span style="font-size:9.5px; font-weight:900; color:#475569; text-transform:uppercase;">📊 RISQUE FWI</span>
-                                <span style="font-size:12px; font-weight:900; color:${{w.spread_risk_color || '#0F172A'}};">${{w.spread_risk || 'N/A'}} <span style="font-size:9.5px; color:#475569; font-weight:700;">(${{w.fwi_score || 0}}/30)</span></span>
+
+                            <!-- FWI Risk Gauge -->
+                            <div>
+                                <div style="display:flex; justify-content:space-between; font-size:8.5px; font-weight:900; color:#475569; margin-bottom:4px; text-transform:uppercase;">
+                                    <span>📊 Danger Indice FWI : <b style="color:${{w.spread_risk_color || '#0F172A'}}; font-size:9.5px;">${{w.spread_risk || 'N/A'}}</b></span>
+                                    <span>Score: ${{w.fwi_score || 0}}/30</span>
+                                </div>
+                                <div style="height:8px; border-radius:4px; background:linear-gradient(to right, #16A34A 0%, #EAB308 30%, #F97316 60%, #DC2626 80%, #7C3AED 100%); position:relative; border:1px solid #CBD5E1;">
+                                    <div style="position:absolute; top:-3px; left:calc(${{(w.fwi_score || 0) / 30 * 100}}% - 3px); width:6px; height:12px; background:#0F172A; border:1.5px solid white; border-radius:2px; box-shadow:0 1px 3px rgba(0,0,0,0.35);"></div>
+                                </div>
                             </div>
                         </div>
 
                         ${{exposureHtml}}
 
-                        <div style="background:#F8FAFC; border:1.5px solid #E2E8F0; border-radius:8px; padding:6px 10px; font-size:10px; display:flex; justify-content:space-between; align-items:center;">
-                            <span>✈️ Base : <b>${{f.pelicandrome_name || 'N/A'}}</b> (${{f.pelicandrome_dist || 'N/A'}} km)</span>
-                            <span style="font-weight:900; color:#2563EB;">⏱️ Vol : ${{f.pelicandrome_eta || 'N/A'}}</span>
-                        </div>
-
-                        <div style="background:#F1F5F9; border-radius:6px; padding:6px 10px; font-size:9.5px; color:#334155; border:1px solid #E2E8F0; display:flex; justify-content:space-between; align-items:center;">
-                            <span>📍 Station : <b>${{f.meteociel_station || 'N/A'}}</b> (${{f.meteociel_dist || 'N/A'}} km)</span>
-                            <span style="font-weight:900; color:#0F172A; font-size:9px;">🌤️ METEO CLIMAT PRO</span>
+                        <!-- Logistics -->
+                        <div style="background:#F8FAFC; border:1.5px solid #E2E8F0; border-radius:12px; padding:10px 12px; display:flex; flex-direction:column; gap:6px; box-shadow:0 4px 15px rgba(15,23,42,0.04);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; font-size:10px;">
+                                <span style="font-weight:700; color:#475569;">✈️ Base Canadair : <b>${{f.pelicandrome_name || 'N/A'}}</b> <span style="color:#64748B;">(${{f.pelicandrome_dist || 'N/A'}} km)</span></span>
+                                <span style="font-weight:900; color:#2563EB; font-size:11px;">⏱️ Vol : ${{f.pelicandrome_eta || 'N/A'}}</span>
+                            </div>
+                            <div style="border-top:1px dashed #E2E8F0; padding-top:6px; display:flex; justify-content:space-between; align-items:center; font-size:9.5px; color:#475569;">
+                                <span>📍 Station locale : <b>${{f.meteociel_station || 'N/A'}}</b> <span style="color:#64748B;">(${{f.meteociel_dist || 'N/A'}} km)</span></span>
+                                <span style="font-weight:900; color:#0F172A;">🌤️ MÉTÉO CLIMAT PRO</span>
+                            </div>
                         </div>
 
                         <!-- Legend -->
-                        <div style="background:#F8FAFC; border:1.5px solid #E2E8F0; border-radius:8px; padding:6px 10px; margin-top:auto;">
-                            <div style="font-size:8px; font-weight:900; color:#475569; text-transform:uppercase; margin-bottom:4px; border-bottom:1px solid #E2E8F0; padding-bottom:2px;">📍 LÉGENDE DES STATUTS</div>
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:3px; font-size:8.5px; font-weight:800;">
+                        <div style="background:#F8FAFC; border:1.5px solid #E2E8F0; border-radius:12px; padding:10px 12px; margin-top:auto; box-shadow:0 4px 15px rgba(15,23,42,0.04);">
+                            <div style="font-size:8px; font-weight:900; color:#475569; text-transform:uppercase; margin-bottom:6px; border-bottom:1px solid #E2E8F0; padding-bottom:3px; letter-spacing:0.02em;">📍 LÉGENDE DES STATUTS DE FEUX</div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; font-size:9px; font-weight:800;">
                                 <span style="color:#7C3AED;">🚨 Majeur</span>
                                 <span style="color:#2563EB;">🎯 Fixé</span>
                                 <span style="color:#D97706;">⚡ Nouveau &lt; 1h</span>
@@ -1331,34 +1346,65 @@ def generate_interactive_map(results, latest_news, output_path):
                 if (modalMiniMapInstance) {{
                     try {{ modalMiniMapInstance.remove(); }} catch(e) {{}}
                 }}
-                modalMiniMapInstance = L.map('infographic-mini-map', {{ zoomControl: false, dragging: false, scrollWheelZoom: false }}).setView([f.lat, f.lon], 12);
+                modalMiniMapInstance = L.map('infographic-mini-map', {{ zoomControl: false, dragging: false, scrollWheelZoom: false, attributionControl: false }}).setView([f.lat, f.lon], 12);
                 
                 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{{z}}/{{y}}/{{x}}', {{
                     crossOrigin: true
                 }}).addTo(modalMiniMapInstance);
                 
+                const markerColor = getMarkerColor(f);
+                const isMajeur = (f.fire_scale === 'majeur');
+                const isUnder1h = f.is_under_1h;
+                const isAttaque = (f.etat_feu === 'attaque');
+                const w = f.weather || {{}};
+                
+                let pulseClass = '';
+                let emojiIcon = '🔥';
+                
+                if (currentViewMode === 'risk') {{
+                    if (w.spread_risk && w.spread_risk.includes('EXTRÊME')) emojiIcon = '🚨';
+                    else if (w.spread_risk && w.spread_risk.includes('ÉLEVÉ')) emojiIcon = '🔴';
+                    else if (w.spread_risk && w.spread_risk.includes('MODÉRÉ')) emojiIcon = '🟡';
+                    else emojiIcon = '🟢';
+                }} else {{
+                    if (f.etat_feu === 'eteint') {{
+                        emojiIcon = '💧';
+                    }} else if (f.etat_feu === 'fausse_alerte') {{
+                        emojiIcon = '❌';
+                    }} else if (isMajeur) {{
+                        pulseClass = ' marker-pulse-majeur';
+                        emojiIcon = '🚨';
+                    }} else if (isUnder1h) {{
+                        pulseClass = ' marker-pulse-new';
+                        emojiIcon = '⚡';
+                    }} else if (isAttaque) {{
+                        pulseClass = ' marker-pulse-attaque';
+                        emojiIcon = '🔥';
+                    }} else if (f.etat_feu === 'fixe') {{
+                        emojiIcon = '🎯';
+                    }} else if (f.etat_feu === 'maitrise') {{
+                        emojiIcon = '✅';
+                    }} else {{
+                        emojiIcon = '🔥';
+                    }}
+                }}
                 const miniIcon = L.divIcon({{
-                    html: '<div style="background:#DC2626; color:white; width:26px; height:26px; border-radius:50%; border:2px solid white; display:flex; align-items:center; justify-content:center; font-size:13px; box-shadow:0 0 12px rgba(220,38,38,0.8);">🔥</div>',
+                    html: '<div class="fire-marker-icon' + pulseClass + '" style="background:' + markerColor + '; width:26px; height:26px; border-radius:50%; border:2px solid white; display:flex; align-items:center; justify-content:center; font-size:13px; box-shadow:0 0 12px rgba(0,0,0,0.4); color:white;">' + emojiIcon + '</div>',
                     iconSize: [26, 26], iconAnchor: [13, 13]
                 }});
-                L.marker([f.lat, f.lon], {{ icon: miniIcon }}).addTo(modalMiniMapInstance);
-                
-                drawWindPlumeCone(modalMiniMapInstance, f.lat, f.lon, f.weather ? f.weather.plume_deg : 90, f.weather ? f.weather.wind_gusts_kmh : 30);
-                modalMiniMapInstance.invalidateSize();
-            }}, 200);
-        }}
-
-        function closeInfographieModal() {{
-            document.getElementById('infographie-modal').style.display = 'none';
-        }}
 
         function openNationalInfographieModal() {{
             const validFires = fires.filter(f => f.lat && f.lon);
             const countEnCours = validFires.filter(f => f.etat_feu !== 'eteint' && f.etat_feu !== 'fausse_alerte').length;
             const countUnder1h = validFires.filter(f => f.is_under_1h).length;
             const countMajeurs = validFires.filter(f => f.fire_scale === 'majeur').length;
-            const countModere = validFires.filter(f => f.fire_scale === 'modere').length;
-            const countLocalise = validFires.filter(f => f.fire_scale === 'localise').length;
+            const countAttaque = validFires.filter(f => f.etat_feu === 'attaque').length;
+            const countFixe = validFires.filter(f => f.etat_feu === 'fixe').length;
+            const countMaitrise = validFires.filter(f => f.etat_feu === 'maitrise').length;
+
+            const activeFires = validFires.filter(f => f.etat_feu !== 'eteint' && f.etat_feu !== 'fausse_alerte');
+            const countDepts = new Set(activeFires.map(f => f.dept)).size;
+            const countNew24h = validFires.filter(f => (f.minutes_ago || 99999) <= 1440).length;
 
             const logoHtml = '{logo_b64}'
                 ? `<img src="{logo_b64}" style="height:38px; object-fit:contain;" alt="Météo Climat Pro" />`
@@ -1371,50 +1417,67 @@ def generate_interactive_map(results, latest_news, output_path):
             const html = `
                 <div class="infographie-layout" style="display:flex; gap:16px; padding:4px; font-family:-apple-system, BlinkMacSystemFont, sans-serif; color:#0F172A;">
                     <!-- Left Column: Map and Header -->
-                    <div style="flex: 1.1; display:flex; flex-direction:column; gap:8px;">
-                        <div style="background:#0F172A; color:white; border-radius:10px; padding:10px 14px; box-shadow:0 4px 8px rgba(0,0,0,0.15);">
-                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #334155; padding-bottom:6px; margin-bottom:6px;">
+                    <div style="flex: 1.3; display:flex; flex-direction:column; gap:10px;">
+                        <div style="background:#0F172A; color:white; border-radius:12px; padding:12px 16px; box-shadow:0 6px 20px rgba(15,23,42,0.25); border:1.5px solid #1E293B;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px solid #334155; padding-bottom:8px; margin-bottom:8px;">
                                 <div style="display:flex; align-items:center; gap:6px;">
-                                    <span style="background:#DC2626; color:white; padding:2px 6px; border-radius:4px; font-weight:900; font-size:10px;">🔥 DIRECT NATIONAL</span>
-                                    <span style="background:#334155; color:white; padding:2px 6px; border-radius:4px; font-weight:900; font-size:10px;">BILAN FEUX DE FORÊT</span>
+                                    <span style="background:#DC2626; color:white; padding:3px 8px; border-radius:6px; font-weight:900; font-size:11px; letter-spacing:0.03em;">🔥 DIRECT NATIONAL</span>
+                                    <span style="background:#334155; color:white; padding:3px 8px; border-radius:6px; font-weight:900; font-size:11px;">BILAN FEUX DE FORÊT</span>
                                 </div>
                                 <div>${{logoHtml}}</div>
                             </div>
-                            <h2 style="font-size:16px; font-weight:900; text-transform:uppercase; margin-bottom:2px;">SITUATION EN FRANCE</h2>
-                            <div style="font-size:10px; color:#E2E8F0; font-weight:700;">Situation arrêtée le : <b>${{dateStr}}</b></div>
+                            <h2 style="font-size:18px; font-weight:900; text-transform:uppercase; margin:0 0 4px 0; letter-spacing:-0.02em;">SITUATION EN FRANCE</h2>
+                            <div style="font-size:11px; color:#94A3B8; font-weight:700;">Situation arrêtée le : <b>${{dateStr}}</b></div>
                         </div>
-                        <div style="background:#AAD3DF; border-radius:10px; flex:1; min-height:280px; overflow:hidden; border:1.5px solid #CBD5E1; position:relative;">
+                        <div style="background:#AAD3DF; border-radius:12px; flex:1; min-height:340px; overflow:hidden; border:2px solid #0F172A; position:relative; box-shadow:0 10px 30px rgba(0,0,0,0.15);">
                             <div id="infographic-national-map" style="width:100%; height:100%;"></div>
                         </div>
                     </div>
 
                     <!-- Right Column: Stats, Breakdown, Legend -->
-                    <div style="flex: 0.9; display:flex; flex-direction:column; gap:8px;">
-                        <div style="display:grid; grid-template-columns:1fr; gap:6px;">
+                    <div style="flex: 0.7; display:flex; flex-direction:column; gap:10px;">
+                        <!-- Global metrics card -->
+                        <div style="background:#F8FAFC; border:1.5px solid #E2E8F0; border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:8px; box-shadow:0 4px 15px rgba(15,23,42,0.04);">
+                            <div style="font-size:8px; font-weight:900; color:#475569; text-transform:uppercase; border-bottom:1px solid #E2E8F0; padding-bottom:4px; margin-bottom:2px; letter-spacing:0.02em;">📊 STATISTIQUES NATIONALES</div>
+                            
+                            <!-- Feux en cours (Principal) -->
                             <div style="background:#FFF5F5; border:1.5px solid #FECDD3; border-radius:8px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center;">
-                                <span style="font-size:10px; font-weight:900; color:#E11D48; text-transform:uppercase;">🚨 FEUX EN COURS</span>
-                                <span style="font-size:16px; font-weight:900; color:#DC2626;">${{countEnCours}}</span>
+                                <span style="font-size:11px; font-weight:900; color:#E11D48; text-transform:uppercase;">🔥 FEUX EN COURS</span>
+                                <span style="font-size:24px; font-weight:900; color:#DC2626; line-height:1;">${{countEnCours}}</span>
                             </div>
-                            <div style="background:#FEF3C7; border:1.5px solid #FDE68A; border-radius:8px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center;">
-                                <span style="font-size:10px; font-weight:900; color:#D97706; text-transform:uppercase;">⚡ NOUVEAUX &lt; 1H</span>
-                                <span style="font-size:16px; font-weight:900; color:#B45309;">${{countUnder1h}}</span>
-                            </div>
-                            <div style="background:#F5F3FF; border:1.5px solid #DDD6FE; border-radius:8px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center;">
-                                <span style="font-size:10px; font-weight:900; color:#7C3AED; text-transform:uppercase;">🚨 HAUTE INTENSITÉ</span>
-                                <span style="font-size:16px; font-weight:900; color:#6D28D9;">${{countMajeurs}}</span>
+
+                            <!-- Metrics subgrid -->
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                                <div style="background:#FEF3C7; border:1.5px solid #FDE68A; border-radius:8px; padding:6px 8px; text-align:center;">
+                                    <div style="font-size:8px; font-weight:900; color:#D97706; text-transform:uppercase;">⚡ NOUVEAUX &lt; 1H</div>
+                                    <div style="font-size:16px; font-weight:900; color:#B45309; margin-top:2px;">${{countUnder1h}}</div>
+                                </div>
+                                <div style="background:#F0F9FF; border:1.5px solid #BAE6FD; border-radius:8px; padding:6px 8px; text-align:center;">
+                                    <div style="font-size:8px; font-weight:900; color:#0284C7; text-transform:uppercase;">⚡ NOUVEAUX 24H</div>
+                                    <div style="font-size:16px; font-weight:900; color:#0369A1; margin-top:2px;">+${{countNew24h}}</div>
+                                </div>
+                                <div style="background:#F5F3FF; border:1.5px solid #DDD6FE; border-radius:8px; padding:6px 8px; text-align:center;">
+                                    <div style="font-size:8px; font-weight:900; color:#7C3AED; text-transform:uppercase;">🚨 HAUTE INTENSITÉ</div>
+                                    <div style="font-size:16px; font-weight:900; color:#6D28D9; margin-top:2px;">${{countMajeurs}}</div>
+                                </div>
+                                <div style="background:#F8FAFC; border:1.5px solid #E2E8F0; border-radius:8px; padding:6px 8px; text-align:center;">
+                                    <div style="font-size:8px; font-weight:900; color:#475569; text-transform:uppercase;">🗺️ DÉPTS TOUCHÉS</div>
+                                    <div style="font-size:16px; font-weight:900; color:#0F172A; margin-top:2px;">${{countDepts}}</div>
+                                </div>
                             </div>
                         </div>
 
-                        <div style="background:#F8FAFC; border:1.5px solid #E2E8F0; border-radius:8px; padding:8px 10px; font-size:10px; display:flex; justify-content:space-around; align-items:center; font-weight:800;">
-                            <span style="color:#7C3AED;">🚨 Majeurs : <b>${{countMajeurs}}</b></span>
-                            <span style="color:#C2410C;">🔶 Modérés : <b>${{countModere}}</b></span>
-                            <span style="color:#92400E;">🟡 Localisés : <b>${{countLocalise}}</b></span>
+                        <!-- Operational breakdown -->
+                        <div style="background:#F8FAFC; border:1.5px solid #E2E8F0; border-radius:12px; padding:10px 12px; display:flex; justify-content:space-around; align-items:center; font-size:10px; font-weight:800; box-shadow:0 4px 15px rgba(15,23,42,0.04);">
+                            <span style="color:#DC2626;">🔥 Attaque: ${{countAttaque}}</span>
+                            <span style="color:#2563EB;">🎯 Fixés: ${{countFixe}}</span>
+                            <span style="color:#16A34A;">✅ Maîtrisés: ${{countMaitrise}}</span>
                         </div>
 
                         <!-- Legend -->
-                        <div style="background:#F8FAFC; border:1.5px solid #E2E8F0; border-radius:8px; padding:8px 10px; margin-top:auto;">
-                            <div style="font-size:8px; font-weight:900; color:#475569; text-transform:uppercase; margin-bottom:4px; border-bottom:1px solid #E2E8F0; padding-bottom:2px;">📍 LÉGENDE DES STATUTS</div>
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:3px; font-size:8.5px; font-weight:800;">
+                        <div style="background:#F8FAFC; border:1.5px solid #E2E8F0; border-radius:12px; padding:10px 12px; margin-top:auto; box-shadow:0 4px 15px rgba(15,23,42,0.04);">
+                            <div style="font-size:8px; font-weight:900; color:#475569; text-transform:uppercase; margin-bottom:6px; border-bottom:1px solid #E2E8F0; padding-bottom:3px; letter-spacing:0.02em;">📍 LÉGENDE DES STATUTS DE FEUX</div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; font-size:9px; font-weight:800;">
                                 <span style="color:#7C3AED;">🚨 Majeur</span>
                                 <span style="color:#2563EB;">🎯 Fixé</span>
                                 <span style="color:#D97706;">⚡ Nouveau &lt; 1h</span>
@@ -1447,6 +1510,19 @@ def generate_interactive_map(results, latest_news, output_path):
                     crossOrigin: true
                 }}).addTo(modalMiniMapInstance);
 
+                const placedCoords = {{}};
+                function getOffsetCoords(lat, lon) {{
+                    const key = lat.toFixed(3) + '_' + lon.toFixed(3);
+                    if (!placedCoords[key]) {{
+                        placedCoords[key] = 1;
+                        return [lat, lon];
+                    }}
+                    const count = placedCoords[key]++;
+                    const angle = count * 0.785;
+                    const radius = count * 0.007;
+                    return [lat + Math.sin(angle) * radius, lon + Math.cos(angle) * radius];
+                }}
+
                 validFires.forEach(f => {{
                     const isActive = f.etat_feu !== 'eteint' && f.etat_feu !== 'fausse_alerte';
                     const isEteint24h = f.etat_feu === 'eteint' && (f.minutes_ago || 99999) <= 1440;
@@ -1463,7 +1539,7 @@ def generate_interactive_map(results, latest_news, output_path):
                                          
                     const matchRegion = (currentRegionFilter === 'all' || f.region === currentRegionFilter);
 
-                    if (matchStatus && matchRegion) {{
+                    if (isActive && matchRegion) {{
                         const markerColor = getMarkerColor(f);
                         const isMajeur = (f.fire_scale === 'majeur');
                         const isUnder1h = f.is_under_1h;
@@ -1492,17 +1568,22 @@ def generate_interactive_map(results, latest_news, output_path):
                             }} else if (isAttaque) {{
                                 pulseClass = ' marker-pulse-attaque';
                                 emojiIcon = '🔥';
+                            }} else if (f.etat_feu === 'fixe') {{
+                                emojiIcon = '🎯';
+                            }} else if (f.etat_feu === 'maitrise') {{
+                                emojiIcon = '✅';
                             }} else {{
                                 emojiIcon = '🔥';
                             }}
                         }}
                         
+                        const offsetPos = getOffsetCoords(f.lat, f.lon);
                         const miniIcon = L.divIcon({{
-                            html: '<div class="fire-marker-icon' + pulseClass + '" style="background:' + markerColor + '; width:16px; height:16px; border-radius:50%; border:2px solid white; display:flex; align-items:center; justify-content:center; font-size:8.5px; box-shadow:0 0 6px rgba(0,0,0,0.35); color:white;">' + emojiIcon + '</div>',
-                            iconSize: [16, 16],
-                            iconAnchor: [8, 8]
+                            html: '<div class="fire-marker-icon' + pulseClass + '" style="background:' + markerColor + '; width:20px; height:20px; border-radius:50%; border:2px solid white; display:flex; align-items:center; justify-content:center; font-size:10.5px; box-shadow:0 3px 8px rgba(0,0,0,0.45); color:white;">' + emojiIcon + '</div>',
+                            iconSize: [20, 20],
+                            iconAnchor: [10, 10]
                         }});
-                        L.marker([f.lat, f.lon], {{ icon: miniIcon }}).addTo(modalMiniMapInstance);
+                        L.marker(offsetPos, {{ icon: miniIcon }}).addTo(modalMiniMapInstance);
                     }}
                 }});
                 
@@ -1512,31 +1593,43 @@ def generate_interactive_map(results, latest_news, output_path):
 
         function drawWindPlumeCone(targetLayer, lat, lon, plumeDeg, gustSpeedKmh) {{
             if (!lat || !lon) return;
-            const distKm = Math.min(Math.max((gustSpeedKmh || 30) * 0.4, 6), 40);
-            const spreadAngle = 32;
+            const maxDistKm = Math.min(Math.max((gustSpeedKmh || 30) * 0.4, 6), 40);
 
-            const radLeft = ((plumeDeg - spreadAngle / 2) * Math.PI) / 180;
-            const radRight = ((plumeDeg + spreadAngle / 2) * Math.PI) / 180;
+            function drawLayer(dist, spreadAngle, fillColor, fillOpacity, stroke, strokeColor, dashArray) {{
+                const radLeft = ((plumeDeg - spreadAngle / 2) * Math.PI) / 180;
+                const radRight = ((plumeDeg + spreadAngle / 2) * Math.PI) / 180;
 
-            const dLatLeft = (distKm / 111.0) * Math.cos(radLeft);
-            const dLonLeft = (distKm / (111.0 * Math.cos((lat * Math.PI) / 180))) * Math.sin(radLeft);
+                const dLatLeft = (dist / 111.0) * Math.cos(radLeft);
+                const dLonLeft = (dist / (111.0 * Math.cos((lat * Math.PI) / 180))) * Math.sin(radLeft);
 
-            const dLatRight = (distKm / 111.0) * Math.cos(radRight);
-            const dLonRight = (distKm / (111.0 * Math.cos((lat * Math.PI) / 180))) * Math.sin(radRight);
+                const dLatRight = (dist / 111.0) * Math.cos(radRight);
+                const dLonRight = (dist / (111.0 * Math.cos((lat * Math.PI) / 180))) * Math.sin(radRight);
 
-            const conePoly = [
-                [lat, lon],
-                [lat + dLatLeft, lon + dLonLeft],
-                [lat + dLatRight, lon + dLonRight]
-            ];
+                const conePoly = [
+                    [lat, lon],
+                    [lat + dLatLeft, lon + dLonLeft],
+                    [lat + dLatRight, lon + dLonRight]
+                ];
 
-            L.polygon(conePoly, {{
-                color: '#DC2626',
-                weight: 1.5,
-                fillColor: '#EF4444',
-                fillOpacity: 0.3,
-                dashArray: '4,4'
-            }}).addTo(targetLayer);
+                L.polygon(conePoly, {{
+                    stroke: stroke,
+                    color: strokeColor || '#DC2626',
+                    weight: stroke ? 0.75 : 0,
+                    fillColor: fillColor,
+                    fillOpacity: fillOpacity,
+                    dashArray: dashArray || null,
+                    interactive: false
+                }}).addTo(targetLayer);
+            }}
+
+            // Layer 3: Outer dispersion (wide, long, low opacity)
+            drawLayer(maxDistKm, 36, '#EF4444', 0.08, true, '#DC2626', '2,4');
+            
+            // Layer 2: Mid-range dispersion (medium width, medium length, medium opacity)
+            drawLayer(maxDistKm * 0.8, 24, '#DC2626', 0.20, false);
+            
+            // Layer 1: Core smoke concentration (narrow, short, high opacity)
+            drawLayer(maxDistKm * 0.55, 12, '#991B1B', 0.40, false);
         }}
 
         const map = L.map('map', {{ zoomControl: false, autoPanPaddingTopLeft: [20, 95], autoPanPaddingBottomRight: [20, 20] }}).setView([46.603354, 1.888334], 6);
@@ -1616,13 +1709,13 @@ def generate_interactive_map(results, latest_news, output_path):
             return '#DC2626';
         }}
 
-        function createFireMarker(f, fireIndex) {{
+        function createFireMarker(f, fireIndex, offsetPos) {{
             const color = getMarkerColor(f);
             const isMajeur = (f.fire_scale === 'majeur');
             const isUnder1h = f.is_under_1h;
             const isAttaque = (f.etat_feu === 'attaque');
             const w = f.weather || {{}};
-            const size = f.marker_size || 26;
+            const size = (f.marker_size || 26) + 4;
             
             let pulseClass = '';
             let emojiIcon = '🔥';
@@ -1646,6 +1739,10 @@ def generate_interactive_map(results, latest_news, output_path):
                 }} else if (isAttaque) {{
                     pulseClass = ' marker-pulse-attaque';
                     emojiIcon = '🔥';
+                }} else if (f.etat_feu === 'fixe') {{
+                    emojiIcon = '🎯';
+                }} else if (f.etat_feu === 'maitrise') {{
+                    emojiIcon = '✅';
                 }} else {{
                     emojiIcon = '🔥';
                 }}
@@ -1659,7 +1756,7 @@ def generate_interactive_map(results, latest_news, output_path):
 
             const fireIcon = L.divIcon({{
                 className: 'custom-fire-marker',
-                html: '<div class="' + pulseClass + '" style="background-color: ' + color + '; width: ' + size + 'px; height: ' + size + 'px; border-radius: 50%; border: 2.5px solid white; display: flex; align-items: center; justify-content: center; font-size: ' + (size > 30 ? 16 : 12) + 'px; box-shadow:0 4px 10px rgba(0,0,0,0.4);">' + emojiIcon + '</div>',
+                html: '<div class="' + pulseClass + '" style="background-color: ' + color + '; width: ' + size + 'px; height: ' + size + 'px; border-radius: 50%; border: 2.5px solid white; display: flex; align-items: center; justify-content: center; font-size: ' + (size > 30 ? 16 : 13) + 'px; box-shadow:0 5px 14px rgba(0,0,0,0.5), inset 0 0 4px rgba(255,255,255,0.45);">' + emojiIcon + '</div>',
                 iconSize: [size, size],
                 iconAnchor: [size/2, size/2]
             }});
@@ -1804,9 +1901,10 @@ def generate_interactive_map(results, latest_news, output_path):
                 </div>
             `;
 
-            drawWindPlumeCone(plumeLayerGroup, f.lat, f.lon, w.plume_deg || 90, w.wind_gusts_kmh || 30);
+            const pos = offsetPos || [f.lat, f.lon];
+            drawWindPlumeCone(plumeLayerGroup, pos[0], pos[1], w.plume_deg || 90, w.wind_gusts_kmh || 30);
 
-            return L.marker([f.lat, f.lon], {{ icon: fireIcon }}).bindPopup(popupContent);
+            return L.marker(pos, {{ icon: fireIcon }}).bindPopup(popupContent);
         }}
 
         function renderFires() {{
@@ -1815,6 +1913,19 @@ def generate_interactive_map(results, latest_news, output_path):
             const sidebarContainer = document.getElementById('fire-list-container');
             sidebarContainer.innerHTML = '';
             let visibleCount = 0;
+
+            const placedCoords = {{}};
+            function getOffsetCoords(lat, lon) {{
+                const key = lat.toFixed(3) + '_' + lon.toFixed(3);
+                if (!placedCoords[key]) {{
+                    placedCoords[key] = 1;
+                    return [lat, lon];
+                }}
+                const count = placedCoords[key]++;
+                const angle = count * 0.785;
+                const radius = count * 0.006;
+                return [lat + Math.sin(angle) * radius, lon + Math.cos(angle) * radius];
+            }}
 
             fires.forEach((f, idx) => {{
                 if (!f.lat || !f.lon) return;
@@ -1834,7 +1945,8 @@ def generate_interactive_map(results, latest_news, output_path):
                 
                 if (matchStatus && matchRegion) {{
                     visibleCount++;
-                    const marker = createFireMarker(f, idx);
+                    const offsetPos = getOffsetCoords(f.lat, f.lon);
+                    const marker = createFireMarker(f, idx, offsetPos);
                     markersLayerGroup.addLayer(marker);
 
                     const color = getMarkerColor(f);
@@ -2087,9 +2199,41 @@ def main():
     parser.add_argument("--format", choices=["table", "tsv", "pdf", "json", "map"], default="table", help="Format de sortie")
     parser.add_argument("--desktop", action="store_true", help="Générer la Carte HTML et le PDF directement sur le Bureau")
     parser.add_argument("--ci", action="store_true", help="Mode GitHub Actions : génère index.html + PDF dans le répertoire courant")
+    parser.add_argument("--offline", action="store_true", help="Utiliser des données de simulation hors-ligne pour les tests")
     args = parser.parse_args()
 
-    results, latest_news = fetch_all_feux()
+    if args.offline:
+        results = [
+            {
+                "id": "1", "title": "Feu de forêt à Marseille", "commune": "Marseille", "dept": "13",
+                "lat": 43.2964, "lon": 5.3698, "detect_time_fr": "15:45", "timeAgo": "il y a 10 min",
+                "etat_feu": "attaque", "fire_scale": "majeur", "scale_label": "🚨 FEU MAJEUR", "scale_color": "#7C3AED",
+                "pelicandrome_name": "Marignane", "pelicandrome_dist": 15.0, "pelicandrome_eta": "4 min",
+                "meteociel_station": "Marseille-Marignane", "meteociel_dist": 15.0,
+                "weather": {
+                    "temp_c": 32.5, "humidity_pct": 35, "wind_speed_kmh": 25, "wind_gusts_kmh": 45,
+                    "wind_origin": "N", "plume_arrow": "➡️", "plume_dir": "Sud", "plume_deg": 180,
+                    "spread_risk": "TRÈS ÉLEVÉ", "spread_risk_color": "#DC2626", "fwi_score": 24
+                },
+                "downwind_exposure": [{"commune": "Aubagne", "dist_km": 12, "eta_smoke": "20 min", "is_sector": False}]
+            },
+            {
+                "id": "2", "title": "Feu de forêt à Bordeaux", "commune": "Bordeaux", "dept": "33",
+                "lat": 44.8378, "lon": -0.5792, "detect_time_fr": "15:20", "timeAgo": "il y a 35 min",
+                "etat_feu": "fixe", "fire_scale": "modere", "scale_label": "🔶 MODÉRÉ", "scale_color": "#D97706",
+                "pelicandrome_name": "Mérignac", "pelicandrome_dist": 8.0, "pelicandrome_eta": "3 min",
+                "meteociel_station": "Bordeaux-Mérignac", "meteociel_dist": 8.0,
+                "weather": {
+                    "temp_c": 28.0, "humidity_pct": 45, "wind_speed_kmh": 12, "wind_gusts_kmh": 22,
+                    "wind_origin": "E", "plume_arrow": "➡️", "plume_dir": "Ouest", "plume_deg": 270,
+                    "spread_risk": "MODÉRÉ", "spread_risk_color": "#F59E0B", "fwi_score": 14
+                },
+                "downwind_exposure": []
+            }
+        ]
+        latest_news = []
+    else:
+        results, latest_news = fetch_all_feux()
 
     if args.ci:
         # ponytail: --ci écrit dans le répertoire courant, compatible runner Ubuntu sans Bureau
