@@ -891,19 +891,19 @@ def generate_interactive_map(results, latest_news, output_path):
         #legend .symbol {{ width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 900; color: white; flex-shrink: 0; }}
 
         @keyframes pulse-fire-majeur {{
-            0% {{ transform: scale(1); box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.9); }}
-            70% {{ transform: scale(1.3); box-shadow: 0 0 0 16px rgba(124, 58, 237, 0); }}
-            100% {{ transform: scale(1); box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); }}
+            0%   {{ transform: scale(1);   box-shadow: 0 0 0 0   rgba(124, 58, 237, 0.9); }}
+            70%  {{ transform: scale(1.3); box-shadow: 0 0 0 16px rgba(124, 58, 237, 0); }}
+            100% {{ transform: scale(1);   box-shadow: 0 0 0 0   rgba(124, 58, 237, 0); }}
         }}
         @keyframes pulse-fire-attaque {{
-            0% {{ transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.85); }}
-            70% {{ transform: scale(1.22); box-shadow: 0 0 0 12px rgba(220, 38, 38, 0); }}
-            100% {{ transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }}
+            0%   {{ transform: scale(1);    box-shadow: 0 0 0 0   rgba(220, 38, 38, 0.85); }}
+            70%  {{ transform: scale(1.22); box-shadow: 0 0 0 12px rgba(220, 38, 38, 0); }}
+            100% {{ transform: scale(1);    box-shadow: 0 0 0 0   rgba(220, 38, 38, 0); }}
         }}
         @keyframes pulse-fire-new {{
-            0% {{ transform: scale(1); box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.9); }}
-            70% {{ transform: scale(1.25); box-shadow: 0 0 0 14px rgba(217, 119, 6, 0); }}
-            100% {{ transform: scale(1); box-shadow: 0 0 0 0 rgba(217, 119, 6, 0); }}
+            0%   {{ transform: scale(1);    box-shadow: 0 0 0 0   rgba(249, 115, 22, 0.95); }}
+            70%  {{ transform: scale(1.3);  box-shadow: 0 0 0 18px rgba(249, 115, 22, 0); }}
+            100% {{ transform: scale(1);    box-shadow: 0 0 0 0   rgba(249, 115, 22, 0); }}
         }}
         
         .marker-pulse-majeur {{
@@ -919,45 +919,52 @@ def generate_interactive_map(results, latest_news, output_path):
             border-radius: 50%;
         }}
 
-        /* ── Popup Leaflet ─────────────────────────────────── */
+        /* ── Popup Leaflet (Design Pro Lumineux & Grand Public) ── */
         .leaflet-popup-content-wrapper {{
-            background: #0F172A !important; color: #F8FAFC !important; border-radius: 12px !important;
-            border: 1.5px solid #334155 !important; box-shadow: 0 12px 30px rgba(0,0,0,0.4) !important;
+            background: #FFFFFF !important; color: #0F172A !important; border-radius: 12px !important;
+            border: 1px solid #E2E8F0 !important; box-shadow: 0 10px 25px rgba(15, 23, 42, 0.15) !important;
             padding: 0 !important; overflow: hidden;
         }}
-        .leaflet-popup-tip {{ background: #0F172A !important; }}
-        .leaflet-popup-content {{ margin: 0 !important; line-height: 1.3 !important; width: 340px !important; }}
+        .leaflet-popup-tip {{ background: #FFFFFF !important; }}
+        .leaflet-popup-content {{ margin: 0 !important; line-height: 1.3 !important; width: 280px !important; }}
 
-        .popup-header {{ padding: 8px 10px 6px; background: #1E293B; border-bottom: 1px solid #334155; }}
-        .popup-header .top-row {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }}
-        .popup-header .badge-dept {{ background: #334155; color: #CBD5E1; font-weight: 900; font-size: 9.5px; padding: 2px 6px; border-radius: 4px; letter-spacing: 0.05em; }}
-        .popup-header .badge-state {{ display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; }}
-        .popup-header h3 {{ font-size: 13px; font-weight: 900; color: #FFFFFF; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -0.01em; }}
-        .popup-header .time-ago {{ font-size: 9px; color: #94A3B8; font-weight: 600; margin-top: 2px; }}
+        .popup-header {{ padding: 10px 12px 8px; background: #F8FAFC; border-bottom: 1px solid #E2E8F0; }}
+        .popup-header .top-row {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }}
+        .popup-header .badge-dept {{ background: #E2E8F0; color: #334155; font-weight: 800; font-size: 10px; padding: 2px 6px; border-radius: 4px; letter-spacing: 0.02em; }}
+        .popup-header .badge-state {{ display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.02em; }}
+        .popup-header h3 {{ font-size: 14.5px; font-weight: 900; color: #0F172A; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -0.01em; }}
+        .popup-header .time-ago {{ font-size: 9.5px; color: #64748B; font-weight: 600; margin-top: 3px; }}
 
-        .popup-grid-layout {{ display: grid; grid-template-columns: 155px 165px; gap: 0; padding: 7px 8px; align-items: start; background: #0F172A; }}
-        .popup-col-left {{ display: flex; flex-direction: column; gap: 3px; padding-right: 8px; }}
-        .popup-col-right {{ display: flex; flex-direction: column; gap: 3px; border-left: 1px solid #1E293B; padding-left: 8px; }}
+        .popup-main-layout {{ padding: 10px 12px; background: #FFFFFF; display: flex; flex-direction: column; gap: 4px; }}
 
-        .grid-weather {{ display: grid; grid-template-columns: 1fr 1fr; gap: 3px; margin-bottom: 3px; }}
-        .weather-card {{ background: #1E293B; border: 1px solid #334155; border-radius: 6px; padding: 4px 5px; text-align: center; }}
-        .weather-card .lbl {{ font-size: 7px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 1px; }}
-        .weather-card .val {{ font-size: 11px; font-weight: 900; color: #F8FAFC; }}
+        .grid-weather {{ display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 4px; }}
+        .weather-card {{ border-radius: 6px; padding: 5px; text-align: center; border: 1.5px solid transparent; }}
+        .weather-card .lbl {{ font-size: 7.5px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 1px; }}
+        .weather-card .val {{ font-size: 11.5px; font-weight: 900; }}
 
-        .info-row {{ display: flex; justify-content: space-between; align-items: center; padding: 2.5px 0; border-top: 1px solid #1E293B; font-size: 8.5px; }}
+        .info-row {{ display: flex; justify-content: space-between; align-items: center; padding: 3px 0; border-top: 1px solid #F1F5F9; font-size: 9.5px; }}
         .info-row .lbl {{ color: #64748B; font-weight: 600; }}
-        .info-row .val {{ font-weight: 800; color: #CBD5E1; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
+        .info-row .val {{ font-weight: 800; color: #0F172A; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
 
-        .history-table {{ width: 100%; border-collapse: collapse; font-size: 9.5px; background: transparent; text-align: center; }}
-        .history-table th {{ background: #1E293B; color: #94A3B8; padding: 3px 2px; font-size: 8px; text-transform: uppercase; position: sticky; top: 0; white-space: nowrap; letter-spacing: 0.04em; }}
-        .history-table td {{ padding: 2.5px 2px; border-top: 1px solid #1E293B; font-weight: 700; white-space: nowrap; color: #CBD5E1; }}
+        /* Historique Toggleable */
+        .history-toggle-btn {{
+            background: #F1F5F9; color: #475569; border: 1px solid #E2E8F0; width: 100%; padding: 4.5px 8px; border-radius: 6px;
+            font-size: 9.5px; font-weight: 800; cursor: pointer; text-align: center; margin: 5px 0 2px 0; display: flex; align-items: center; justify-content: center; gap: 4px;
+            transition: all 0.15s ease;
+        }}
+        .history-toggle-btn:hover {{ background: #E2E8F0; color: #0F172A; }}
+        
+        .history-container {{ display: none; margin-top: 4px; border-top: 1.5px dashed #E2E8F0; padding-top: 6px; }}
+        .history-table {{ width: 100%; border-collapse: collapse; font-size: 9.5px; text-align: center; }}
+        .history-table th {{ background: #F8FAFC; color: #475569; padding: 4px 2px; font-size: 8.5px; text-transform: uppercase; border-bottom: 1px solid #E2E8F0; font-weight: 800; }}
+        .history-table td {{ padding: 4px 2px; border-top: 1px solid #F1F5F9; font-weight: 700; color: #334155; }}
 
-        .risk-banner {{ margin-top: 3px; padding: 4px 7px; border-radius: 6px; font-weight: 900; font-size: 9.5px; display: flex; justify-content: space-between; align-items: center; }}
+        .risk-banner {{ margin-top: 4px; padding: 5px 8px; border-radius: 6px; font-weight: 900; font-size: 10px; display: flex; justify-content: space-between; align-items: center; }}
 
-        .popup-btn-row {{ display: flex; gap: 5px; margin-top: 5px; }}
-        button.btn-infographie {{ flex: 1; background: #DC2626; color: white; border: none; padding: 6px; border-radius: 6px; font-size: 9.5px; font-weight: 900; cursor: pointer; box-shadow: 0 2px 6px rgba(220,38,38,0.35); transition: background 0.2s; }}
+        .popup-btn-row {{ display: flex; gap: 6px; margin-top: 8px; border-top: 1px solid #F1F5F9; padding-top: 8px; }}
+        button.btn-infographie {{ flex: 1; background: #DC2626; color: white; border: none; padding: 7px; border-radius: 6px; font-size: 10px; font-weight: 900; cursor: pointer; box-shadow: 0 2px 6px rgba(220,38,38,0.2); transition: background 0.15s; }}
         button.btn-infographie:hover {{ background: #B91C1C; }}
-        button.btn-close-popup {{ background: #334155 !important; color: #CBD5E1 !important; border: none; padding: 6px 10px; border-radius: 6px; font-size: 9.5px; font-weight: 900; cursor: pointer; transition: background 0.2s; }}
+        button.btn-close-popup {{ background: #64748B !important; color: white !important; border: none; padding: 7px 12px; border-radius: 6px; font-size: 10px; font-weight: 900; cursor: pointer; transition: background 0.15s; }}
         button.btn-close-popup:hover {{ background: #475569 !important; }}
     </style>
 </head>
@@ -1046,27 +1053,13 @@ def generate_interactive_map(results, latest_news, output_path):
 
     <div id="legend">
         <div id="legend-status">
-            <div class="legend-title">📍 Légende : Ampleur des Feux</div>
-            <div class="legend-row">
-                <div class="symbol {majeur_pulse_class}" style="background:#7C3AED; border:2px solid white; width:22px; height:22px;">🚨</div>
-                <span><b>Feu Majeur / Important</b></span>
-            </div>
-            <div class="legend-row">
-                <div class="symbol marker-pulse-attaque" style="background:#DC2626; border:1.5px solid white;">🔥</div>
-                <span><b>Feu en Attaque (Clignotant)</b></span>
-            </div>
-            <div class="legend-row">
-                <div class="symbol" style="background:#EA580C; border:1.5px solid white;">🔴</div>
-                <span><b>Feu Modéré (2 - 10 ha)</b></span>
-            </div>
-            <div class="legend-row">
-                <div class="symbol" style="background:#D97706; border:1.5px solid white;">🟡</div>
-                <span><b>Feu Localisé (< 2 ha)</b></span>
-            </div>
-            <div class="legend-row">
-                <div class="symbol" style="background:#2563EB; border:1.5px solid white;">✈️</div>
-                <span><b>Base Canadair</b></span>
-            </div>
+            <div class="legend-title">📍 Légende : Statut des Feux</div>
+            <div class="legend-row"><div class="symbol {majeur_pulse_class}" style="background:#7C3AED; border:2px solid white; width:22px; height:22px;">🚨</div> <b>Feu Majeur</b></div>
+            <div class="legend-row"><div class="symbol marker-pulse-new" style="background:#F97316; border:1.5px solid white;">⚡</div> <b>Nouveau &lt; 1h</b></div>
+            <div class="legend-row"><div class="symbol marker-pulse-attaque" style="background:#DC2626; border:1.5px solid white;">🔥</div> <b>En Attaque</b></div>
+            <div class="legend-row"><div class="symbol" style="background:#2563EB; border:1.5px solid white;">🎯</div> <b>Fixé</b></div>
+            <div class="legend-row"><div class="symbol" style="background:#16A34A; border:1.5px solid white;">✅</div> <b>Maîtrisé</b></div>
+            <div class="legend-row"><div class="symbol" style="background:#64748B; border:1.5px solid white;">💧</div> <b>Éteint récent</b></div>
         </div>
         
         <div id="legend-risk" style="display:none;">
@@ -1393,13 +1386,13 @@ def generate_interactive_map(results, latest_news, output_path):
                 const w = f.weather || {{}};
                 return w.spread_risk_color || '#6B7280';
             }}
-            if (f.fire_scale === 'majeur') return '#7C3AED';
-            if (f.etat_feu === 'eteint') return '#64748B';
-            if (f.etat_feu === 'fausse_alerte') return '#94A3B8';
-            if (f.is_under_1h) return '#D97706';
-            if (f.etat_feu === 'attaque') return '#DC2626';
-            if (f.etat_feu === 'fixe') return '#2563EB';
-            if (f.etat_feu === 'maitrise') return '#D97706';
+            if (f.fire_scale === 'majeur') return '#7C3AED';   // violet
+            if (f.etat_feu === 'eteint')       return '#64748B';   // gris
+            if (f.etat_feu === 'fausse_alerte') return '#94A3B8';  // gris clair
+            if (f.is_under_1h)                 return '#F97316';   // orange vif — NOUVEAU < 1h
+            if (f.etat_feu === 'attaque')       return '#DC2626';   // rouge
+            if (f.etat_feu === 'fixe')          return '#2563EB';   // bleu
+            if (f.etat_feu === 'maitrise')      return '#16A34A';   // vert
             return '#DC2626';
         }}
 
@@ -1489,30 +1482,21 @@ def generate_interactive_map(results, latest_news, output_path):
                 const n = matchedNews[0];
                 const linkAttr = n.link ? 'href="' + n.link + '" target="_blank" rel="noopener"' : 'href="#"';
                 popupNewsHtml = `
-                    <div class="info-row" style="background:#EFF6FF; padding:3.5px 6px; border-radius:4px; margin-top:3px; border:1px solid #BFDBFE;">
-                        <span class="lbl" style="color:#1D4ED8; font-weight:800;">📰 SDIS :</span>
-                        <span class="val" style="color:#1E40AF; font-weight:800;">
-                            <a ${{linkAttr}} style="color:#1E40AF; text-decoration:none; font-weight:900;" title="Cliquer pour lire l'article complet">[${{n.source}}] ${{n.title}} 🔗</a>
-                        </span>
-                    </div>
-                `;
-            }}
-
-            const histPts = f.history_points || [];
+                    <div class="info-row" style="background:#EFF6FF; padding:3.5px 6px; border-r            const histPts = f.history_points || [];
             let historyHtml = '';
             if (histPts.length > 0) {{
                 let rows = histPts.map(h => `
                     <tr>
-                        <td>${{h.time}}</td>
-                        <td style="color:#DC2626;">${{h.temp}}°C</td>
-                        <td style="color:#0F172A;">${{h.wind}} km/h</td>
-                        <td style="color:#D97706; font-weight:900;">${{h.gusts}} km/h</td>
+                        <td style="font-weight: 800; color: #475569;">${{h.time}}</td>
+                        <td style="color:#DC2626; font-weight: 900;">${{h.temp}}°C</td>
+                        <td style="color:#2563EB; font-weight: 800;">${{h.wind}} <span style="font-size:7px;">km/h</span></td>
+                        <td style="color:#D97706; font-weight: 900;">${{h.gusts}} <span style="font-size:7px;">km/h</span></td>
                     </tr>
                 `).join('');
 
                 historyHtml = `
-                    <div style="font-size:9px; font-weight:900; color:#0F172A; text-transform:uppercase; margin-bottom:4px; white-space:nowrap;">📈 HISTORIQUE OBS (5 MIN)</div>
-                    <div style="max-height:230px; overflow-y:auto; border-radius:6px; border:1.5px solid #CBD5E1; box-shadow:inset 0 1px 3px rgba(0,0,0,0.05);">
+                    <div style="font-size:9px; font-weight:900; color:#475569; text-transform:uppercase; margin-bottom:5px; border-bottom: 1px solid #F1F5F9; padding-bottom: 3px;">📈 Historique 5 min</div>
+                    <div style="max-height:140px; overflow-y:auto; border-radius:6px; border:1px solid #E2E8F0; background: #F8FAFC;">
                         <table class="history-table">
                             <thead>
                                 <tr><th>Heure</th><th>Temp</th><th>Moy.</th><th>Raf.</th></tr>
@@ -1522,7 +1506,7 @@ def generate_interactive_map(results, latest_news, output_path):
                     </div>
                 `;
             }} else {{
-                historyHtml = `<div style="font-size:10px; color:#64748B; font-weight:700; padding:20px 0; text-align:center;">Historique en cours de constitution...</div>`;
+                historyHtml = `<div style="font-size:9.5px; color:#64748B; font-weight:700; padding:10px 0; text-align:center;">Historique en cours de constitution...</div>`;
             }}
 
             const popupContent = `
@@ -1537,55 +1521,55 @@ def generate_interactive_map(results, latest_news, output_path):
                         <div class="time-ago">⏱️ Détecté à <b style="color:#DC2626; font-size:11.5px;">${{f.detect_time_fr || 'N/A'}}</b> (${{f.timeAgo || ''}}) • <b style="color:${{f.scale_color || '#DC2626'}};">${{f.scale_label || ''}}</b></div>
                     </div>
                     
-                    <div class="popup-grid-layout">
-                        <div class="popup-col-left">
-                            <div class="grid-weather">
-                                <div class="weather-card" style="border-left: 3.5px solid #DC2626; background:#FFF5F5;">
-                                    <div class="lbl">🌡️ Temp</div>
-                                    <div class="val" style="color:#DC2626;">${{tempTxt}}</div>
-                                </div>
-                                <div class="weather-card" style="border-left: 3.5px solid #0284C7; background:#F0F9FF;">
-                                    <div class="lbl">💧 Hum.</div>
-                                    <div class="val" style="color:#0284C7;">${{humTxt}}</div>
-                                </div>
-                                <div class="weather-card" style="border-left: 3.5px solid #0F172A; background:#F8FAFC;">
-                                    <div class="lbl">💨 Vent</div>
-                                    <div class="val" style="color:#0F172A;">${{speedVal}} <span style="font-size:9px;">km/h</span></div>
-                                </div>
-                                <div class="weather-card" style="border-left: 3.5px solid #D97706; background:#FEF3C7;">
-                                    <div class="lbl">🌪️ Rafales</div>
-                                    <div class="val" style="color:#D97706;">${{gustVal}} <span style="font-size:9px;">km/h</span></div>
-                                </div>
+                    <div class="popup-main-layout">
+                        <div class="grid-weather">
+                            <div class="weather-card" style="border-left: 3.5px solid #DC2626; background:#FFF5F5; border-color:#FECDD3;">
+                                <div class="lbl">🌡️ Temp</div>
+                                <div class="val" style="color:#DC2626;">${{tempTxt}}</div>
                             </div>
-
-                            <div class="info-row">
-                                <span class="lbl">🧭 Panache :</span>
-                                <span class="val" style="color:#B45309; font-weight:900;">${{plumeArrow}} Vers le ${{plumeDir}}</span>
+                            <div class="weather-card" style="border-left: 3.5px solid #0284C7; background:#F0F9FF; border-color:#BAE6FD;">
+                                <div class="lbl">💧 Hum.</div>
+                                <div class="val" style="color:#0284C7;">${{humTxt}}</div>
                             </div>
-                            ${{popupExposureHtml}}
-                            ${{popupNewsHtml}}
-                            <div class="info-row">
-                                <span class="lbl">📍 Station :</span>
-                                <span class="val" style="color:#0F172A; font-weight:800;" title="${{stName}} (${{stDist}})">${{stName}} (<b style="color:#2563EB;">${{stDist}}</b>)</span>
+                            <div class="weather-card" style="border-left: 3.5px solid #0F172A; background:#F8FAFC; border-color:#E2E8F0;">
+                                <div class="lbl">💨 Vent</div>
+                                <div class="val" style="color:#0F172A;">${{speedVal}} <span style="font-size:9px;">km/h</span></div>
                             </div>
-                            <div class="info-row">
-                                <span class="lbl">✈️ Canadairs :</span>
-                                <span class="val" style="color:#2563EB; font-weight:900;" title="${{pName}} (${{pDist}}) • Vol: ${{pEta}}">${{pName}} (<b style="color:#DC2626;">${{pEta}}</b>)</span>
-                            </div>
-
-                            <div class="risk-banner" style="background:${{w.spread_risk_color || '#F1F5F9'}}22; color:${{w.spread_risk_color || '#0F172A'}}; border: 1.5px solid ${{w.spread_risk_color || '#E2E8F0'}}; margin-top:2px;">
-                                <span>Danger FWI :</span>
-                                <span style="font-size:11.5px;">${{w.spread_risk || 'N/A'}}</span>
-                            </div>
-                            
-                            <div class="popup-btn-row" style="margin-top:4px; display:flex; gap:4px;">
-                                <button class="btn-infographie" style="background:${{isMajeur ? '#7C3AED' : '#DC2626'}}; box-shadow:0 2px 5px ${{isMajeur ? 'rgba(124,58,237,0.25)' : 'rgba(220,38,38,0.25)'}};" onclick="openInfographieModal(${{fireIndex}})">📸 Infographie</button>
-                                <button class="btn-close-popup" onclick="map.closePopup()" style="background:#64748B; color:white; border:none; padding:5px 8px; border-radius:5px; font-size:9px; font-weight:900; cursor:pointer;">✕ Fermer</button>
+                            <div class="weather-card" style="border-left: 3.5px solid #D97706; background:#FEF3C7; border-color:#FDE68A;">
+                                <div class="lbl">🌪️ Rafales</div>
+                                <div class="val" style="color:#D97706;">${{gustVal}} <span style="font-size:9px;">km/h</span></div>
                             </div>
                         </div>
 
-                        <div class="popup-col-right">
+                        <div class="info-row">
+                            <span class="lbl">🧭 Panache :</span>
+                            <span class="val" style="color:#B45309; font-weight:900;">${{plumeArrow}} Vers le ${{plumeDir}}</span>
+                        </div>
+                        ${{popupExposureHtml}}
+                        ${{popupNewsHtml}}
+                        <div class="info-row">
+                            <span class="lbl">📍 Station :</span>
+                            <span class="val" style="color:#0F172A; font-weight:800;" title="${{stName}} (${{stDist}})">${{stName}} (<b style="color:#2563EB;">${{stDist}}</b>)</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="lbl">✈️ Canadairs :</span>
+                            <span class="val" style="color:#2563EB; font-weight:900;" title="${{pName}} (${{pDist}}) • Vol: ${{pEta}}">${{pName}} (<b style="color:#DC2626;">${{pEta}}</b>)</span>
+                        </div>
+
+                        <div class="risk-banner" style="background:${{w.spread_risk_color || '#F1F5F9'}}18; color:${{w.spread_risk_color || '#0F172A'}}; border: 1px solid ${{w.spread_risk_color || '#CBD5E1'}}; margin-top:2px;">
+                            <span style="color:#475569;">Danger FWI :</span>
+                            <span style="font-size:11.5px; font-weight:900;">${{w.spread_risk || 'N/A'}}</span>
+                        </div>
+
+                        <button class="history-toggle-btn" onclick="const container = document.getElementById('hist-container-${{fireIndex}}'); container.style.display = container.style.display === 'block' ? 'none' : 'block'; this.innerText = container.style.display === 'block' ? '📊 Masquer l\\\'historique' : '📊 Voir l\\\'historique (Obs)'; if (map._popup) map._popup.update();">📊 Voir l'historique (Obs)</button>
+                        
+                        <div id="hist-container-${{fireIndex}}" class="history-container">
                             ${{historyHtml}}
+                        </div>
+                        
+                        <div class="popup-btn-row">
+                            <button class="btn-infographie" style="background:${{isMajeur ? '#7C3AED' : '#DC2626'}}; box-shadow:0 2px 5px ${{isMajeur ? 'rgba(124,58,237,0.25)' : 'rgba(220,38,38,0.25)'}};" onclick="openInfographieModal(${{fireIndex}})">📸 Infographie</button>
+                            <button class="btn-close-popup" onclick="map.closePopup()">✕ Fermer</button>
                         </div>
                     </div>
                 </div>
