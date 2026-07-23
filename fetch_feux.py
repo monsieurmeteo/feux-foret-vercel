@@ -498,7 +498,7 @@ def fetch_all_feux():
     # Fetch 1 : homepage → feux actifs (enCours=True)
     url = "https://feuxdeforet.fr/"
     req = urllib.request.Request(url, headers=ANONYMOUS_HEADERS)
-    with urllib.request.urlopen(req, timeout=10) as resp:
+    with urllib.request.urlopen(req, timeout=30) as resp:
         html = resp.read().decode("utf-8")
 
     idx = html.find("window.__INITIAL_DATA__=")
@@ -514,7 +514,7 @@ def fetch_all_feux():
     resolved = []
     try:
         req2 = urllib.request.Request("https://feuxdeforet.fr/signalements/", headers=ANONYMOUS_HEADERS)
-        with urllib.request.urlopen(req2, timeout=8) as resp2:
+        with urllib.request.urlopen(req2, timeout=25) as resp2:
             html2 = resp2.read().decode("utf-8")
         idx2 = html2.find("window.__INITIAL_DATA__=")
         if idx2 != -1:

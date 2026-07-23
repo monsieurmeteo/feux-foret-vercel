@@ -1,8 +1,7 @@
 import asyncio
-import os
 from playwright.async_api import async_playwright
 
-async def test_toggle_local():
+async def test_toggle_public():
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         page = await browser.new_page()
@@ -12,9 +11,8 @@ async def test_toggle_local():
         page.on("pageerror", lambda err: errors.append(err.message))
         page.on("console", lambda msg: print(f"CONSOLE: [{msg.type}] {msg.text}"))
         
-        local_path = os.path.abspath("index.html")
-        url = f"file:///{local_path}"
-        print(f"Opening local page: {url}")
+        url = "https://monsieurmeteo.github.io/feux-foret-vercel/?v=18"
+        print(f"Opening public page: {url}")
         await page.goto(url)
         
         # Log in
@@ -22,15 +20,20 @@ async def test_toggle_local():
         await page.fill("#username", "feux59")
         await page.fill("#password", "mto59")
         await page.click("button[type='submit']")
-        await asyncio.sleep(2)
+        await asyncio.sleep(2) # Give it time to load map
         
+        # Wait for leaflet marker to appear
+        try:
+            await page.wait_for_selector(".leaflet-marker-icon", timeout=5000)
+        except Exception:
+            pass
+            
         # Find all leaflet markers
         markers = await page.locator(".leaflet-marker-icon").all()
         print(f"Found {len(markers)} markers on the map.")
         
         success = False
         for i, marker in enumerate(markers):
-            # Click marker to open popup
             print(f"Clicking marker {i}...")
             await marker.click()
             await asyncio.sleep(1.5)
@@ -55,20 +58,19 @@ async def test_toggle_local():
                 is_btn_still_visible = await active_btn.is_visible()
                 print(f"Is active toggle button still visible? {is_btn_still_visible}")
                 
-                if is_btn_still_visible:
-                    # Target container by fetching its ID from the active button's attribute
-                    container_id = await active_btn.evaluate("el => el.getAttribute('data-container-id')")
-                    print(f"Active container ID: {container_id}")
-                    
-                    is_container_visible = await page.is_visible(f"#{container_id}")
-                    print(f"Container visible: {is_container_visible}")
-                    
-                    display_style = await page.locator(f"#{container_id}").evaluate("el => el.style.display")
-                    print(f"Container display style: '{display_style}'")
-                    
-                    btn_text = await active_btn.inner_text()
-                    print(f"Button text after click: '{btn_text}'")
-                    success = True
+                # Verify container display style inside evaluate to check actual state in browser!
+                res = await page.evaluate('''() => {
+                    const btn = document.querySelector('.leaflet-popup .history-toggle-btn');
+                    const containerId = btn.getAttribute('data-container-id');
+                    const container = document.getElementById(containerId);
+                    return {
+                        id: containerId,
+                        display: container.style.display,
+                        innerText: btn.innerText
+                    };
+                }''')
+                print("Browser state after click:", res)
+                success = True
                 break
             else:
                 # Close popup
@@ -81,4 +83,4 @@ async def test_toggle_local():
         await browser.close()
 
 if __name__ == "__main__":
-    asyncio.run(test_toggle_local())
+    asyncio.run(test_toggle_public())
