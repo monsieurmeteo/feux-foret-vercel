@@ -1463,7 +1463,7 @@ def generate_interactive_map(results, latest_news, output_path):
                     <div style="flex: 1.3; display:flex; flex-direction:column; gap:10px;">
                         <div style="background:#FFFFFF; color:#0F172A; border-radius:12px; padding:14px 18px; box-shadow:0 4px 16px rgba(15,23,42,0.08); border:1.5px solid #E2E8F0;">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                                <div style="background:#DC2626; color:white; padding:10px 20px; border-radius:10px; font-size:32px; font-weight:900; text-transform:uppercase; letter-spacing:0.04em; box-shadow:0 4px 14px rgba(220,38,38,0.35); border:2px solid #B91C1C; flex:1; text-align:center; margin-right:12px;">🔥 FEU DE FORÊT EN COURS</div>
+                                <div style="background:#DC2626; color:white; padding:10px 20px; border-radius:10px; font-size:32px; font-weight:900; text-transform:uppercase; letter-spacing:0.04em; box-shadow:0 4px 14px rgba(220,38,38,0.35); border:2px solid #B91C1C; flex:1; text-align:center; margin-right:12px;">🔥 FEUX DE FORÊT EN COURS</div>
                                 <div>${{logoHtml}}</div>
                             </div>
                             <h2 style="font-size:28px; font-weight:900; text-transform:uppercase; margin:0 0 8px 0; color:#0F172A; letter-spacing:-0.02em;">${{f.commune.toUpperCase()}}</h2>
@@ -1640,16 +1640,17 @@ def generate_interactive_map(results, latest_news, output_path):
                 <div class="infographie-layout" style="display:flex; gap:16px; padding:4px; font-family:-apple-system, BlinkMacSystemFont, sans-serif; color:#0F172A;">
                     <!-- Left Column: Map and Header -->
                     <div style="flex: 1.3; display:flex; flex-direction:column; gap:10px;">
-                        <div style="background:#FFFFFF; color:#0F172A; border-radius:12px; padding:12px 16px; box-shadow:0 4px 16px rgba(15,23,42,0.08); border:1.5px solid #E2E8F0;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px solid #F1F5F9; padding-bottom:8px; margin-bottom:8px;">
-                                <div style="display:flex; align-items:center; gap:6px;">
-                                    <span style="background:#DC2626; color:white; padding:3px 8px; border-radius:6px; font-weight:900; font-size:11px; letter-spacing:0.03em;">🔥 DIRECT NATIONAL</span>
-                                    <span style="background:#F1F5F9; color:#475569; border:1px solid #CBD5E1; padding:3px 8px; border-radius:6px; font-weight:900; font-size:11px;">BILAN FEUX DE FORÊT</span>
-                                </div>
+                        <div style="background:#FFFFFF; color:#0F172A; border-radius:12px; padding:14px 18px; box-shadow:0 4px 16px rgba(15,23,42,0.08); border:1.5px solid #E2E8F0;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                                <div style="background:#DC2626; color:white; padding:10px 20px; border-radius:10px; font-size:32px; font-weight:900; text-transform:uppercase; letter-spacing:0.04em; box-shadow:0 4px 14px rgba(220,38,38,0.35); border:2px solid #B91C1C; flex:1; text-align:center; margin-right:12px;">🔥 FEUX DE FORÊT EN COURS</div>
                                 <div>${{logoHtml}}</div>
                             </div>
-                            <h2 style="font-size:20px; font-weight:900; text-transform:uppercase; margin:0 0 4px 0; color:#0F172A; letter-spacing:-0.02em;">SUPERVISION FRANCE EN TEMPS RÉEL</h2>
-                            <div style="font-size:11px; color:#64748B; font-weight:700;">⏱️ Situation arrêtée au : <b style="color:#D97706; font-size:12px;">${{dateStr}}</b></div>
+                            <h2 style="font-size:28px; font-weight:900; text-transform:uppercase; margin:0 0 8px 0; color:#0F172A; letter-spacing:-0.02em;">SUPERVISION FRANCE EN TEMPS RÉEL</h2>
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                                <span style="background:#DC2626; color:white; padding:5px 12px; border-radius:6px; font-weight:900; font-size:13px; letter-spacing:0.03em;">🔥 DIRECT NATIONAL</span>
+                                <span style="background:#F1F5F9; color:#475569; border:1px solid #CBD5E1; padding:5px 12px; border-radius:6px; font-weight:900; font-size:13px;">BILAN FEUX DE FORÊT</span>
+                            </div>
+                            <div style="font-size:12px; color:#64748B; font-weight:700; border-top:1px dashed #E2E8F0; padding-top:8px;">⏱️ Situation arrêtée par les secours au : <b style="color:#D97706; font-size:13px;">${{dateStr}}</b></div>
                         </div>
                         <div style="background:#AAD3DF; border-radius:12px; flex:1; min-height:340px; overflow:hidden; border:2px solid #0F172A; position:relative; box-shadow:0 10px 30px rgba(0,0,0,0.15);">
                             <div id="infographic-national-map" style="width:100%; height:100%;"></div>
