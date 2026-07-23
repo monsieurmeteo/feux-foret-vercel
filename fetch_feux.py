@@ -323,9 +323,19 @@ def calculate_downwind_exposure(fire_lat, fire_lon, plume_deg, wind_speed_kmh, a
 def get_region_name(dept):
     d = str(dept).zfill(2)
     if d in ['2A', '2B', '02A', '02B']: return 'Corse'
-    if d in ['13', '83', '06', '84', '04', '05', '30']: return 'Sud-Est / PACA'
-    if d in ['33', '40', '47', '64', '24', '17', '16', '79', '86', '19', '23', '87']: return 'Nouvelle-Aquitaine'
-    if d in ['31', '32', '65', '09', '11', '66', '34', '12', '46', '48', '81', '82']: return 'Occitanie'
+    if d in ['04', '05', '06', '13', '83', '84']: return 'PACA'
+    if d in ['16', '17', '19', '23', '24', '33', '40', '47', '64', '79', '86', '87']: return 'Nouvelle-Aquitaine'
+    if d in ['09', '11', '12', '30', '31', '32', '34', '46', '48', '65', '66', '81', '82']: return 'Occitanie'
+    if d in ['01', '03', '07', '15', '26', '38', '42', '43', '63', '69', '73', '74']: return 'Auvergne-Rhône-Alpes'
+    if d in ['21', '25', '39', '58', '70', '71', '89', '90']: return 'Bourgogne-Franche-Comté'
+    if d in ['22', '29', '35', '56']: return 'Bretagne'
+    if d in ['18', '28', '36', '37', '41', '45']: return 'Centre-Val de Loire'
+    if d in ['08', '10', '51', '52', '54', '55', '57', '67', '68', '88']: return 'Grand Est'
+    if d in ['59', '62', '02', '60', '80']: return 'Hauts-de-France'
+    if d in ['75', '77', '78', '91', '92', '93', '94', '95']: return 'Île-de-France'
+    if d in ['14', '27', '50', '61', '76']: return 'Normandie'
+    if d in ['44', '49', '53', '72', '85']: return 'Pays de la Loire'
+    if d in ['971', '972', '973', '974', '976']: return 'Outre-Mer'
     return 'Autres Régions'
 
 def load_meteociel_network():
@@ -1067,11 +1077,20 @@ def generate_interactive_map(results, latest_news, output_path):
 
             <select class="clean-select" onchange="filterRegion(this.value)">
                 <option value="all">🌐 Toutes Régions</option>
-                <option value="Sud-Est / PACA">☀️ PACA / Sud-Est</option>
-                <option value="Nouvelle-Aquitaine">🌲 Aquitaine</option>
+                <option value="PACA">☀️ PACA / Sud-Est</option>
+                <option value="Nouvelle-Aquitaine">🌲 Nouvelle-Aquitaine</option>
                 <option value="Occitanie">🏔️ Occitanie</option>
+                <option value="Auvergne-Rhône-Alpes">🌋 Auvergne-Rhône-Alpes</option>
                 <option value="Corse">🏝️ Corse</option>
-                <option value="Autres Régions">🛡️ Autres</option>
+                <option value="Hauts-de-France">⚜️ Hauts-de-France</option>
+                <option value="Bretagne">⚓ Bretagne</option>
+                <option value="Grand Est">🍇 Grand Est</option>
+                <option value="Île-de-France">🏛️ Île-de-France</option>
+                <option value="Pays de la Loire">🌊 Pays de la Loire</option>
+                <option value="Normandie">🌾 Normandie</option>
+                <option value="Bourgogne-Franche-Comté">🍷 Bourgogne-Franche-Comté</option>
+                <option value="Centre-Val de Loire">🏰 Centre-Val de Loire</option>
+                <option value="Outre-Mer">🌴 Outre-Mer</option>
             </select>
 
             <button class="btn-sidebar-toggle" onclick="toggleSidebar()">📋 Liste</button>
