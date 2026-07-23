@@ -2,7 +2,7 @@ name: Auto Update Feux de Forêt — Temps Réel
 
 on:
   schedule:
-    - cron: '*/15 * * * *'   # toutes les 15 min (GitHub limite à 1 run/min max fiable)
+    - cron: '*/5 * * * *'    # toutes les 5 min (minimum GitHub Actions)
   workflow_dispatch:           # déclenchement manuel possible
 
 jobs:
