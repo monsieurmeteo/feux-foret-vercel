@@ -148,7 +148,10 @@ def record_snapshots(results):
     return history_by_fire
 
 def load_logo_base64():
+    # ponytail: charger le logo en chemin relatif pour compatibilité locale et CI
+    local_logo_path = os.path.join(DATA_DIR, "logo_meteo_climat_pro.png")
     possible_paths = [
+        local_logo_path,
         r"C:\Users\grego\Documents\METEO_CLIMAT\minisite-douai\public\logo_default.png",
         r"C:\Users\grego\Documents\METEO_CLIMAT\minisite-douai\public\logo.jpg",
         r"C:\Users\grego\Desktop\LOGOS & IMAGES\logo_meteo_climat_pro.png",
