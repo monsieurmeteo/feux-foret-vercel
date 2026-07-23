@@ -627,14 +627,9 @@ def generate_interactive_map(results, latest_news, output_path):
     count_fixe = sum(1 for f in valid_fires if f.get("etat_feu") == "fixe")
     count_maitrise = sum(1 for f in valid_fires if f.get("etat_feu") == "maitrise")
 
-    leaflet_css = ""
-    leaflet_js = ""
-    if os.path.exists(LEAFLET_CSS_PATH):
-        with open(LEAFLET_CSS_PATH, "r", encoding="utf-8") as f:
-            leaflet_css = f.read()
-    if os.path.exists(LEAFLET_JS_PATH):
-        with open(LEAFLET_JS_PATH, "r", encoding="utf-8") as f:
-            leaflet_js = f.read()
+    # ponytail: CDN direct — plus fiable que l'embed local sur GitHub Actions runner
+    leaflet_css = '@import url("https://unpkg.com/leaflet@1.9.4/dist/leaflet.css");'
+    leaflet_js = ""  # injecté via <script src> CDN ci-dessous
 
     brand_logo_html = f'<img src="{logo_b64}" style="height:38px; border-radius:6px; object-fit:contain;" alt="Météo Climat Pro" />' if logo_b64 else '<div class="brand-icon">🔥</div>'
 
@@ -1029,9 +1024,7 @@ def generate_interactive_map(results, latest_news, output_path):
     
     <div id="map"></div>
 
-    <script>
-    {leaflet_js}
-    </script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         function checkSession() {{
             if (sessionStorage.getItem('feux_auth_ok') === 'true') {{
