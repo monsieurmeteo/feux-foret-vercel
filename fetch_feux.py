@@ -495,166 +495,189 @@ def get_closest_pelicandrome(lat, lon, bases):
     return best_name, round(min_dist, 1), eta_str
 
 def fetch_all_feux():
-    # Fetch 1 : homepage → feux actifs (enCours=True)
-    url = "https://feuxdeforet.fr/"
-    req = urllib.request.Request(url, headers=ANONYMOUS_HEADERS)
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        html = resp.read().decode("utf-8")
-
-    idx = html.find("window.__INITIAL_DATA__=")
-    if idx == -1:
-        if "cloudflare" in html.lower() or "challenge-platform" in html.lower():
-            raise RuntimeError("Scraper bloqué par le challenge Cloudflare !")
-        raise RuntimeError("Impossible de trouver window.__INITIAL_DATA__ sur la page d'accueil !")
-    start = html.find("{", idx)
-    data, _ = json.JSONDecoder().raw_decode(html[start:])
-
-    active_feux = data.get("data", {}).get("feux", [])
-    seen_ids = {f["id"] for f in active_feux}
-
-    # Fetch 2 : /signalements/ → résolus récents (éteint, fausse_alerte)
-    resolved = []
+    cache_path = os.path.join(DATA_DIR, "last_fires.json")
     try:
-        req2 = urllib.request.Request("https://feuxdeforet.fr/signalements/", headers=ANONYMOUS_HEADERS)
-        with urllib.request.urlopen(req2, timeout=25) as resp2:
-            html2 = resp2.read().decode("utf-8")
-        idx2 = html2.find("window.__INITIAL_DATA__=")
-        if idx2 != -1:
-            start2 = html2.find("{", idx2)
-            data2, _ = json.JSONDecoder().raw_decode(html2[start2:])
-            for f in data2.get("data", {}).get("signalements", []):
-                if not f.get("enCours") and f["id"] not in seen_ids:
-                    resolved.append(f)
-                    seen_ids.add(f["id"])
-    except Exception:
-        pass  # /signalements/ optionnel — la carte reste fonctionnelle sans
+        # Fetch 1 : homepage → feux actifs (enCours=True)
+        url = "https://feuxdeforet.fr/"
+        req = urllib.request.Request(url, headers=ANONYMOUS_HEADERS)
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            html = resp.read().decode("utf-8")
 
-    to_enrich = [f for f in active_feux if f.get("enCours")] + resolved
-    now = datetime.now(timezone.utc)
-    pelicandromes = load_pelicandromes()
-    meteociel_stations, meteociel_validity = load_meteociel_network()
+        idx = html.find("window.__INITIAL_DATA__=")
+        if idx == -1:
+            if "cloudflare" in html.lower() or "challenge-platform" in html.lower():
+                raise RuntimeError("Scraper bloqué par le challenge Cloudflare !")
+            raise RuntimeError("Impossible de trouver window.__INITIAL_DATA__ sur la page d'accueil !")
+        start = html.find("{", idx)
+        data, _ = json.JSONDecoder().raw_decode(html[start:])
 
-    def enrich(f):
-        fire_url = "https://feuxdeforet.fr" + f["url"]
+        active_feux = data.get("data", {}).get("feux", [])
+        seen_ids = {f["id"] for f in active_feux}
+
+        # Fetch 2 : /signalements/ → résolus récents (éteint, fausse_alerte)
+        resolved = []
         try:
-            req_p = urllib.request.Request(fire_url, headers=ANONYMOUS_HEADERS)
-            with urllib.request.urlopen(req_p, timeout=6) as r:
-                h = r.read().decode("utf-8")
-            st = h.find("{", h.find("window.__INITIAL_DATA__="))
-            d, _ = json.JSONDecoder().raw_decode(h[st:])
-            det = d.get("data", {})
-            f["date_signal"] = det.get("date") or f.get("dateIso")
-            f["date_meta"] = det.get("dateMetaFr", f.get("timeAgo", ""))
-            f["etat_feu"] = det.get("etat_feu", "Attaque")
-            f["lat"] = det.get("latitude")
-            f["lon"] = det.get("longitude")
-            f["avions"] = det.get("moyen_aerien_avions", 0)
-            f["helico"] = det.get("moyen_aerien_helicoptere", 0)
-            f["superficie"] = det.get("superficie", 0)
-            f["hero"] = det.get("hero_image") or det.get("og_image") or ""
+            req2 = urllib.request.Request("https://feuxdeforet.fr/signalements/", headers=ANONYMOUS_HEADERS)
+            with urllib.request.urlopen(req2, timeout=25) as resp2:
+                html2 = resp2.read().decode("utf-8")
+            idx2 = html2.find("window.__INITIAL_DATA__=")
+            if idx2 != -1:
+                start2 = html2.find("{", idx2)
+                data2, _ = json.JSONDecoder().raw_decode(html2[start2:])
+                for f in data2.get("data", {}).get("signalements", []):
+                    if not f.get("enCours") and f["id"] not in seen_ids:
+                        resolved.append(f)
+                        seen_ids.add(f["id"])
         except Exception:
-            pass
-        
-        f["region"] = get_region_name(f.get("dept", ""))
+            pass  # /signalements/ optionnel — la carte reste fonctionnelle sans
 
-        dt_str = f.get("date_signal") or f.get("dateIso")
-        if dt_str:
+        to_enrich = [f for f in active_feux if f.get("enCours")] + resolved
+        now = datetime.now(timezone.utc)
+        pelicandromes = load_pelicandromes()
+        meteociel_stations, meteociel_validity = load_meteociel_network()
+
+        def enrich(f):
+            fire_url = "https://feuxdeforet.fr" + f["url"]
             try:
-                dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
-                diff_sec = (now - dt).total_seconds()
-                f["minutes_ago"] = int(diff_sec // 60)
-                dt_local_h = (dt.hour + 2) % 24
-                dt_local_m = dt.minute
-                f["detect_time_fr"] = f"{dt_local_h:02d}h{dt_local_m:02d}"
+                req_p = urllib.request.Request(fire_url, headers=ANONYMOUS_HEADERS)
+                with urllib.request.urlopen(req_p, timeout=6) as r:
+                    h = r.read().decode("utf-8")
+                st = h.find("{", h.find("window.__INITIAL_DATA__="))
+                d, _ = json.JSONDecoder().raw_decode(h[st:])
+                det = d.get("data", {})
+                f["date_signal"] = det.get("date") or f.get("dateIso")
+                f["date_meta"] = det.get("dateMetaFr", f.get("timeAgo", ""))
+                f["etat_feu"] = det.get("etat_feu", "Attaque")
+                f["lat"] = det.get("latitude")
+                f["lon"] = det.get("longitude")
+                f["avions"] = det.get("moyen_aerien_avions", 0)
+                f["helico"] = det.get("moyen_aerien_helicoptere", 0)
+                f["superficie"] = det.get("superficie", 0)
+                f["hero"] = det.get("hero_image") or det.get("og_image") or ""
             except Exception:
-                f["minutes_ago"] = 99999
-        else:
-            f["minutes_ago"] = 99999
-
-        f["is_under_1h"] = (f.get("minutes_ago", 99999) <= 60)
-        f["is_recent"] = (f.get("minutes_ago", 99999) <= 240)
-
-        # Classification Feu Majeur vs Feu Localisé vs Résolu
-        ha = f.get("superficie") or 0
-        avions = f.get("avions") or 0
-        helico = f.get("helico") or 0
-        etat = f.get("etat_feu", "attaque")
-
-        if etat == "eteint":
-            f["fire_scale"] = "eteint"
-            f["scale_label"] = "💧 FEU ÉTEINT"
-            f["scale_color"] = "#64748B"
-            f["marker_size"] = 20
-        elif etat == "fausse_alerte":
-            f["fire_scale"] = "fausse_alerte"
-            f["scale_label"] = "❌ FAUSSE ALERTE"
-            f["scale_color"] = "#94A3B8"
-            f["marker_size"] = 20
-        elif ha >= 10 or avions > 0 or helico > 0:
-            f["fire_scale"] = "majeur"
-            f["scale_label"] = "🚨 FEU MAJEUR"
-            f["scale_color"] = "#7C3AED" # Violet clignotant
-            f["marker_size"] = 34
-        elif ha >= 2:
-            f["fire_scale"] = "modere"
-            f["scale_label"] = "🔴 FEU MODÉRÉ"
-            f["scale_color"] = "#EA580C"
-            f["marker_size"] = 26
-        else:
-            f["fire_scale"] = "localise"
-            f["scale_label"] = "🟡 FEU LOCALISÉ"
-            f["scale_color"] = "#D97706"
-            f["marker_size"] = 22
-        
-        if f.get("lat") and f.get("lon"):
-            p_name, p_dist, p_eta = get_closest_pelicandrome(f["lat"], f["lon"], pelicandromes)
-            f["pelicandrome_name"] = p_name
-            f["pelicandrome_dist"] = p_dist
-            f["pelicandrome_eta"] = p_eta
+                pass
             
-            mc_name, mc_dist, obs_data = get_closest_meteociel_station_and_obs(f["lat"], f["lon"], meteociel_stations)
-            f["meteociel_station"] = mc_name
-            f["meteociel_dist"] = mc_dist
-            f["meteociel_time"] = meteociel_validity
-            f["weather"] = obs_data
-        else:
-            f["pelicandrome_name"] = "N/A"
-            f["pelicandrome_dist"] = None
-            f["pelicandrome_eta"] = "N/A"
-            f["meteociel_station"] = "Station Régionale"
-            f["meteociel_dist"] = 12.0
-            f["meteociel_time"] = ""
-            f["weather"] = {
-                "temp_c": 26.0, "humidity_pct": 45.0, "wind_speed_kmh": 15, "wind_gusts_kmh": 25,
-                "wind_origin": "SO", "plume_arrow": "↗️", "plume_dir": "Nord-Est", "plume_deg": 45,
-                "spread_risk": "🟡 MODÉRÉ", "spread_risk_color": "#D97706", "fwi_score": 6.5
-            }
+            f["region"] = get_region_name(f.get("dept", ""))
 
-        return f
+            dt_str = f.get("date_signal") or f.get("dateIso")
+            if dt_str:
+                try:
+                    dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+                    diff_sec = (now - dt).total_seconds()
+                    f["minutes_ago"] = int(diff_sec // 60)
+                    dt_local_h = (dt.hour + 2) % 24
+                    dt_local_m = dt.minute
+                    f["detect_time_fr"] = f"{dt_local_h:02d}h{dt_local_m:02d}"
+                except Exception:
+                    f["minutes_ago"] = 99999
+            else:
+                f["minutes_ago"] = 99999
 
-    with ThreadPoolExecutor(max_workers=10) as ex:
-        results = list(ex.map(enrich, to_enrich))
+            f["is_under_1h"] = (f.get("minutes_ago", 99999) <= 60)
+            f["is_recent"] = (f.get("minutes_ago", 99999) <= 240)
 
-    latest_news = fetch_firefighter_news()
+            # Classification Feu Majeur vs Feu Localisé vs Résolu
+            ha = f.get("superficie") or 0
+            avions = f.get("avions") or 0
+            helico = f.get("helico") or 0
+            etat = f.get("etat_feu", "attaque")
 
-    for f in results:
-        w = f.get("weather", {})
-        f["downwind_exposure"] = calculate_downwind_exposure(
-            f.get("lat"), f.get("lon"), w.get("plume_deg", 90), w.get("wind_gusts_kmh", 15), results, f.get("commune")
-        )
-        
-        f_dept = str(f.get("dept", "")).strip()
-        f_commune = f.get("commune", "").lower()
-        matched_n = []
-        for n in latest_news:
-            t_low = n["title"].lower()
-            if (f_dept and f_dept in t_low) or (f_commune and f_commune in t_low):
-                matched_n.append(n)
-        f["news_items"] = matched_n[:2]
+            if etat == "eteint":
+                f["fire_scale"] = "eteint"
+                f["scale_label"] = "💧 FEU ÉTEINT"
+                f["scale_color"] = "#64748B"
+                f["marker_size"] = 20
+            elif etat == "fausse_alerte":
+                f["fire_scale"] = "fausse_alerte"
+                f["scale_label"] = "❌ FAUSSE ALERTE"
+                f["scale_color"] = "#94A3B8"
+                f["marker_size"] = 20
+            elif ha >= 10 or avions > 0 or helico > 0:
+                f["fire_scale"] = "majeur"
+                f["scale_label"] = "🚨 FEU MAJEUR"
+                f["scale_color"] = "#7C3AED" # Violet clignotant
+                f["marker_size"] = 34
+            elif ha >= 2:
+                f["fire_scale"] = "modere"
+                f["scale_label"] = "🔴 FEU MODÉRÉ"
+                f["scale_color"] = "#EA580C"
+                f["marker_size"] = 26
+            else:
+                f["fire_scale"] = "localise"
+                f["scale_label"] = "🟡 FEU LOCALISÉ"
+                f["scale_color"] = "#D97706"
+                f["marker_size"] = 22
+            
+            if f.get("lat") and f.get("lon"):
+                p_name, p_dist, p_eta = get_closest_pelicandrome(f["lat"], f["lon"], pelicandromes)
+                f["pelicandrome_name"] = p_name
+                f["pelicandrome_dist"] = p_dist
+                f["pelicandrome_eta"] = p_eta
+                
+                mc_name, mc_dist, obs_data = get_closest_meteociel_station_and_obs(f["lat"], f["lon"], meteociel_stations)
+                f["meteociel_station"] = mc_name
+                f["meteociel_dist"] = mc_dist
+                f["meteociel_time"] = meteociel_validity
+                f["weather"] = obs_data
+            else:
+                f["pelicandrome_name"] = "N/A"
+                f["pelicandrome_dist"] = None
+                f["pelicandrome_eta"] = "N/A"
+                f["meteociel_station"] = "Station Régionale"
+                f["meteociel_dist"] = 12.0
+                f["meteociel_time"] = ""
+                f["weather"] = {
+                    "temp_c": 26.0, "humidity_pct": 45.0, "wind_speed_kmh": 15, "wind_gusts_kmh": 25,
+                    "wind_origin": "SO", "plume_arrow": "↗️", "plume_dir": "Nord-Est", "plume_deg": 45,
+                    "spread_risk": "🟡 MODÉRÉ", "spread_risk_color": "#D97706", "fwi_score": 6.5
+                }
 
-    results.sort(key=lambda x: (0 if x.get("fire_scale") == "majeur" else 1, x.get('minutes_ago', 99999)))
-    record_snapshots(results)
-    return results, latest_news
+            return f
+
+        with ThreadPoolExecutor(max_workers=10) as ex:
+            results = list(ex.map(enrich, to_enrich))
+
+        latest_news = fetch_firefighter_news()
+
+        for f in results:
+            w = f.get("weather", {})
+            f["downwind_exposure"] = calculate_downwind_exposure(
+                f.get("lat"), f.get("lon"), w.get("plume_deg", 90), w.get("wind_gusts_kmh", 15), results, f.get("commune")
+            )
+            
+            f_dept = str(f.get("dept", "")).strip()
+            f_commune = f.get("commune", "").lower()
+            matched_n = []
+            for n in latest_news:
+                t_low = n["title"].lower()
+                if (f_dept and f_dept in t_low) or (f_commune and f_commune in t_low):
+                    matched_n.append(n)
+            f["news_items"] = matched_n[:2]
+
+        results.sort(key=lambda x: (0 if x.get("fire_scale") == "majeur" else 1, x.get('minutes_ago', 99999)))
+        record_snapshots(results)
+
+        # Save cache on success
+        try:
+            os.makedirs(DATA_DIR, exist_ok=True)
+            with open(cache_path, "w", encoding="utf-8") as f_cache:
+                json.dump((results, latest_news), f_cache, ensure_ascii=False, indent=2)
+        except Exception as cache_write_err:
+            print(f"⚠️ Impossible d'écrire le cache JSON : {cache_write_err}")
+
+        return results, latest_news
+
+    except Exception as scrape_err:
+        print(f"⚠️ Erreur lors du scraping des feux: {scrape_err}")
+        if os.path.exists(cache_path):
+            print("🔄 Récupération de la dernière situation sauvegardée en cache...")
+            try:
+                with open(cache_path, "r", encoding="utf-8") as f_cache:
+                    cached_results, cached_news = json.load(f_cache)
+                    return cached_results, cached_news
+            except Exception as cache_read_err:
+                print(f"❌ Erreur lors de la lecture du cache JSON: {cache_read_err}")
+        raise scrape_err
 
 def generate_interactive_map(results, latest_news, output_path):
     pelicandromes = load_pelicandromes()
