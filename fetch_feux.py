@@ -104,8 +104,8 @@ def record_snapshots(results):
             except Exception:
                 pass
 
-        # If fire has never been recorded in the database and is currently active (< 1h or in attack)
-        if not last_row and f.get("etat_feu") not in ("eteint", "fausse_alerte"):
+        # Alerte e-mail envoyée UNIQUEMENT pour les feux nouveaux détectés depuis moins de 1h (< 1h)
+        if not last_row and f.get("is_under_1h") and f.get("etat_feu") not in ("eteint", "fausse_alerte"):
             send_new_fire_email_alert(f)
 
         if should_insert:
