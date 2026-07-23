@@ -1462,11 +1462,11 @@ def generate_interactive_map(results, latest_news, output_path):
                     <!-- Left Column: Map and Header -->
                     <div style="flex: 1.3; display:flex; flex-direction:column; gap:10px;">
                         <div style="background:#FFFFFF; color:#0F172A; border-radius:12px; padding:12px 16px; box-shadow:0 4px 16px rgba(15,23,42,0.08); border:1.5px solid #E2E8F0;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px solid #F1F5F9; padding-bottom:8px; margin-bottom:8px;">
-                                <div style="font-size:15px; font-weight:900; color:#DC2626; text-transform:uppercase; letter-spacing:0.04em;">🔥 FEU DE FORÊT EN COURS</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                                <div style="background:#DC2626; color:white; padding:8px 16px; border-radius:8px; font-size:22px; font-weight:900; text-transform:uppercase; letter-spacing:0.04em; box-shadow:0 3px 10px rgba(220,38,38,0.3); border:1.5px solid #B91C1C;">🔥 FEU DE FORÊT EN COURS</div>
                                 <div>${{logoHtml}}</div>
                             </div>
-                            <h2 style="font-size:24px; font-weight:900; text-transform:uppercase; margin:0 0 8px 0; color:#0F172A; letter-spacing:-0.02em;">${{f.commune.toUpperCase()}}</h2>
+                            <h2 style="font-size:26px; font-weight:900; text-transform:uppercase; margin:0 0 8px 0; color:#0F172A; letter-spacing:-0.02em;">${{f.commune.toUpperCase()}}</h2>
                             <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
                                 <span style="background:${{f.scale_color || '#DC2626'}}; color:white; padding:4px 10px; border-radius:6px; font-weight:900; font-size:12px; letter-spacing:0.03em;">${{f.scale_label || '🔥 EN ATTAQUE'}}</span>
                                 <span style="background:#F1F5F9; color:#475569; border:1px solid #CBD5E1; padding:4px 10px; border-radius:6px; font-weight:900; font-size:12px;">DÉPARTEMENT ${{f.dept}}</span>
