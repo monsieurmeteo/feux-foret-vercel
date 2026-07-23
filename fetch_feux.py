@@ -353,7 +353,10 @@ def send_new_fire_email_alert(fire):
         msg['From'] = f"Gregory Langlet <{smtp_user}>"
         msg['To'] = target_email
         msg['Reply-To'] = smtp_user
+        msg['Sender'] = smtp_user
         msg['Subject'] = subject
+        msg['X-Mailer'] = "Python/MeteoClimatPro"
+        msg['Message-ID'] = f"<{datetime.now().timestamp()}@{smtp_user.split('@')[-1]}>"
 
         part1 = MIMEText(body_text, 'plain', 'utf-8')
         part2 = MIMEText(body_html, 'html', 'utf-8')
