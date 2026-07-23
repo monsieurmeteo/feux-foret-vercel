@@ -1410,7 +1410,7 @@ def generate_interactive_map(results, latest_news, output_path):
             if (isMajeur) {{
                 recentHeader = '<div style="background:#7C3AED; color:white; font-size:10.5px; font-weight:900; text-align:center; padding:3px; text-transform:uppercase; letter-spacing:0.02em;">🚨 INCENDIE MAJEUR EN COURS</div>';
             }} else if (isUnder1h) {{
-                recentHeader = '<div style="background:#D97706; color:white; font-size:10px; font-weight:900; text-align:center; padding:3px; text-transform:uppercase; letter-spacing:0.02em;">⚡ NOUVEAU FEU DÉTECTÉ (< 1h)</div>';
+                recentHeader = '<div style="background:#D97706; color:white; font-size:10px; font-weight:900; text-align:center; padding:3px; text-transform:uppercase; letter-spacing:0.02em;">⚡ NOUVEAU FEU DÉTECTÉ (' + f.minutes_ago + ' MIN)</div>';
             }}
 
             const downwindItems = f.downwind_exposure || [];
@@ -1574,7 +1574,7 @@ def generate_interactive_map(results, latest_news, output_path):
                         scaleTag = '<span class="scale-badge-majeur">🚨 MAJEUR</span>';
                     }} else if (f.is_under_1h) {{
                         cardClass += ' under-1h-card';
-                        scaleTag = '<span class="scale-badge-modere">⚡ < 1H</span>';
+                        scaleTag = '<span class="scale-badge-modere">⚡ ' + f.minutes_ago + ' MIN</span>';
                     }} else {{
                         scaleTag = '<span class="scale-badge-localise">🟡 LOCALISÉ</span>';
                     }}
@@ -1703,7 +1703,7 @@ def export_pdf(results, latest_news, output_path):
             elif m < 9999: anc = f"({m//60}h{m%60:02d})"
             else: anc = ""
             
-            recent_prefix = "<b>[🚨 MAJEUR]</b> " if f.get("fire_scale") == "majeur" else ("<b>[⚡ < 1H]</b> " if f.get("is_under_1h") else "")
+            recent_prefix = "<b>[🚨 MAJEUR]</b> " if f.get("fire_scale") == "majeur" else (f"<b>[⚡ {m} MIN]</b> " if f.get("is_under_1h") else "")
             det_time = f"{recent_prefix}{f.get('detect_time_fr', 'N/A')} {anc}"
             w = f.get('weather', {})
             
