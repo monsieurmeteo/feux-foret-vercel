@@ -31,8 +31,6 @@ jobs:
       - name: Install Dependencies
         run: pip install -r requirements.txt
 
-      - name: Debug Fetch
-        run: python scratch/test_runner_fetch.py
 
       - name: Run Fetch Feux Script
         run: python fetch_feux.py --ci
