@@ -18,6 +18,7 @@ import smtplib
 import ssl
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from concurrent.futures import ThreadPoolExecutor
 import re
 
 # ponytail: chemin relatif — fonctionne aussi bien en local qu'sur GitHub Actions runner Ubuntu
