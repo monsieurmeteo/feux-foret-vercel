@@ -290,21 +290,41 @@ def send_new_fire_email_alert(fire):
     plume_dir = w.get("plume_dir", "Sud")
     station = fire.get("meteociel_station", "Station locale")
 
-    subject = f"🚨 ALERTE NOUVEAU FEU — {commune} (Dépt. {dept})"
+    subject = f"Alerte nouveau feu de forêt : {commune} (Département {dept})"
 
-    body_html = f"""
-    <!DOCTYPE html>
+    body_text = f"""
+    MÉTÉO CLIMAT PRO — ALERTE FEU DE FORÊT
+    
+    Un nouveau feu de forêt vient d'être détecté.
+    
+    Commune : {commune} (Département {dept})
+    Heure de détection : {detect_time}
+    Statut : {etat}
+    
+    Météo sur zone (Station {station}) :
+    - Température : {temp}
+    - Humidité : {hum}
+    - Vent Moyen : {speed} (Rafales : {gusts})
+    - Dispersion des fumées : Vers le {plume_dir}
+    
+    Consulter la carte de supervision en direct :
+    https://monsieurmeteo.github.io/feux-foret-vercel/
+    
+    --
+    Météo Climat Pro • Surveillance feux de forêt 24h/7j
+    """
+
+    body_html = f"""<!DOCTYPE html>
     <html lang="fr">
     <head><meta charset="UTF-8"></head>
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #F8FAFC; color: #0F172A; margin: 0; padding: 20px;">
         <div style="max-width: 600px; margin: 0 auto; background: #FFFFFF; border-radius: 12px; border: 1.5px solid #E2E8F0; overflow: hidden; box-shadow: 0 10px 25px rgba(15,23,42,0.08);">
-            <div style="background: #DC2626; color: white; padding: 16px 20px; font-weight: 900; font-size: 16px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="background: #DC2626; color: white; padding: 16px 20px; font-weight: 900; font-size: 16px;">
                 <span>🔥 MÉTÉO CLIMAT PRO — ALERTE FEU</span>
-                <span style="background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 4px; font-size: 11px;">DÉPT {dept}</span>
             </div>
             
             <div style="padding: 20px;">
-                <h2 style="font-size: 22px; font-weight: 900; color: #0F172A; margin-top: 0; margin-bottom: 6px; text-transform: uppercase;">{commune}</h2>
+                <h2 style="font-size: 22px; font-weight: 900; color: #0F172A; margin-top: 0; margin-bottom: 6px; text-transform: uppercase;">{commune} (DÉPT {dept})</h2>
                 <div style="font-size: 13px; color: #64748B; font-weight: 700; margin-bottom: 16px;">⏱️ Détection secours : <b style="color: #DC2626;">{detect_time}</b> • Statut : <b>{etat}</b></div>
 
                 <div style="background: #FFF7ED; border: 1.5px solid #FFEDD5; border-radius: 10px; padding: 14px; margin-bottom: 16px;">
@@ -326,21 +346,26 @@ def send_new_fire_email_alert(fire):
             </div>
         </div>
     </body>
-    </html>
-    """
+    </html>"""
 
     try:
-        msg = MIMEMultipart()
-        msg['From'] = smtp_user
+        msg = MIMEMultipart('alternative')
+        msg['From'] = f"Gregory Langlet <{smtp_user}>"
         msg['To'] = target_email
+        msg['Reply-To'] = smtp_user
         msg['Subject'] = subject
-        msg.attach(MIMEText(body_html, 'html', 'utf-8'))
+
+        part1 = MIMEText(body_text, 'plain', 'utf-8')
+        part2 = MIMEText(body_html, 'html', 'utf-8')
+
+        msg.attach(part1)
+        msg.attach(part2)
 
         context = ssl.create_default_context()
         with smtplib.SMTP_SSL(smtp_server, smtp_port, context=context, timeout=15) as server:
             server.login(smtp_user, smtp_pass)
             server.sendmail(smtp_user, [target_email], msg.as_string())
-        print(f"📧 ALERTE E-MAIL ENVOYÉE À {target_email} POUR LE FEU DE {commune} !")
+        print(f"📧 ALERTE E-MAIL OPTIMISÉE ENVOYÉE À {target_email} POUR LE FEU DE {commune} !")
         return True
     except Exception as e:
         print(f"⚠️ Erreur lors de l'envoi de l'alerte e-mail : {e}")
