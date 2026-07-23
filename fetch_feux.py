@@ -601,31 +601,27 @@ def fetch_all_feux():
             helico = f.get("helico") or 0
             etat = f.get("etat_feu", "attaque")
 
+            # Statuts réels d'intervention SDIS (100% officiel)
             if etat == "eteint":
-                f["fire_scale"] = "eteint"
                 f["scale_label"] = "💧 FEU ÉTEINT"
                 f["scale_color"] = "#64748B"
-                f["marker_size"] = 20
+                f["marker_size"] = 22
             elif etat == "fausse_alerte":
-                f["fire_scale"] = "fausse_alerte"
                 f["scale_label"] = "❌ FAUSSE ALERTE"
                 f["scale_color"] = "#94A3B8"
-                f["marker_size"] = 20
-            elif ha >= 10 or avions > 0 or helico > 0:
-                f["fire_scale"] = "majeur"
-                f["scale_label"] = "🚨 FEU MAJEUR"
-                f["scale_color"] = "#7C3AED" # Violet clignotant
-                f["marker_size"] = 34
-            elif ha >= 2:
-                f["fire_scale"] = "modere"
-                f["scale_label"] = "🔴 FEU MODÉRÉ"
-                f["scale_color"] = "#EA580C"
+                f["marker_size"] = 22
+            elif etat == "fixe":
+                f["scale_label"] = "🎯 FEU FIXÉ"
+                f["scale_color"] = "#2563EB"
+                f["marker_size"] = 26
+            elif etat == "maitrise":
+                f["scale_label"] = "✅ FEU MAÎTRISÉ"
+                f["scale_color"] = "#16A34A"
                 f["marker_size"] = 26
             else:
-                f["fire_scale"] = "localise"
-                f["scale_label"] = "🟡 FEU LOCALISÉ"
-                f["scale_color"] = "#D97706"
-                f["marker_size"] = 22
+                f["scale_label"] = "🔥 EN ATTAQUE"
+                f["scale_color"] = "#DC2626"
+                f["marker_size"] = 28
             
             if f.get("lat") and f.get("lon"):
                 p_name, p_dist, p_eta = get_closest_pelicandrome(f["lat"], f["lon"], pelicandromes)
@@ -1060,14 +1056,11 @@ def generate_interactive_map(results, latest_news, output_path):
             <select class="clean-select" id="status-filter-select" onchange="filterFires(this.value)">
                 <option value="en_cours" selected>🔥 Feux en Cours ({count_en_cours})</option>
                 <option value="all">🌐 Tous ({len(valid_fires)})</option>
-                <option value="majeur">🚨 Majeurs ({count_majeurs})</option>
-                <option value="modere">🔶 Modérés 2-10ha ({count_modere})</option>
-                <option value="localise">🟡 Localisés &lt;2ha ({count_localise})</option>
-                <option value="under1h">⚡ Nouveaux &lt; 1h ({count_under_1h})</option>
-                <option value="recent">🕒 Récents &lt; 4h ({count_recent})</option>
                 <option value="attaque">🔥 En Attaque ({count_attaque})</option>
                 <option value="fixe">🎯 Fixés ({count_fixe})</option>
                 <option value="maitrise">✅ Maîtrisés ({count_maitrise})</option>
+                <option value="under1h">⚡ Nouveaux &lt; 1h ({count_under_1h})</option>
+                <option value="recent">🕒 Récents &lt; 4h ({count_recent})</option>
                 <option value="eteint">💧 Éteints ({count_eteint})</option>
                 <option value="fausse_alerte">❌ Fausses Alertes ({count_fausse_alerte})</option>
             </select>
@@ -1095,20 +1088,19 @@ def generate_interactive_map(results, latest_news, output_path):
 
     <div id="sidebar">
         <div class="sidebar-header">
-            <h2>🔥 Feux en Cours (<span id="sidebar-count" style="font-size:13px; font-weight:900; color:#7C3AED;">{count_en_cours}</span> / {len(valid_fires)} sur carte)</h2>
-            <div class="count-chip" id="sidebar-chip">MAJEURS EN PREMIER</div>
+            <h2>🔥 Feux en Cours (<span id="sidebar-count" style="font-size:13px; font-weight:900; color:#DC2626;">{count_en_cours}</span> / {len(valid_fires)} sur carte)</h2>
+            <div class="count-chip" id="sidebar-chip">RÉCENTS EN PREMIER</div>
         </div>
         <div class="fire-list" id="fire-list-container"></div>
     </div>
 
     <div id="legend">
         <div id="legend-status">
-            <div class="legend-title">📍 Légende : Statut des Feux</div>
-            <div class="legend-row"><div class="symbol {majeur_pulse_class}" style="background:#7C3AED; border:2px solid white; width:22px; height:22px;">🚨</div> <b>Feu Majeur</b></div>
-            <div class="legend-row"><div class="symbol marker-pulse-new" style="background:#F97316; border:1.5px solid white;">⚡</div> <b>Nouveau &lt; 1h</b></div>
+            <div class="legend-title">📍 Légende : Statut SDIS</div>
             <div class="legend-row"><div class="symbol marker-pulse-attaque" style="background:#DC2626; border:1.5px solid white;">🔥</div> <b>En Attaque</b></div>
             <div class="legend-row"><div class="symbol" style="background:#2563EB; border:1.5px solid white;">🎯</div> <b>Fixé</b></div>
             <div class="legend-row"><div class="symbol" style="background:#16A34A; border:1.5px solid white;">✅</div> <b>Maîtrisé</b></div>
+            <div class="legend-row"><div class="symbol marker-pulse-new" style="background:#F97316; border:1.5px solid white;">⚡</div> <b>Nouveau &lt; 1h</b></div>
             <div class="legend-row"><div class="symbol" style="background:#64748B; border:1.5px solid white;">💧</div> <b>Éteint récent</b></div>
         </div>
         
@@ -1396,13 +1388,12 @@ def generate_interactive_map(results, latest_news, output_path):
 
                         <!-- Legend -->
                         <div style="background:#F8FAFC; border:1.5px solid #E2E8F0; border-radius:12px; padding:10px 12px; margin-top:auto; box-shadow:0 4px 15px rgba(15,23,42,0.04);">
-                            <div style="font-size:8px; font-weight:900; color:#475569; text-transform:uppercase; margin-bottom:6px; border-bottom:1px solid #E2E8F0; padding-bottom:3px; letter-spacing:0.02em;">📍 LÉGENDE DES STATUTS DE FEUX</div>
+                            <div style="font-size:8px; font-weight:900; color:#475569; text-transform:uppercase; margin-bottom:6px; border-bottom:1px solid #E2E8F0; padding-bottom:3px; letter-spacing:0.02em;">📍 LÉGENDE DES STATUTS SDIS</div>
                             <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; font-size:9px; font-weight:800;">
-                                <span style="color:#7C3AED;">🚨 Majeur</span>
-                                <span style="color:#2563EB;">🎯 Fixé</span>
-                                <span style="color:#D97706;">⚡ Nouveau &lt; 1h</span>
-                                <span style="color:#16A34A;">✅ Maîtrisé</span>
                                 <span style="color:#DC2626;">🔥 En Attaque</span>
+                                <span style="color:#2563EB;">🎯 Fixé</span>
+                                <span style="color:#16A34A;">✅ Maîtrisé</span>
+                                <span style="color:#D97706;">⚡ Nouveau &lt; 1h</span>
                                 <span style="color:#64748B;">💧 Éteint / Alerte</span>
                             </div>
                         </div>
