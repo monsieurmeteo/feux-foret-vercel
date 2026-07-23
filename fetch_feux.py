@@ -68,8 +68,8 @@ def record_snapshots(results):
     now_dt = datetime.now(timezone.utc)
     now_utc_str = now_dt.isoformat()
     
-    # Calculate current 10-minute rounded slot label (e.g. 02h40)
-    current_10m_slot = f"{(now_dt.hour+2)%24:02d}h{(now_dt.minute // 10) * 10:02d}"
+    # Calculate current 5-minute rounded slot label (e.g. 02h40)
+    current_10m_slot = f"{(now_dt.hour+2)%24:02d}h{(now_dt.minute // 5) * 5:02d}"
 
     for f in results:
         fire_id = f"fire_{f.get('dept')}_{f.get('commune')}".lower().replace(" ", "_")
@@ -87,7 +87,7 @@ def record_snapshots(results):
         if last_row:
             try:
                 last_dt = datetime.fromisoformat(last_row[1])
-                last_slot = f"{(last_dt.hour+2)%24:02d}h{(last_dt.minute // 10) * 10:02d}"
+                last_slot = f"{(last_dt.hour+2)%24:02d}h{(last_dt.minute // 5) * 5:02d}"
                 if last_slot == current_10m_slot:
                     should_insert = False
             except Exception:
@@ -120,8 +120,8 @@ def record_snapshots(results):
         for r in rows:
             try:
                 dt = datetime.fromisoformat(r[0])
-                m_10 = (dt.minute // 10) * 10
-                time_lbl = f"{(dt.hour+2)%24:02d}h{m_10:02d}"
+                m_5 = (dt.minute // 5) * 5
+                time_lbl = f"{(dt.hour+2)%24:02d}h{m_5:02d}"
             except Exception:
                 time_lbl = "N/A"
             
