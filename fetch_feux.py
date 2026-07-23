@@ -637,6 +637,7 @@ def generate_interactive_map(results, latest_news, output_path):
     count_attaque = sum(1 for f in valid_fires if f.get("etat_feu") == "attaque")
     count_fixe = sum(1 for f in valid_fires if f.get("etat_feu") == "fixe")
     count_maitrise = sum(1 for f in valid_fires if f.get("etat_feu") == "maitrise")
+    majeur_pulse_class = "marker-pulse-majeur" if count_majeurs > 0 else ""
 
     # ponytail: CDN direct — plus fiable que l'embed local sur GitHub Actions runner
     leaflet_css = '@import url("https://unpkg.com/leaflet@1.9.4/dist/leaflet.css");'
@@ -910,9 +911,9 @@ def generate_interactive_map(results, latest_news, output_path):
         .info-row .lbl {{ color: #475569; font-weight: 700; }}
         .info-row .val {{ font-weight: 800; color: #0F172A; max-width: 95px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
         
-        .history-table {{ width: 100%; border-collapse: collapse; font-size: 8px; background: #FFFFFF; text-align: center; }}
-        .history-table th {{ background: #0F172A; color: white; padding: 1.5px 2px; font-size: 7px; text-transform: uppercase; position: sticky; top: 0; }}
-        .history-table td {{ padding: 1px 1.5px; border-top: 1px solid #F1F5F9; font-weight: 700; }}
+        .history-table {{ width: 100%; border-collapse: collapse; font-size: 10.5px; background: #FFFFFF; text-align: center; }}
+        .history-table th {{ background: #0F172A; color: white; padding: 3px 2px; font-size: 9px; text-transform: uppercase; position: sticky; top: 0; }}
+        .history-table td {{ padding: 2.5px 2px; border-top: 1px solid #F1F5F9; font-weight: 700; }}
 
         .risk-banner {{ margin-top: 2.5px; padding: 3px 5px; border-radius: 5px; font-weight: 900; font-size: 9px; display: flex; justify-content: space-between; align-items: center; }}
         
@@ -1004,7 +1005,7 @@ def generate_interactive_map(results, latest_news, output_path):
         <div id="legend-status">
             <div class="legend-title">📍 Légende : Ampleur des Feux</div>
             <div class="legend-row">
-                <div class="symbol marker-pulse-majeur" style="background:#7C3AED; border:2px solid white; width:22px; height:22px;">🚨</div>
+                <div class="symbol {majeur_pulse_class}" style="background:#7C3AED; border:2px solid white; width:22px; height:22px;">🚨</div>
                 <span><b>Feu Majeur / Important</b></span>
             </div>
             <div class="legend-row">
@@ -1455,7 +1456,7 @@ def generate_interactive_map(results, latest_news, output_path):
                 `).join('');
 
                 historyHtml = `
-                    <div style="font-size:9.5px; font-weight:900; color:#0F172A; text-transform:uppercase; margin-bottom:4px;">📈 HISTORIQUE OBS (10 MIN)</div>
+                    <div style="font-size:9.5px; font-weight:900; color:#0F172A; text-transform:uppercase; margin-bottom:4px;">📈 HISTORIQUE OBS (5 MIN)</div>
                     <div style="max-height:230px; overflow-y:auto; border-radius:6px; border:1.5px solid #CBD5E1; box-shadow:inset 0 1px 3px rgba(0,0,0,0.05);">
                         <table class="history-table">
                             <thead>
