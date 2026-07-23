@@ -1,5 +1,6 @@
 name: Auto Update Feux de Forêt — Temps Réel
 
+on:
   workflow_dispatch:           # déclenché par cron-job.org toutes les 5 min
 
 jobs:
