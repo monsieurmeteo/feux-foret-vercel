@@ -1127,6 +1127,116 @@ def generate_interactive_map(results, latest_news, output_path):
             renderFires();
         }}
 
+        function toggleHistView(viewType, fireIndex) {{
+            const graphContainer = document.getElementById('hist-graph-container-' + fireIndex);
+            const tableContainer = document.getElementById('hist-table-container-' + fireIndex);
+            const btnGraph = document.getElementById('btn-hist-graph-' + fireIndex);
+            const btnTable = document.getElementById('btn-hist-table-' + fireIndex);
+            
+            if (viewType === 'graph') {{
+                graphContainer.style.display = 'block';
+                tableContainer.style.display = 'none';
+                
+                btnGraph.style.background = '#FFFFFF';
+                btnGraph.style.color = '#0F172A';
+                btnGraph.style.boxShadow = '0 1px 2px rgba(0,0,0,0.08)';
+                
+                btnTable.style.background = 'transparent';
+                btnTable.style.color = '#64748B';
+                btnTable.style.boxShadow = 'none';
+            }} else {{
+                graphContainer.style.display = 'none';
+                tableContainer.style.display = 'block';
+                
+                btnTable.style.background = '#FFFFFF';
+                btnTable.style.color = '#0F172A';
+                btnTable.style.boxShadow = '0 1px 2px rgba(0,0,0,0.08)';
+                
+                btnGraph.style.background = 'transparent';
+                btnGraph.style.color = '#64748B';
+                btnGraph.style.boxShadow = 'none';
+            }}
+        }}
+
+        function generateSvgGraph(pts) {{
+            if (!pts || pts.length === 0) return '';
+            const data = [...pts].reverse();
+            
+            const width = 160;
+            const height = 180;
+            const padTop = 15;
+            const padBot = 22;
+            const padLeft = 18;
+            const padRight = 5;
+            
+            const plotW = width - padLeft - padRight;
+            const plotH = height - padTop - padBot;
+            
+            const temps = data.map(p => p.temp || 0);
+            const winds = data.map(p => p.wind || 0);
+            const gusts = data.map(p => p.gusts || 0);
+            
+            const maxVal = Math.max(30, ...temps, ...winds, ...gusts);
+            
+            const getX = (idx) => padLeft + (idx * plotW) / (data.length - 1);
+            const getY = (val) => height - padBot - ((val / maxVal) * plotH);
+            
+            let tempPoints = [];
+            let windPoints = [];
+            let gustPoints = [];
+            
+            data.forEach((p, idx) => {{
+                const x = getX(idx);
+                tempPoints.push(x + ',' + getY(p.temp || 0));
+                windPoints.push(x + ',' + getY(p.wind || 0));
+                gustPoints.push(x + ',' + getY(p.gusts || 0));
+            }});
+            
+            const tempPath = 'M ' + tempPoints.join(' L ');
+            const windPath = 'M ' + windPoints.join(' L ');
+            const gustPath = 'M ' + gustPoints.join(' L ');
+            
+            const midVal = Math.round(maxVal / 2);
+            const topVal = Math.round(maxVal);
+            
+            let gridHtml = '<line x1="' + padLeft + '" y1="' + getY(0) + '" x2="' + (width - padRight) + '" y2="' + getY(0) + '" stroke="#E2E8F0" stroke-width="1"/>' +
+                '<line x1="' + padLeft + '" y1="' + getY(midVal) + '" x2="' + (width - padRight) + '" y2="' + getY(midVal) + '" stroke="#F1F5F9" stroke-width="1" stroke-dasharray="2,2"/>' +
+                '<line x1="' + padLeft + '" y1="' + getY(topVal) + '" x2="' + (width - padRight) + '" y2="' + getY(topVal) + '" stroke="#F1F5F9" stroke-width="1" stroke-dasharray="2,2"/>' +
+                '<text x="' + (padLeft - 4) + '" y="' + (getY(0) + 3) + '" text-anchor="end" font-size="8px" fill="#64748B" font-weight="bold">0</text>' +
+                '<text x="' + (padLeft - 4) + '" y="' + (getY(midVal) + 3) + '" text-anchor="end" font-size="8px" fill="#64748B" font-weight="bold">' + midVal + '</text>' +
+                '<text x="' + (padLeft - 4) + '" y="' + (getY(topVal) + 3) + '" text-anchor="end" font-size="8px" fill="#64748B" font-weight="bold">' + topVal + '</text>';
+            
+            if (data.length > 1) {{
+                const firstTime = data[0].time;
+                const lastTime = data[data.length - 1].time;
+                gridHtml += '<text x="' + padLeft + '" y="' + (height - 12) + '" text-anchor="start" font-size="7.5px" fill="#64748B" font-weight="bold">' + firstTime + '</text>' +
+                    '<text x="' + (width - padRight) + '" y="' + (height - 12) + '" text-anchor="end" font-size="7.5px" fill="#64748B" font-weight="bold">' + lastTime + '</text>';
+            }}
+            
+            let dotsHtml = '';
+            data.forEach((p, idx) => {{
+                const x = getX(idx);
+                dotsHtml += '<circle cx="' + x + '" cy="' + getY(p.temp || 0) + '" r="2" fill="#EF4444"/>' +
+                    '<circle cx="' + x + '" cy="' + getY(p.wind || 0) + '" r="1.8" fill="#3B82F6"/>' +
+                    '<circle cx="' + x + '" cy="' + getY(p.gusts || 0) + '" r="1.8" fill="#F59E0B"/>';
+            }});
+            
+            return \'<svg width="100%" height="\' + height + \'" viewBox="0 0 \' + width + \' \' + height + \'" style="background:#FFFFFF; overflow:visible;">\' +
+                gridHtml +
+                \'<path d="\' + tempPath + \'" fill="none" stroke="#EF4444" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>\' +
+                \'<path d="\' + gustPath + \'" fill="none" stroke="#F59E0B" stroke-width="1.5" stroke-dasharray="3,2" stroke-linecap="round" stroke-linejoin="round"/>\' +
+                \'<path d="\' + windPath + \'" fill="none" stroke="#3B82F6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>\' +
+                dotsHtml +
+                \'<g transform="translate(6, \' + (height - 4) + \')">\' +
+                \'<circle cx="5" cy="0" r="2.5" fill="#EF4444"/>\' +
+                \'<text x="10" y="2.5" font-size="8px" font-weight="bold" fill="#0F172A">T°C</text>\' +
+                \'<circle cx="45" cy="0" r="2.5" fill="#3B82F6"/>\' +
+                \'<text x="50" y="2.5" font-size="8px" font-weight="bold" fill="#0F172A">Moy</text>\' +
+                \'<circle cx="85" cy="0" r="2.5" fill="#F59E0B"/>\' +
+                \'<text x="90" y="2.5" font-size="8px" font-weight="bold" fill="#0F172A">Raf</text>\' +
+                \'</g></svg>\';
+        }}
+
         function downloadInfographiePNG(communeName) {{
             const card = document.querySelector('.infographie-card');
             const closeBtn = card.querySelector('.close-btn');
@@ -1455,9 +1565,22 @@ def generate_interactive_map(results, latest_news, output_path):
                     </tr>
                 `).join('');
 
+                const svgGraph = generateSvgGraph(histPts);
+
                 historyHtml = `
-                    <div style="font-size:9px; font-weight:900; color:#0F172A; text-transform:uppercase; margin-bottom:4px; white-space:nowrap;">📈 HISTORIQUE OBS (5 MIN)</div>
-                    <div style="max-height:230px; overflow-y:auto; border-radius:6px; border:1.5px solid #CBD5E1; box-shadow:inset 0 1px 3px rgba(0,0,0,0.05);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; padding-right:2px;">
+                        <div style="font-size:9px; font-weight:900; color:#0F172A; text-transform:uppercase; white-space:nowrap;">📈 HISTORIQUE OBS</div>
+                        <div style="display:flex; background:#F1F5F9; border-radius:6px; padding:1.5px; gap:2px; border:1px solid #E2E8F0;">
+                            <button onclick="toggleHistView('graph', ${{fireIndex}})" id="btn-hist-graph-${{fireIndex}}" class="hist-toggle-btn active-tab" style="background:#FFFFFF; border:none; padding:2px 5px; border-radius:4px; font-size:9px; cursor:pointer; font-weight:800; box-shadow:0 1px 2px rgba(0,0,0,0.08); outline:none;">📊 Graphe</button>
+                            <button onclick="toggleHistView('table', ${{fireIndex}})" id="btn-hist-table-${{fireIndex}}" class="hist-toggle-btn" style="background:transparent; border:none; padding:2px 5px; border-radius:4px; font-size:9px; cursor:pointer; font-weight:700; color:#64748B; outline:none;">📋 Table</button>
+                        </div>
+                    </div>
+                    
+                    <div id="hist-graph-container-${{fireIndex}}" style="border:1.5px solid #CBD5E1; border-radius:6px; padding:4px; background:#FFFFFF; box-shadow:inset 0 1px 3px rgba(0,0,0,0.02); height:200px; display:block;">
+                        ${{svgGraph}}
+                    </div>
+                    
+                    <div id="hist-table-container-${{fireIndex}}" style="display:none; max-height:200px; overflow-y:auto; border-radius:6px; border:1.5px solid #CBD5E1; box-shadow:inset 0 1px 3px rgba(0,0,0,0.05);">
                         <table class="history-table">
                             <thead>
                                 <tr><th>Heure</th><th>Temp</th><th>Moy.</th><th>Raf.</th></tr>
