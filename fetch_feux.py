@@ -495,19 +495,39 @@ def get_closest_pelicandrome(lat, lon, bases):
     return best_name, round(min_dist, 1), eta_str
 
 def fetch_all_feux():
+    # Fetch 1 : homepage → feux actifs (enCours=True)
     url = "https://feuxdeforet.fr/"
     req = urllib.request.Request(url, headers=ANONYMOUS_HEADERS)
     with urllib.request.urlopen(req, timeout=10) as resp:
         html = resp.read().decode("utf-8")
-    
+
     idx = html.find("window.__INITIAL_DATA__=")
     if idx == -1:
         return [], []
     start = html.find("{", idx)
     data, _ = json.JSONDecoder().raw_decode(html[start:])
-    
-    all_feux = data.get("data", {}).get("feux", [])
-    to_enrich = [f for f in all_feux if f.get("enCours")]
+
+    active_feux = data.get("data", {}).get("feux", [])
+    seen_ids = {f["id"] for f in active_feux}
+
+    # Fetch 2 : /signalements/ → résolus récents (éteint, fausse_alerte)
+    resolved = []
+    try:
+        req2 = urllib.request.Request("https://feuxdeforet.fr/signalements/", headers=ANONYMOUS_HEADERS)
+        with urllib.request.urlopen(req2, timeout=8) as resp2:
+            html2 = resp2.read().decode("utf-8")
+        idx2 = html2.find("window.__INITIAL_DATA__=")
+        if idx2 != -1:
+            start2 = html2.find("{", idx2)
+            data2, _ = json.JSONDecoder().raw_decode(html2[start2:])
+            for f in data2.get("data", {}).get("signalements", []):
+                if not f.get("enCours") and f["id"] not in seen_ids:
+                    resolved.append(f)
+                    seen_ids.add(f["id"])
+    except Exception:
+        pass  # /signalements/ optionnel — la carte reste fonctionnelle sans
+
+    to_enrich = [f for f in active_feux if f.get("enCours")] + resolved
     now = datetime.now(timezone.utc)
     pelicandromes = load_pelicandromes()
     meteociel_stations, meteociel_validity = load_meteociel_network()
