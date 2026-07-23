@@ -1262,6 +1262,9 @@ def generate_interactive_map(results, latest_news, output_path):
             if (!f) return;
             const w = f.weather || {{}};
             const color = getMarkerColor(f);
+            const speedVal = (w.wind_speed_kmh !== undefined && w.wind_speed_kmh !== null) ? w.wind_speed_kmh : 15;
+            const gustVal = (w.wind_gusts_kmh !== undefined && w.wind_gusts_kmh !== null) ? w.wind_gusts_kmh : 25;
+            const exposureHtml = buildDownwindExposureHTML(f.downwind_exposure);
             
             map.flyTo([f.lat, f.lon], 13, {{ duration: 0.8 }});
 
