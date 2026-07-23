@@ -1003,7 +1003,7 @@ def generate_interactive_map(results, latest_news, output_path):
 
             <select class="clean-select" id="status-filter-select" onchange="filterFires(this.value)">
                 <option value="en_cours" selected>🔥 Feux en Cours ({count_en_cours})</option>
-                <option value="all">🌐 Tous ({len(results)})</option>
+                <option value="all">🌐 Tous ({len(valid_fires)})</option>
                 <option value="majeur">🚨 Majeurs ({count_majeurs})</option>
                 <option value="modere">🔶 Modérés 2-10ha ({count_modere})</option>
                 <option value="localise">🟡 Localisés &lt;2ha ({count_localise})</option>
@@ -1038,7 +1038,7 @@ def generate_interactive_map(results, latest_news, output_path):
 
     <div id="sidebar">
         <div class="sidebar-header">
-            <h2>🔥 Feux en Cours (<span id="sidebar-count" style="font-size:13px; font-weight:900; color:#7C3AED;">{count_en_cours}</span> / {len(results)})</h2>
+            <h2>🔥 Feux en Cours (<span id="sidebar-count" style="font-size:13px; font-weight:900; color:#7C3AED;">{count_en_cours}</span> / {len(valid_fires)} sur carte)</h2>
             <div class="count-chip" id="sidebar-chip">MAJEURS EN PREMIER</div>
         </div>
         <div class="fire-list" id="fire-list-container"></div>
