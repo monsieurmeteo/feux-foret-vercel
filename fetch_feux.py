@@ -733,7 +733,7 @@ def generate_interactive_map(results, latest_news, output_path):
         }}
 
         .infographie-card {{
-            background: #FFFFFF; border-radius: 16px; width: 620px; max-width: 95vw; max-height: 90vh; overflow-y: auto;
+            background: #FFFFFF; border-radius: 16px; width: 860px; max-width: 95vw; max-height: 90vh; overflow-y: auto;
             box-shadow: 0 30px 60px rgba(0,0,0,0.3); border: 2px solid #0F172A; padding: 18px; position: relative;
         }}
         .infographie-card .close-btn {{
@@ -1178,9 +1178,13 @@ def generate_interactive_map(results, latest_news, output_path):
 
             const origMaxHeight = card.style.maxHeight;
             const origOverflow = card.style.overflow;
+            const origWidth = card.style.width;
+            const origMaxWidth = card.style.maxWidth;
             
             card.style.maxHeight = 'none';
             card.style.overflow = 'visible';
+            card.style.width = '840px';
+            card.style.maxWidth = 'none';
 
             if (modalMiniMapInstance) {{
                 modalMiniMapInstance.invalidateSize();
@@ -1197,12 +1201,14 @@ def generate_interactive_map(results, latest_news, output_path):
                 }}).then(canvas => {{
                     card.style.maxHeight = origMaxHeight;
                     card.style.overflow = origOverflow;
+                    card.style.width = origWidth;
+                    card.style.maxWidth = origMaxWidth;
                     if (closeBtn) closeBtn.style.display = 'block';
                     if (dlBtn) dlBtn.style.display = 'block';
 
                     const link = document.createElement('a');
                     const safeName = (communeName || 'Feu_de_Foret').replace(/[^a-zA-Z0-9_-]/g, '_');
-                    link.download = 'Infographie_Feu_' + safeName + '.png';
+                    link.download = 'Infographie_' + safeName + '.png';
                     link.href = canvas.toDataURL('image/png');
                     link.click();
                 }});
@@ -1246,58 +1252,76 @@ def generate_interactive_map(results, latest_news, output_path):
             const gustVal = (w.wind_gusts_kmh !== undefined) ? w.wind_gusts_kmh : 0;
 
             const html = `
-                <div style="background:#0F172A; color:white; border-radius:10px; padding:14px 16px; margin-bottom:12px; box-shadow:0 8px 16px rgba(0,0,0,0.25);">
-                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #334155; padding-bottom:8px; margin-bottom:8px;">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span style="background:${{f.scale_color || '#DC2626'}}; color:white; padding:3px 8px; border-radius:5px; font-weight:900; font-size:11.5px;">${{f.scale_label || '🚨 FEU MAJEUR'}}</span>
-                            <span style="background:#334155; color:white; padding:3px 8px; border-radius:5px; font-weight:900; font-size:11px;">DEP ${{f.dept}}</span>
+                <div class="infographie-layout" style="display:flex; gap:16px; padding:4px; font-family:-apple-system, BlinkMacSystemFont, sans-serif; color:#0F172A;">
+                    <!-- Left Column: Map and Header -->
+                    <div style="flex: 1.1; display:flex; flex-direction:column; gap:8px;">
+                        <div style="background:#0F172A; color:white; border-radius:10px; padding:10px 14px; box-shadow:0 4px 8px rgba(0,0,0,0.15);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #334155; padding-bottom:6px; margin-bottom:6px;">
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    <span style="background:${{f.scale_color || '#DC2626'}}; color:white; padding:2px 6px; border-radius:4px; font-weight:900; font-size:10px;">${{f.scale_label || '🚨 FEU MAJEUR'}}</span>
+                                    <span style="background:#334155; color:white; padding:2px 6px; border-radius:4px; font-weight:900; font-size:10px;">DEP ${{f.dept}}</span>
+                                </div>
+                                <div>${{logoHtml}}</div>
+                            </div>
+                            <h2 style="font-size:16px; font-weight:900; text-transform:uppercase; margin-bottom:2px;">${{f.commune.toUpperCase()}}</h2>
+                            <div style="font-size:10px; color:#E2E8F0; font-weight:700;">Détection : <b style="color:#F59E0B;">${{f.detect_time_fr || 'N/A'}}</b> (${{f.timeAgo || ''}})</div>
                         </div>
-                        <div>${{logoHtml}}</div>
-                    </div>
-
-                    <h2 style="font-size:20px; font-weight:900; color:white; text-transform:uppercase; margin-bottom:4px;">COMMUNE DE ${{f.commune.toUpperCase()}}</h2>
-                    <div style="font-size:11px; color:#E2E8F0; font-weight:700;">Détection : <b style="color:#F59E0B; font-size:12px;">${{f.detect_time_fr || 'N/A'}}</b> (${{f.timeAgo || ''}}) • GPS : <b style="color:#60A5FA;">${{f.lat}}, ${{f.lon}}</b></div>
-                </div>
-
-                <div style="background:#E2E8F0; border-radius:10px; height:200px; margin-bottom:12px; overflow:hidden; border:1.5px solid #CBD5E1;">
-                    <div id="infographic-mini-map" style="width:100%; height:100%;"></div>
-                </div>
-
-                ${{exposureHtml}}
-
-                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:12px;">
-                    <div style="background:#FFF5F5; border:1.5px solid #FECDD3; border-radius:8px; padding:8px; text-align:center;">
-                        <div style="font-size:9.5px; font-weight:900; color:#E11D48; text-transform:uppercase;">🌡️ TEMP. & HUMIDITÉ</div>
-                        <div style="font-size:16px; font-weight:900; color:#DC2626; margin-top:2px;">${{w.temp_c !== undefined ? w.temp_c + ' °C' : 'N/A'}}</div>
-                        <div style="font-size:10px; color:#0284C7; font-weight:800; margin-top:1px;">Humidité : ${{w.humidity_pct !== undefined ? w.humidity_pct + ' %' : 'N/A'}}</div>
-                    </div>
-
-                    <div style="background:#FEF3C7; border:1.5px solid #FDE68A; border-radius:8px; padding:8px; text-align:center;">
-                        <div style="font-size:9.5px; font-weight:900; color:#D97706; text-transform:uppercase;">💨 VENT & RAFALES</div>
-                        <div style="font-size:12px; font-weight:900; color:#0F172A; margin-top:2px;">
-                            Moy: <b style="color:#2563EB;">${{speedVal}}</b> • Raf: <b style="color:#DC2626;">${{gustVal}} km/h</b>
+                        <div style="background:#E2E8F0; border-radius:10px; flex:1; min-height:280px; overflow:hidden; border:1.5px solid #CBD5E1; position:relative;">
+                            <div id="infographic-mini-map" style="width:100%; height:100%;"></div>
                         </div>
-                        <div style="font-size:9.5px; color:#B45309; font-weight:800; margin-top:1px;">${{w.plume_arrow || '➡️'}} Vers le ${{w.plume_dir || 'Sud'}}</div>
                     </div>
 
-                    <div style="background:${{w.spread_risk_color || '#F1F5F9'}}18; border:1.5px solid ${{w.spread_risk_color || '#CBD5E1'}}; border-radius:8px; padding:8px; text-align:center;">
-                        <div style="font-size:9.5px; font-weight:900; color:#475569; text-transform:uppercase;">📊 RISQUE FWI</div>
-                        <div style="font-size:13.5px; font-weight:900; color:${{w.spread_risk_color || '#0F172A'}}; margin-top:2px;">${{w.spread_risk || 'N/A'}}</div>
-                        <div style="font-size:9.5px; font-weight:800; color:#334155; margin-top:1px;">Score FWI : ${{w.fwi_score || 0}} / 30</div>
+                    <!-- Right Column: Stats, Weather, Legend -->
+                    <div style="flex: 0.9; display:flex; flex-direction:column; gap:8px;">
+                        <div style="display:grid; grid-template-columns:1fr; gap:6px;">
+                            <div style="background:#FFF5F5; border:1.5px solid #FECDD3; border-radius:8px; padding:6px 10px; display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-size:9.5px; font-weight:900; color:#E11D48; text-transform:uppercase;">🌡️ TEMP. & HUMIDITÉ</span>
+                                <span style="font-size:12.5px; font-weight:900; color:#DC2626;">
+                                    ${{w.temp_c !== undefined ? w.temp_c + ' °C' : 'N/A'}} 
+                                    <span style="font-size:9.5px; color:#0284C7; font-weight:700;">(HR: ${{w.humidity_pct !== undefined ? w.humidity_pct + '%' : 'N/A'}})</span>
+                                </span>
+                            </div>
+                            <div style="background:#FEF3C7; border:1.5px solid #FDE68A; border-radius:8px; padding:6px 10px; display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-size:9.5px; font-weight:900; color:#D97706; text-transform:uppercase;">💨 VENT & RAFALES</span>
+                                <span style="font-size:11px; font-weight:800; color:#0F172A;">
+                                    Moy: <b>${{speedVal}}</b> • Raf: <b style="color:#DC2626;">${{gustVal}} km/h</b> 
+                                    <span style="font-size:9.5px; color:#B45309;">(${{w.plume_arrow || '➡️'}} Vers ${{w.plume_dir || 'Sud'}})</span>
+                                </span>
+                            </div>
+                            <div style="background:${{w.spread_risk_color || '#F1F5F9'}}18; border:1.5px solid ${{w.spread_risk_color || '#CBD5E1'}}; border-radius:8px; padding:6px 10px; display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-size:9.5px; font-weight:900; color:#475569; text-transform:uppercase;">📊 RISQUE FWI</span>
+                                <span style="font-size:12px; font-weight:900; color:${{w.spread_risk_color || '#0F172A'}};">${{w.spread_risk || 'N/A'}} <span style="font-size:9.5px; color:#475569; font-weight:700;">(${{w.fwi_score || 0}}/30)</span></span>
+                            </div>
+                        </div>
+
+                        ${{exposureHtml}}
+
+                        <div style="background:#F8FAFC; border:1.5px solid #E2E8F0; border-radius:8px; padding:6px 10px; font-size:10px; display:flex; justify-content:space-between; align-items:center;">
+                            <span>✈️ Base : <b>${{f.pelicandrome_name || 'N/A'}}</b> (${{f.pelicandrome_dist || 'N/A'}} km)</span>
+                            <span style="font-weight:900; color:#2563EB;">⏱️ Vol : ${{f.pelicandrome_eta || 'N/A'}}</span>
+                        </div>
+
+                        <div style="background:#F1F5F9; border-radius:6px; padding:6px 10px; font-size:9.5px; color:#334155; border:1px solid #E2E8F0; display:flex; justify-content:space-between; align-items:center;">
+                            <span>📍 Station : <b>${{f.meteociel_station || 'N/A'}}</b> (${{f.meteociel_dist || 'N/A'}} km)</span>
+                            <span style="font-weight:900; color:#0F172A; font-size:9px;">🌤️ METEO CLIMAT PRO</span>
+                        </div>
+
+                        <!-- Legend -->
+                        <div style="background:#F8FAFC; border:1.5px solid #E2E8F0; border-radius:8px; padding:6px 10px; margin-top:auto;">
+                            <div style="font-size:8px; font-weight:900; color:#475569; text-transform:uppercase; margin-bottom:4px; border-bottom:1px solid #E2E8F0; padding-bottom:2px;">📍 LÉGENDE DES STATUTS</div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:3px; font-size:8.5px; font-weight:800;">
+                                <span style="color:#7C3AED;">🚨 Majeur</span>
+                                <span style="color:#2563EB;">🎯 Fixé</span>
+                                <span style="color:#D97706;">⚡ Nouveau &lt; 1h</span>
+                                <span style="color:#16A34A;">✅ Maîtrisé</span>
+                                <span style="color:#DC2626;">🔥 En Attaque</span>
+                                <span style="color:#64748B;">💧 Éteint / Alerte</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div style="background:#F8FAFC; border:1.5px solid #E2E8F0; border-radius:8px; padding:8px 12px; font-size:11px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-                    <span>✈️ Base Canadair : <b style="color:#0F172A;">${{f.pelicandrome_name || 'N/A'}}</b> (${{f.pelicandrome_dist || 'N/A'}} km)</span>
-                    <span style="font-weight:900; color:#2563EB;">⏱️ Vol Canadair : ${{f.pelicandrome_eta || 'N/A'}}</span>
-                </div>
-
-                <div style="background:#F1F5F9; border-radius:6px; padding:8px 12px; font-size:10.5px; color:#334155; display:flex; justify-content:space-between; align-items:center; border:1px solid #E2E8F0;">
-                    <span>📍 Station locale : <b style="color:#0F172A;">${{f.meteociel_station || 'N/A'}}</b> (${{f.meteociel_dist || 'N/A'}} km)</span>
-                    <span style="font-weight:900; color:#0F172A;">🌤️ MÉTÉO CLIMAT PRO</span>
-                </div>
-
-                <button class="download-png-btn" onclick="downloadInfographiePNG('${{f.commune.replace(/'/g, "")}}')">📸 Télécharger l'Infographie PNG (Design Épuré Météo Climat Pro)</button>
+                <button class="download-png-btn" onclick="downloadInfographiePNG('${{f.commune.replace(/'/g, "")}}')">📸 Télécharger l'Infographie PNG</button>
             `;
             
             document.getElementById('infographie-modal-content').innerHTML = html;
@@ -1345,41 +1369,61 @@ def generate_interactive_map(results, latest_news, output_path):
             }});
 
             const html = `
-                <div style="background:#0F172A; color:white; border-radius:10px; padding:14px 16px; margin-bottom:12px; box-shadow:0 8px 16px rgba(0,0,0,0.25);">
-                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #334155; padding-bottom:8px; margin-bottom:8px;">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span style="background:#DC2626; color:white; padding:3px 8px; border-radius:5px; font-weight:900; font-size:11.5px;">🔥 DIRECT NATIONAL</span>
-                            <span style="background:#334155; color:white; padding:3px 8px; border-radius:5px; font-weight:900; font-size:11px;">BILAN FEUX DE FORÊT</span>
+                <div class="infographie-layout" style="display:flex; gap:16px; padding:4px; font-family:-apple-system, BlinkMacSystemFont, sans-serif; color:#0F172A;">
+                    <!-- Left Column: Map and Header -->
+                    <div style="flex: 1.1; display:flex; flex-direction:column; gap:8px;">
+                        <div style="background:#0F172A; color:white; border-radius:10px; padding:10px 14px; box-shadow:0 4px 8px rgba(0,0,0,0.15);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #334155; padding-bottom:6px; margin-bottom:6px;">
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    <span style="background:#DC2626; color:white; padding:2px 6px; border-radius:4px; font-weight:900; font-size:10px;">🔥 DIRECT NATIONAL</span>
+                                    <span style="background:#334155; color:white; padding:2px 6px; border-radius:4px; font-weight:900; font-size:10px;">BILAN FEUX DE FORÊT</span>
+                                </div>
+                                <div>${{logoHtml}}</div>
+                            </div>
+                            <h2 style="font-size:16px; font-weight:900; text-transform:uppercase; margin-bottom:2px;">SITUATION EN FRANCE</h2>
+                            <div style="font-size:10px; color:#E2E8F0; font-weight:700;">Situation arrêtée le : <b>${{dateStr}}</b></div>
                         </div>
-                        <div>${{logoHtml}}</div>
+                        <div style="background:#AAD3DF; border-radius:10px; flex:1; min-height:280px; overflow:hidden; border:1.5px solid #CBD5E1; position:relative;">
+                            <div id="infographic-national-map" style="width:100%; height:100%;"></div>
+                        </div>
                     </div>
-                    <h2 style="font-size:18px; font-weight:900; color:white; text-transform:uppercase; margin-bottom:4px;">SITUATION EN FRANCE</h2>
-                    <div style="font-size:11px; color:#E2E8F0; font-weight:700;">Situation arrêtée le : <b style="color:#F59E0B; font-size:12px;">${{dateStr}}</b></div>
-                </div>
 
-                <div style="background:#AAD3DF; border-radius:10px; height:360px; margin-bottom:12px; overflow:hidden; border:1.5px solid #CBD5E1; position:relative;">
-                    <div id="infographic-national-map" style="width:100%; height:100%;"></div>
-                </div>
+                    <!-- Right Column: Stats, Breakdown, Legend -->
+                    <div style="flex: 0.9; display:flex; flex-direction:column; gap:8px;">
+                        <div style="display:grid; grid-template-columns:1fr; gap:6px;">
+                            <div style="background:#FFF5F5; border:1.5px solid #FECDD3; border-radius:8px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-size:10px; font-weight:900; color:#E11D48; text-transform:uppercase;">🚨 FEUX EN COURS</span>
+                                <span style="font-size:16px; font-weight:900; color:#DC2626;">${{countEnCours}}</span>
+                            </div>
+                            <div style="background:#FEF3C7; border:1.5px solid #FDE68A; border-radius:8px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-size:10px; font-weight:900; color:#D97706; text-transform:uppercase;">⚡ NOUVEAUX &lt; 1H</span>
+                                <span style="font-size:16px; font-weight:900; color:#B45309;">${{countUnder1h}}</span>
+                            </div>
+                            <div style="background:#F5F3FF; border:1.5px solid #DDD6FE; border-radius:8px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-size:10px; font-weight:900; color:#7C3AED; text-transform:uppercase;">🚨 HAUTE INTENSITÉ</span>
+                                <span style="font-size:16px; font-weight:900; color:#6D28D9;">${{countMajeurs}}</span>
+                            </div>
+                        </div>
 
-                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:12px;">
-                    <div style="background:#FFF5F5; border:1.5px solid #FECDD3; border-radius:8px; padding:8px; text-align:center;">
-                        <div style="font-size:9.5px; font-weight:900; color:#E11D48; text-transform:uppercase;">🚨 FEUX EN COURS</div>
-                        <div style="font-size:20px; font-weight:900; color:#DC2626; margin-top:2px;">${{countEnCours}}</div>
-                    </div>
-                    <div style="background:#FEF3C7; border:1.5px solid #FDE68A; border-radius:8px; padding:8px; text-align:center;">
-                        <div style="font-size:9.5px; font-weight:900; color:#D97706; text-transform:uppercase;">⚡ NOUVEAUX &lt; 1H</div>
-                        <div style="font-size:20px; font-weight:900; color:#B45309; margin-top:2px;">${{countUnder1h}}</div>
-                    </div>
-                    <div style="background:#F5F3FF; border:1.5px solid #DDD6FE; border-radius:8px; padding:8px; text-align:center;">
-                        <div style="font-size:9.5px; font-weight:900; color:#7C3AED; text-transform:uppercase;">🚨 HAUTE INTENSITÉ</div>
-                        <div style="font-size:20px; font-weight:900; color:#6D28D9; margin-top:2px;">${{countMajeurs}}</div>
-                    </div>
-                </div>
+                        <div style="background:#F8FAFC; border:1.5px solid #E2E8F0; border-radius:8px; padding:8px 10px; font-size:10px; display:flex; justify-content:space-around; align-items:center; font-weight:800;">
+                            <span style="color:#7C3AED;">🚨 Majeurs : <b>${{countMajeurs}}</b></span>
+                            <span style="color:#C2410C;">🔶 Modérés : <b>${{countModere}}</b></span>
+                            <span style="color:#92400E;">🟡 Localisés : <b>${{countLocalise}}</b></span>
+                        </div>
 
-                <div style="background:#F8FAFC; border:1.5px solid #E2E8F0; border-radius:8px; padding:10px 12px; font-size:11px; margin-bottom:12px; display:flex; justify-content:space-around; align-items:center; font-weight:800;">
-                    <span style="color:#7C3AED;">🚨 Majeurs : <b>${{countMajeurs}}</b></span>
-                    <span style="color:#C2410C;">🔶 Modérés : <b>${{countModere}}</b></span>
-                    <span style="color:#92400E;">🟡 Localisés : <b>${{countLocalise}}</b></span>
+                        <!-- Legend -->
+                        <div style="background:#F8FAFC; border:1.5px solid #E2E8F0; border-radius:8px; padding:8px 10px; margin-top:auto;">
+                            <div style="font-size:8px; font-weight:900; color:#475569; text-transform:uppercase; margin-bottom:4px; border-bottom:1px solid #E2E8F0; padding-bottom:2px;">📍 LÉGENDE DES STATUTS</div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:3px; font-size:8.5px; font-weight:800;">
+                                <span style="color:#7C3AED;">🚨 Majeur</span>
+                                <span style="color:#2563EB;">🎯 Fixé</span>
+                                <span style="color:#D97706;">⚡ Nouveau &lt; 1h</span>
+                                <span style="color:#16A34A;">✅ Maîtrisé</span>
+                                <span style="color:#DC2626;">🔥 En Attaque</span>
+                                <span style="color:#64748B;">💧 Éteint / Alerte</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <button class="download-png-btn" onclick="downloadInfographiePNG('Bilan_National')">📸 Télécharger le Bilan National PNG</button>
