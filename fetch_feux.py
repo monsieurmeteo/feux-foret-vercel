@@ -32,6 +32,9 @@ LEAFLET_JS_PATH = os.path.join(DATA_DIR, "leaflet.js")
 AUTH_USER = "feux59"
 AUTH_PASS = "mto59"
 
+# Activer/désactiver l'envoi d'e-mails d'alerte (False pour désactiver)
+ENABLE_EMAIL_ALERTS = False
+
 import random as _random
 _USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
@@ -118,8 +121,8 @@ def record_snapshots(results):
             except Exception:
                 pass
 
-        # Alerte e-mail envoyée STRICTEMENT 1 SEULE FOIS ABSOLUE par feu (et uniquement si < 1h et actif)
-        if not already_emailed and f.get("is_under_1h") and f.get("etat_feu") not in ("eteint", "fausse_alerte"):
+        # Alerte e-mail envoyée STRICTEMENT 1 SEULE FOIS ABSOLUE par feu (et uniquement si < 1h, actif et activé)
+        if ENABLE_EMAIL_ALERTS and not already_emailed and f.get("is_under_1h") and f.get("etat_feu") not in ("eteint", "fausse_alerte"):
             sent_ok = send_new_fire_email_alert(f)
             if sent_ok:
                 cursor.execute("INSERT OR REPLACE INTO feux_alertes_envoyees (fire_id, sent_at_utc) VALUES (?, ?)", (fire_id, now_utc_str))
