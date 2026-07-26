@@ -1120,6 +1120,7 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
     # 3. Associer la commune la plus proche pour chaque feu satellite (avec filtre de bounding box rapide)
     for f in firms_fires:
         closest_name = "Zone isolée / forêt"
+        closest_c = None
         min_d = float("inf")
         f_lat, f_lon = f["lat"], f["lon"]
         for c in all_communes:
@@ -1132,10 +1133,17 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
             if dist < min_d:
                 min_d = dist
                 closest_name = c["nom"]
-        if min_d <= 15.0:
+                closest_c = c
+        if min_d <= 15.0 and closest_c:
             f["commune_proche"] = f"{closest_name} ({round(min_d, 1)} km)"
+            f["commune_proche_lat"] = closest_c["lat"]
+            f["commune_proche_lon"] = closest_c["lon"]
+            f["commune_proche_name"] = closest_name
         else:
             f["commune_proche"] = "Zone isolée / forêt"
+            f["commune_proche_lat"] = None
+            f["commune_proche_lon"] = None
+            f["commune_proche_name"] = ""
 
     # Ré-sérialiser les feux satellites avec les infos de communes proches
     firms_fires_json = json.dumps(firms_fires, ensure_ascii=False)
@@ -1826,6 +1834,8 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
         let modalMiniMapInstance = null;
         let newsIdx = 0;
         let refreshSeconds = 300; // ponytail: 5 minutes refresh interval
+        let activeLinkLine = null;
+        let activeCommuneMarker = null;
 
         function handleSearch(val) {{
             searchQuery = val.toLowerCase().trim();
@@ -2646,6 +2656,39 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
                     </div>
                 `;
                 marker.bindPopup(popupContent);
+                
+                marker.on('popupopen', function() {{
+                    if (activeLinkLine) map.removeLayer(activeLinkLine);
+                    if (activeCommuneMarker) map.removeLayer(activeCommuneMarker);
+                    
+                    if (f.commune_proche_lat && f.commune_proche_lon) {{
+                        activeLinkLine = L.polyline([[f.lat, f.lon], [f.commune_proche_lat, f.commune_proche_lon]], {{
+                            color: '#E11D48',
+                            weight: 2.2,
+                            dashArray: '4, 6',
+                            interactive: false
+                        }}).addTo(map);
+                        
+                        const tempIcon = L.divIcon({{
+                            className: 'temp-commune-label',
+                            html: '<div style="background:#FFFFFF; border:1.8px solid #E11D48; border-radius:6px; padding:3.5px 7px; font-weight:900; font-size:10px; color:#991B1B; white-space:nowrap; box-shadow:0 3px 8px rgba(0,0,0,0.15); display:flex; align-items:center; gap:4px;">🏘️ ' + f.commune_proche_name + '</div>',
+                            iconAnchor: [30, 10]
+                        }});
+                        activeCommuneMarker = L.marker([f.commune_proche_lat, f.commune_proche_lon], {{ icon: tempIcon }}).addTo(map);
+                    }}
+                }});
+
+                marker.on('popupclose', function() {{
+                    if (activeLinkLine) {{
+                        map.removeLayer(activeLinkLine);
+                        activeLinkLine = null;
+                    }}
+                    if (activeCommuneMarker) {{
+                        map.removeLayer(activeCommuneMarker);
+                        activeCommuneMarker = null;
+                    }}
+                }});
+
                 firmsLayerGroup.addLayer(marker);
             }});
         }}
