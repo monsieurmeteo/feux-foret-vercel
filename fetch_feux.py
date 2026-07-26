@@ -1361,6 +1361,10 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
         button.btn-infographie:hover {{ background: #B91C1C; }}
         button.btn-close-popup {{ background: #64748B !important; color: white !important; border: none; padding: 7px 12px; border-radius: 6px; font-size: 10px; font-weight: 900; cursor: pointer; transition: background 0.15s; }}
         button.btn-close-popup:hover {{ background: #475569 !important; }}
+        
+        .leaflet-top.leaflet-right {{
+            margin-top: 110px !important;
+        }}
     </style>
 </head>
 <body>
@@ -2290,7 +2294,7 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
             "🔥 Feux Détectés (NASA FIRMS)": firmsLayerGroup,
             "✈️ Bases Canadair": pelicandromesLayerGroup,
             "✈️ Avions & Hélicos de Secours": aircraftLayerGroup
-        }}, {{ position: 'bottomright' }}).addTo(map);
+        }}, {{ position: 'topright' }}).addTo(map);
 
         const datePicker = document.getElementById('gibs-date-picker');
         if (datePicker) {{
