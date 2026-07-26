@@ -1250,6 +1250,7 @@ def generate_interactive_map(results, latest_news, output_path):
                 <option value="Outre-Mer">🌴 Outre-Mer</option>
             </select>
 
+            <button id="btn-lock-map" onclick="toggleMapLock()" style="background:#DC2626; border: 1.5px solid #B91C1C; color:#FFFFFF; padding:5px 12px; border-radius:20px; font-size:11.5px; font-weight:800; cursor:pointer; outline:none; transition:all 0.15s ease; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(0,0,0,0.05);">🔒 Carte figée</button>
             <button class="btn-sidebar-toggle" onclick="toggleSidebar()">📋 Liste</button>
             <a href="Rapport_Feux_de_Foret_Temps_Reel.pdf" target="_blank" class="btn-pdf-download">📥 PDF</a>
             <button onclick="openNationalInfographieModal()" class="btn-national-infographie" id="btn-bilan-infographie" style="background:#7C3AED; color:white; border:none; padding:5px 12px; border-radius:20px; font-size:11.5px; font-weight:800; cursor:pointer; outline:none; transition:background 0.2s; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(124,58,237,0.3);">📸 Bilan</button>
@@ -1266,6 +1267,9 @@ def generate_interactive_map(results, latest_news, output_path):
         <div class="sidebar-header">
             <h2>🔥 Feux en Cours (<span id="sidebar-count" style="font-size:13px; font-weight:900; color:#DC2626;">{count_en_cours}</span> / {len(valid_fires)} sur carte)</h2>
             <div class="count-chip" id="sidebar-chip">RÉCENTS EN PREMIER</div>
+        </div>
+        <div style="padding: 8px 10px; border-bottom: 1.5px solid #E2E8F0; background: #FFFFFF;">
+            <input type="text" id="search-input" oninput="handleSearch(this.value)" placeholder="🔍 Rechercher une commune ou dépt..." style="width: 100%; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 6px 10px; font-size: 11.5px; font-weight: 700; outline: none; box-sizing: border-box;" />
         </div>
         <div class="fire-list" id="fire-list-container"></div>
     </div>
@@ -1340,12 +1344,68 @@ def generate_interactive_map(results, latest_news, output_path):
         const latestNews = {news_json};
         const regionsGeoJSON = {regions_geojson_json};
 
+        const REGION_GEOJSON_MAPPING = {{
+            "PACA": "Provence-Alpes-Côte d'Azur",
+            "Nouvelle-Aquitaine": "Nouvelle-Aquitaine",
+            "Occitanie": "Occitanie",
+            "Auvergne-Rhône-Alpes": "Auvergne-Rhône-Alpes",
+            "Corse": "Corse",
+            "Hauts-de-France": "Hauts-de-France",
+            "Bretagne": "Bretagne",
+            "Grand Est": "Grand Est",
+            "Île-de-France": "Île-de-France",
+            "Pays de la Loire": "Pays de la Loire",
+            "Normandie": "Normandie",
+            "Bourgogne-Franche-Comté": "Bourgogne-Franche-Comté",
+            "Centre-Val de Loire": "Centre-Val de Loire"
+        }};
+
         let currentStatusFilter = 'en_cours';
         let currentRegionFilter = 'all';
+        let mainRegionLayer = null;
+        let searchQuery = '';
         let currentViewMode = 'status';
         let modalMiniMapInstance = null;
         let newsIdx = 0;
         let refreshSeconds = 300; // ponytail: 5 minutes refresh interval
+
+        function handleSearch(val) {{
+            searchQuery = val.toLowerCase().trim();
+            renderFires();
+        }}
+
+        let isMapLocked = true;
+        function toggleMapLock() {{
+            const btn = document.getElementById('btn-lock-map');
+            isMapLocked = !isMapLocked;
+            if (isMapLocked) {{
+                map.dragging.disable();
+                map.touchZoom.disable();
+                map.doubleClickZoom.disable();
+                map.scrollWheelZoom.disable();
+                map.boxZoom.disable();
+                map.keyboard.disable();
+                if (map.tap) map.tap.disable();
+                
+                btn.innerHTML = '🔒 Carte figée';
+                btn.style.background = '#DC2626';
+                btn.style.color = '#FFFFFF';
+                btn.style.borderColor = '#B91C1C';
+            }} else {{
+                map.dragging.enable();
+                map.touchZoom.enable();
+                map.doubleClickZoom.enable();
+                map.scrollWheelZoom.enable();
+                map.boxZoom.enable();
+                map.keyboard.enable();
+                if (map.tap) map.tap.enable();
+                
+                btn.innerHTML = '🔓 Carte libre';
+                btn.style.background = '#F1F5F9';
+                btn.style.color = '#0F172A';
+                btn.style.borderColor = '#CBD5E1';
+            }}
+        }}
 
         // Auto Refresh Timer 5 minutes
         setInterval(() => {{
@@ -1644,21 +1704,47 @@ def generate_interactive_map(results, latest_news, output_path):
             }}, 200);
         }}
 
-        const REGION_GEOJSON_MAPPING = {{
-            "PACA": "Provence-Alpes-Côte d'Azur",
-            "Nouvelle-Aquitaine": "Nouvelle-Aquitaine",
-            "Occitanie": "Occitanie",
-            "Auvergne-Rhône-Alpes": "Auvergne-Rhône-Alpes",
-            "Corse": "Corse",
-            "Hauts-de-France": "Hauts-de-France",
-            "Bretagne": "Bretagne",
-            "Grand Est": "Grand Est",
-            "Île-de-France": "Île-de-France",
-            "Pays de la Loire": "Pays de la Loire",
-            "Normandie": "Normandie",
-            "Bourgogne-Franche-Comté": "Bourgogne-Franche-Comté",
-            "Centre-Val de Loire": "Centre-Val de Loire"
-        }};
+
+
+        function generateSvgBarChart(regionalFires) {{
+            const activeFires = regionalFires.filter(f => f.etat_feu !== 'eteint' && f.etat_feu !== 'fausse_alerte');
+            if (activeFires.length === 0) {{
+                return '<div style="font-size: 10.5px; color: #64748B; text-align: center; padding: 15px; font-weight: 800;">Aucun feu actif pour générer le graphique.</div>';
+            }}
+
+            const deptCounts = {{}};
+            activeFires.forEach(f => {{
+                const d = f.dept || "N/A";
+                deptCounts[d] = (deptCounts[d] || 0) + 1;
+            }});
+
+            const sortedDepts = Object.entries(deptCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+
+            const maxCount = Math.max(...sortedDepts.map(d => d[1]));
+
+            const width = 230;
+            const rowHeight = 22;
+            const height = sortedDepts.length * rowHeight + 10;
+            
+            let svgRows = sortedDepts.map(([dept, count], index) => {{
+                const barWidth = Math.max(Math.round((count / maxCount) * 110), 10);
+                const y = index * rowHeight + 8;
+                return `
+                    <text x="5" y="${{y + 13}}" font-size="9.5" font-weight="900" fill="#475569">DEP ${{dept}}</text>
+                    <rect x="50" y="${{y}}" width="${{barWidth}}" height="14" rx="3" fill="#DC2626" />
+                    <text x="${{55 + barWidth}}" y="${{y + 11}}" font-size="9.5" font-weight="900" fill="#0F172A">${{count}}</text>
+                `;
+            }}).join('');
+
+            return `
+                <div style="font-size:8px; font-weight:900; color:#475569; text-transform:uppercase; margin-bottom:6px; border-bottom:1px solid #E2E8F0; padding-bottom:3px; letter-spacing:0.02em;">📈 TOP DÉPARTEMENTS TOUCHÉS</div>
+                <svg width="100%" height="${{height}}" viewBox="0 0 ${{width}} ${{height}}" style="font-family:-apple-system, BlinkMacSystemFont, sans-serif;">
+                    ${{svgRows}}
+                </svg>
+            `;
+        }}
 
         function openNationalInfographieModal() {{
             const isNational = (currentRegionFilter === 'all');
@@ -1751,6 +1837,11 @@ def generate_interactive_map(results, latest_news, output_path):
                             <span style="color:#DC2626;">🔥 Attaque: ${{countAttaque}}</span>
                             <span style="color:#2563EB;">🎯 Fixés: ${{countFixe}}</span>
                             <span style="color:#16A34A;">✅ Maîtrisés: ${{countMaitrise}}</span>
+                        </div>
+
+                        <!-- Top depts chart -->
+                        <div style="background:#F8FAFC; border:1.5px solid #E2E8F0; border-radius:12px; padding:10px 12px; box-shadow:0 4px 15px rgba(15,23,42,0.04);">
+                            ${{generateSvgBarChart(regionalFires)}}
                         </div>
 
                         <!-- Legend -->
@@ -1941,6 +2032,15 @@ def generate_interactive_map(results, latest_news, output_path):
         }}
 
         const map = L.map('map', {{ zoomControl: false, autoPanPaddingTopLeft: [20, 95], autoPanPaddingBottomRight: [20, 20] }}).setView([46.603354, 1.888334], 6);
+        if (isMapLocked) {{
+            map.dragging.disable();
+            map.touchZoom.disable();
+            map.doubleClickZoom.disable();
+            map.scrollWheelZoom.disable();
+            map.boxZoom.disable();
+            map.keyboard.disable();
+            if (map.tap) map.tap.disable();
+        }}
         L.control.zoom({{ position: 'topright' }}).addTo(map);
 
         const markersLayerGroup = L.layerGroup().addTo(map);
@@ -2255,8 +2355,11 @@ def generate_interactive_map(results, latest_news, output_path):
                                      (currentStatusFilter === 'recent'   && f.is_recent) ||
                                      f.etat_feu === currentStatusFilter);
                 const matchRegion = (currentRegionFilter === 'all' || f.region === currentRegionFilter);
+                const matchSearch = !searchQuery || 
+                                    (f.commune && f.commune.toLowerCase().includes(searchQuery)) || 
+                                    (f.dept && f.dept.toString().includes(searchQuery));
                 
-                if (matchStatus && matchRegion) {{
+                if (matchStatus && matchRegion && matchSearch) {{
                     visibleCount++;
                     const offsetPos = getOffsetCoords(f.lat, f.lon);
                     const marker = createFireMarker(f, idx, offsetPos);
@@ -2349,6 +2452,33 @@ def generate_interactive_map(results, latest_news, output_path):
 
         function filterRegion(regionVal) {{
             currentRegionFilter = regionVal;
+            
+            if (mainRegionLayer) {{
+                try {{ map.removeLayer(mainRegionLayer); }} catch(e) {{}}
+                mainRegionLayer = null;
+            }}
+            
+            if (regionVal !== 'all') {{
+                const regionName = REGION_GEOJSON_MAPPING[regionVal];
+                if (regionsGeoJSON && regionsGeoJSON.features && regionName) {{
+                    const feature = regionsGeoJSON.features.find(feat => feat.properties.nom === regionName);
+                    if (feature) {{
+                        mainRegionLayer = L.geoJSON(feature, {{
+                            style: {{
+                                color: '#DC2626',
+                                weight: 2.5,
+                                fillColor: '#DC2626',
+                                fillOpacity: 0.08
+                            }}
+                        }}).addTo(map);
+                        
+                        map.fitBounds(mainRegionLayer.getBounds(), {{ padding: [25, 25] }});
+                    }}
+                }}
+            }} else {{
+                map.setView([46.603354, 1.888334], 6);
+            }}
+            
             renderFires();
         }}
 
