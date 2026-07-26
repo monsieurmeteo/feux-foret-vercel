@@ -652,6 +652,73 @@ def get_closest_pelicandrome(lat, lon, bases):
     eta_str = calculate_canadair_eta(min_dist) if best_name else "N/A"
     return best_name, round(min_dist, 1), eta_str
 
+def fetch_firms_fires():
+    import csv
+    import io
+
+    urls = [
+        "https://firms.modaps.eosdis.nasa.gov/data/active_fire/suomi-npp-viirs-c2/csv/SUOMI_VIIRS_C2_Europe_7d.csv",
+        "https://firms.modaps.eosdis.nasa.gov/data/active_fire/noaa-20-viirs-c2/csv/J1_VIIRS_C2_Europe_7d.csv",
+        "https://firms.modaps.eosdis.nasa.gov/data/active_fire/noaa-21-viirs-c2/csv/J2_VIIRS_C2_Europe_7d.csv",
+    ]
+
+    fires = []
+    # ponytail: France bbox filter
+    lat_min, lat_max = 41.0, 51.5
+    lon_min, lon_max = -5.5, 10.0
+
+    sat_names = {
+        "N": "Suomi-NPP",
+        "1": "NOAA-20",
+        "2": "NOAA-21"
+    }
+
+    for url in urls:
+        print(f"📡 Récupération des détections thermiques FIRMS depuis : {url}")
+        try:
+            req = urllib.request.Request(url, headers=ANONYMOUS_HEADERS)
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                csv_content = resp.read().decode("utf-8")
+
+            reader = csv.DictReader(io.StringIO(csv_content))
+            for row in reader:
+                try:
+                    lat = float(row["latitude"])
+                    lon = float(row["longitude"])
+                    if lat_min <= lat <= lat_max and lon_min <= lon <= lon_max:
+                        acq_time = row["acq_time"]
+                        formatted_time = f"{acq_time[:2]}h{acq_time[2:4]}" if len(acq_time) == 4 else acq_time
+
+                        sat_code = row.get("satellite", "N")
+                        sat_name = sat_names.get(sat_code, sat_code)
+
+                        conf_code = row.get("confidence", "n").lower()
+                        conf_name = "nominale"
+                        if conf_code == "h":
+                            conf_name = "élevée"
+                        elif conf_code == "l":
+                            conf_name = "faible"
+                        elif conf_code in ("nominal", "high", "low"):
+                            conf_name = {"nominal": "nominale", "high": "élevée", "low": "faible"}[conf_code]
+
+                        fires.append({
+                            "lat": lat,
+                            "lon": lon,
+                            "date": row["acq_date"],
+                            "time": formatted_time,
+                            "sat": sat_name,
+                            "confidence": conf_name,
+                            "frp": float(row["frp"]),
+                            "brightness": float(row.get("bright_ti4", 0))
+                        })
+                except Exception:
+                    pass
+        except Exception as e:
+            print(f"⚠️ Erreur lors de la récupération FIRMS depuis {url} : {e}")
+
+    print(f"🔥 Total détections FIRMS filtrées pour la France : {len(fires)}")
+    return fires
+
 def fetch_all_feux():
     cache_path = os.path.join(DATA_DIR, "last_fires.json")
     try:
@@ -857,11 +924,12 @@ def fetch_all_feux():
                 print(f"❌ Erreur lors de la lecture du cache JSON: {cache_read_err}")
         raise scrape_err
 
-def generate_interactive_map(results, latest_news, output_path):
+def generate_interactive_map(results, latest_news, firms_fires, output_path):
     pelicandromes = load_pelicandromes()
     fires_json = json.dumps(results, ensure_ascii=False)
     peli_json = json.dumps(pelicandromes, ensure_ascii=False)
     news_json = json.dumps(latest_news, ensure_ascii=False)
+    firms_fires_json = json.dumps(firms_fires, ensure_ascii=False)
     now_str = datetime.now(tz_paris).strftime("%d/%m/%Y à %H:%M")
     logo_b64 = load_logo_base64()
 
@@ -1008,9 +1076,10 @@ def generate_interactive_map(results, latest_news, output_path):
             background: #DC2626; color: white; box-shadow: 0 2px 6px rgba(220,38,38,0.35);
         }}
 
-        select.clean-select {{
+        select.clean-select, input.clean-date {{
             background: #F1F5F9; border: 1.5px solid #CBD5E1; color: #0F172A;
-            padding: 5px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 800; outline: none; cursor: pointer;
+            padding: 4px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 800; outline: none; cursor: pointer;
+            font-family: inherit;
         }}
 
         .btn-sidebar-toggle {{
@@ -1250,6 +1319,8 @@ def generate_interactive_map(results, latest_news, output_path):
                 <option value="Outre-Mer">🌴 Outre-Mer</option>
             </select>
 
+            <input type="date" class="clean-date" id="gibs-date-picker" style="display:none;" title="Date pour l'imagerie satellite NASA & les feux FIRMS" />
+
             <button id="btn-lock-map" onclick="toggleMapLock()" style="background:#DC2626; border: 1.5px solid #B91C1C; color:#FFFFFF; padding:5px 12px; border-radius:20px; font-size:11.5px; font-weight:800; cursor:pointer; outline:none; transition:all 0.15s ease; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(0,0,0,0.05);">🔒 Carte figée</button>
             <button class="btn-sidebar-toggle" onclick="toggleSidebar()">📋 Liste</button>
             <a href="Rapport_Feux_de_Foret_Temps_Reel.pdf" target="_blank" class="btn-pdf-download">📥 PDF</a>
@@ -1343,6 +1414,7 @@ def generate_interactive_map(results, latest_news, output_path):
         const pelicandromes = {peli_json};
         const latestNews = {news_json};
         const regionsGeoJSON = {regions_geojson_json};
+        const firmsFires = {firms_fires_json};
 
         const REGION_GEOJSON_MAPPING = {{
             "PACA": "Provence-Alpes-Côte d'Azur",
@@ -2047,6 +2119,8 @@ def generate_interactive_map(results, latest_news, output_path):
         const plumeLayerGroup = L.layerGroup().addTo(map);
         const pelicandromesLayerGroup = L.layerGroup().addTo(map); // ponytail: affiché par défaut
 
+        const firmsLayerGroup = L.layerGroup().addTo(map);
+
         const osmLayer = L.tileLayer('https://tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
             maxZoom: 19,
             attribution: '&copy; OpenStreetMap'
@@ -2056,12 +2130,84 @@ def generate_interactive_map(results, latest_news, output_path):
             attribution: '&copy; Esri World Imagery'
         }});
 
+        let todayUtc = new Date().toISOString().split('T')[0];
+        if (firmsFires && firmsFires.length) {{
+            const dates = firmsFires.map(f => f.date).filter(Boolean);
+            if (dates.length) {{
+                dates.sort();
+                todayUtc = dates[dates.length - 1];
+            }}
+        }}
+
+        const nasaGibsSuomi = L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_CorrectedReflectance_TrueColor/default/{{date}}/GoogleMapsCompatible_Level9/{{z}}/{{y}}/{{x}}.jpg', {{
+            date: todayUtc,
+            maxZoom: 9,
+            attribution: 'Imagerie © NASA EOSDIS GIBS'
+        }});
+
         L.control.layers({{
             "🗺️ Carte Blanche OpenStreetMap": osmLayer,
-            "🛰️ Satellite HD Esri": satLayer
+            "🛰️ Satellite HD Esri": satLayer,
+            "🛰️ Satellite NASA Suomi-NPP (Vraies Couleurs)": nasaGibsSuomi
         }}, {{
+            "🔥 Feux Détectés (NASA FIRMS)": firmsLayerGroup,
             "✈️ Bases Canadair": pelicandromesLayerGroup
         }}, {{ position: 'bottomright' }}).addTo(map);
+
+        const datePicker = document.getElementById('gibs-date-picker');
+        if (datePicker) {{
+            datePicker.value = todayUtc;
+            datePicker.style.display = 'inline-block';
+            
+            datePicker.addEventListener('change', function(e) {{
+                const newDate = e.target.value;
+                if (newDate) {{
+                    nasaGibsSuomi.setUrl('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_CorrectedReflectance_TrueColor/default/' + newDate + '/GoogleMapsCompatible_Level9/{{z}}/{{y}}/{{x}}.jpg');
+                    renderFirmsFires(newDate);
+                }}
+            }});
+        }}
+
+        function getFirmsColor(frp) {{
+            if (frp >= 100) return '#DC2626';
+            if (frp >= 30)  return '#EA580C';
+            if (frp >= 10)  return '#F59E0B';
+            return '#FBBF24';
+        }}
+
+        function renderFirmsFires(selectedDate) {{
+            firmsLayerGroup.clearLayers();
+            if (!firmsFires || !firmsFires.length) return;
+
+            firmsFires.forEach(f => {{
+                if (f.date !== selectedDate) return;
+
+                const marker = L.circleMarker([f.lat, f.lon], {{
+                    radius: f.frp >= 100 ? 7 : (f.frp >= 30 ? 5.5 : 4),
+                    color: '#0F172A',
+                    weight: 0.8,
+                    fillColor: getFirmsColor(f.frp),
+                    fillOpacity: 0.85
+                }});
+
+                const popupContent = `
+                    <div style="font-family: system-ui, sans-serif; font-size: 11.5px; color: #0F172A; line-height: 1.5; padding: 4px;">
+                        <h4 style="margin: 0 0 6px 0; font-size: 12.5px; font-weight: 900; color: #DC2626; display: flex; align-items: center; gap: 4px;">
+                            <span>🔥</span> Foyer Thermique Satellite
+                        </h4>
+                        <div style="margin-bottom: 3px;"><b>Date/Heure :</b> ${{f.date}} à ${{f.time}} UTC</div>
+                        <div style="margin-bottom: 3px;"><b>Satellite :</b> ${{f.sat}}</div>
+                        <div style="margin-bottom: 3px;"><b>Puissance (FRP) :</b> ${{f.frp}} MW</div>
+                        <div style="margin-bottom: 3px;"><b>Confiance :</b> ${{f.confidence}}</div>
+                        <div><b>Température (Brightness) :</b> ${{Math.round(f.brightness - 273.15)}}°C (${{f.brightness}} K)</div>
+                    </div>
+                `;
+                marker.bindPopup(popupContent);
+                firmsLayerGroup.addLayer(marker);
+            }});
+        }}
+
+        renderFirmsFires(todayUtc);
 
         map.on('popupopen', function(e) {{
             console.log('POPUP OPENED', e.popup);
@@ -2688,18 +2834,20 @@ def main():
             }
         ]
         latest_news = []
+        firms_fires = []
     else:
         results, latest_news = fetch_all_feux()
+        firms_fires = fetch_firms_fires()
 
     if args.ci:
         # ponytail: --ci écrit dans le répertoire courant, compatible runner Ubuntu sans Bureau
-        generate_interactive_map(results, latest_news, "index.html")
+        generate_interactive_map(results, latest_news, firms_fires, "index.html")
         export_pdf(results, latest_news, "Rapport_Feux_de_Foret_Temps_Reel.pdf")
         return
 
     if args.format == "map" or args.desktop:
         desktop_map = os.path.join(os.path.expanduser("~"), "Desktop", "carte_feux.html")
-        generate_interactive_map(results, latest_news, desktop_map)
+        generate_interactive_map(results, latest_news, firms_fires, desktop_map)
 
     if args.format == "pdf" or args.desktop:
         desktop_pdf = os.path.join(os.path.expanduser("~"), "Desktop", "Rapport_Feux_de_Foret_Temps_Reel.pdf")
