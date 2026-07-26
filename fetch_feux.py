@@ -1149,19 +1149,17 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
     firms_fires_json = json.dumps(firms_fires, ensure_ascii=False)
     aircraft_tracks_json = json.dumps(aircraft_tracks, ensure_ascii=False)
 
-    # 3.1 Filtrer les feux satellites actifs des dernières 24h pour le calcul des risques
-    from datetime import datetime, timedelta
-    now_utc = datetime.utcnow()
+    # 3.1 Filtrer pour ne garder que la date d'observation satellite la plus récente (les dernières observations)
+    latest_firm_date = None
+    if firms_fires:
+        dates_in_firms = [f["date"] for f in firms_fires if f.get("date")]
+        if dates_in_firms:
+            latest_firm_date = max(dates_in_firms)
+    
     active_firms = []
-    for f in firms_fires:
-        try:
-            time_str = f["time"].replace("h", ":")
-            dt = datetime.strptime(f"{f['date']} {time_str}:00", "%Y-%m-%d %H:%M:%S")
-            if now_utc - dt <= timedelta(hours=24):
-                active_firms.append(f)
-        except Exception:
-            pass
-    if not active_firms:
+    if latest_firm_date:
+        active_firms = [f for f in firms_fires if f.get("date") == latest_firm_date]
+    else:
         active_firms = firms_fires
 
     # 4. Calculer les risques pour chaque commune (Top 100)
@@ -1677,6 +1675,7 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
 
             <input type="date" class="clean-date" id="gibs-date-picker" style="display:none;" title="Date pour l'imagerie satellite NASA & les feux FIRMS" />
             <button id="btn-timelapse" onclick="toggleTimelapse()" style="display:none; background:#0F172A; border: 1.5px solid #334155; color:#FFFFFF; padding:5px 12px; border-radius:20px; font-size:11.5px; font-weight:800; cursor:pointer; outline:none; transition:all 0.15s ease; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(0,0,0,0.05);">▶️ Animation</button>
+            <button id="btn-filter-latest-firms" onclick="toggleLatestFirmsFilter()" style="background:#FFFFFF; border: 1.5px solid #CBD5E1; color:#0F172A; padding:5px 12px; border-radius:20px; font-size:11.5px; font-weight:800; cursor:pointer; outline:none; transition:all 0.15s ease; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(0,0,0,0.05);">✨ Tous les foyers</button>
 
             <button id="btn-lock-map" onclick="toggleMapLock()" style="background:#DC2626; border: 1.5px solid #B91C1C; color:#FFFFFF; padding:5px 12px; border-radius:20px; font-size:11.5px; font-weight:800; cursor:pointer; outline:none; transition:all 0.15s ease; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(0,0,0,0.05);">🔒 Carte figée</button>
             <button class="btn-sidebar-toggle" onclick="toggleSidebar()">📋 Liste</button>
@@ -1722,8 +1721,13 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
             <div class="fire-list" id="fire-list-container" style="flex:1; overflow-y:auto; padding:8px;"></div>
         </div>
 
-        <div id="threatened-tab-content" style="display:none; flex:1; overflow-y:auto; padding:8px; background:#FFFFFF;">
-            <div id="threatened-list-container"></div>
+        <div id="threatened-tab-content" style="display:none; flex-direction:column; flex:1; overflow:hidden; background:#FFFFFF;">
+            <div style="padding: 8px 10px; border-bottom: 1.5px solid #E2E8F0; background: #F8FAFC;">
+                <select id="threat-dept-filter" onchange="renderThreatenedCommunes()" style="width: 100%; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 6px 10px; font-size: 11.5px; font-weight: 700; outline: none; box-sizing: border-box; background: white;">
+                    <option value="all">🌍 Tous les départements</option>
+                </select>
+            </div>
+            <div id="threatened-list-container" style="flex: 1; overflow-y: auto; padding: 8px;"></div>
         </div>
     </div>
 
@@ -1845,6 +1849,25 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
         let refreshSeconds = 300; // ponytail: 5 minutes refresh interval
         let activeLinkLine = null;
         let activeCommuneMarker = null;
+        let onlyLatestFirms = false;
+
+        function toggleLatestFirmsFilter() {{
+            onlyLatestFirms = !onlyLatestFirms;
+            const btn = document.getElementById('btn-filter-latest-firms');
+            if (onlyLatestFirms) {{
+                btn.style.background = '#D946EF';
+                btn.style.color = '#FFFFFF';
+                btn.style.borderColor = '#C026D3';
+                btn.textContent = '✨ Derniers foyers (< 3h)';
+            }} else {{
+                btn.style.background = '#FFFFFF';
+                btn.style.color = '#0F172A';
+                btn.style.borderColor = '#CBD5E1';
+                btn.textContent = '✨ Tous les foyers';
+            }}
+            const picker = document.getElementById('gibs-date-picker');
+            renderFirmsFires(picker.value || todayUtc);
+        }}
 
         function handleSearch(val) {{
             searchQuery = val.toLowerCase().trim();
@@ -2608,6 +2631,10 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
                 let radius = 4;
                 let className = '';
                 let isLatest = (latestHotspot && f.lat === latestHotspot.lat && f.lon === latestHotspot.lon && f.time === latestHotspot.time);
+
+                if (onlyLatestFirms && !isLatest && ageHours >= 3) {{
+                    return;
+                }}
 
                 if (isLatest) {{
                     // Le tout dernier foyer détecté (fuchsia clignotant et plus grand)
@@ -3428,13 +3455,14 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
                 firesBtn.classList.remove('active');
                 threatBtn.classList.add('active');
                 firesContent.style.display = 'none';
-                threatContent.style.display = 'block';
+                threatContent.style.display = 'flex';
                 renderThreatenedCommunes();
             }}
         }}
 
         function renderThreatenedCommunes() {{
             const container = document.getElementById('threatened-list-container');
+            const selectEl = document.getElementById('threat-dept-filter');
             if (!container) return;
             
             if (!threatenedCommunes || !threatenedCommunes.length) {{
@@ -3446,10 +3474,39 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
                 return;
             }}
             
+            // Populer le filtre des départements si c'est la première fois ou si vide
+            if (selectEl && selectEl.options.length <= 1) {{
+                const deptsSet = new Set();
+                threatenedCommunes.forEach(c => deptsSet.add(c.dept));
+                const sortedDepts = Array.from(deptsSet).sort();
+                sortedDepts.forEach(d => {{
+                    const opt = document.createElement('option');
+                    opt.value = d;
+                    opt.textContent = 'Département ' + d;
+                    selectEl.appendChild(opt);
+                }});
+            }}
+            
+            const selectedDept = selectEl ? selectEl.value : 'all';
+            
+            // Filtrer les communes selon le département sélectionné
+            const filteredCommunes = selectedDept === 'all' 
+                ? threatenedCommunes 
+                : threatenedCommunes.filter(c => c.dept === selectedDept);
+            
             let html = '';
             
+            if (filteredCommunes.length === 0) {{
+                container.innerHTML = `
+                    <div style="text-align:center; padding:20px; color:#64748B; font-weight:800; font-size:11px;">
+                        🟢 Aucune commune menacée détectée pour ce département.
+                    </div>
+                `;
+                return;
+            }}
+            
             // 1. SECTION ALERTE ÉVACUATION (Risque Très Élevé ou Élevé)
-            const evacuationVilles = threatenedCommunes.filter(c => c.risk_rank === 1 || c.risk_rank === 2);
+            const evacuationVilles = filteredCommunes.filter(c => c.risk_rank === 1 || c.risk_rank === 2);
             // Trier les alertes par proximité (les plus proches en premier)
             evacuationVilles.sort((a, b) => a.dist_km - b.dist_km);
             
@@ -3488,7 +3545,7 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
             `;
             
             const groups = {{}};
-            threatenedCommunes.forEach(c => {{
+            filteredCommunes.forEach(c => {{
                 if (!groups[c.dept]) groups[c.dept] = [];
                 groups[c.dept].push(c);
             }});
