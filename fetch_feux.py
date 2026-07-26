@@ -1945,7 +1945,7 @@ def generate_interactive_map(results, latest_news, output_path):
 
         const markersLayerGroup = L.layerGroup().addTo(map);
         const plumeLayerGroup = L.layerGroup().addTo(map);
-        const pelicandromesLayerGroup = L.layerGroup(); // ponytail: caché par défaut
+        const pelicandromesLayerGroup = L.layerGroup().addTo(map); // ponytail: affiché par défaut
 
         const osmLayer = L.tileLayer('https://tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
             maxZoom: 19,
