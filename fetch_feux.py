@@ -1516,6 +1516,11 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
             70%  {{ transform: scale(1.3);  box-shadow: 0 0 0 18px rgba(249, 115, 22, 0); }}
             100% {{ transform: scale(1);    box-shadow: 0 0 0 0   rgba(249, 115, 22, 0); }}
         }}
+        @keyframes blink-latest {{
+            0%   {{ opacity: 1; box-shadow: 0 0 0 0 rgba(217, 70, 239, 0.85); }}
+            50%  {{ opacity: 0.15; box-shadow: 0 0 0 10px rgba(217, 70, 239, 0.2); }}
+            100% {{ opacity: 1; box-shadow: 0 0 0 0 rgba(217, 70, 239, 0); }}
+        }}
         
         .marker-pulse-majeur {{
             animation: pulse-fire-majeur 1.1s infinite ease-in-out !important;
@@ -1527,6 +1532,10 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
         }}
         .marker-pulse-new {{
             animation: pulse-fire-new 1.2s infinite ease-in-out !important;
+            border-radius: 50%;
+        }}
+        .marker-blink-latest {{
+            animation: blink-latest 0.75s infinite ease-in-out !important;
             border-radius: 50%;
         }}
 
@@ -2606,7 +2615,7 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
                     radius = 8.0;
                     fillOpacity = 0.95;
                     weight = 1.5;
-                    className = 'marker-pulse-majeur';
+                    className = 'marker-blink-latest';
                 }} else if (ageHours >= 0 && ageHours < 3) {{
                     color = '#DC2626';
                     radius = 6.5;
@@ -3448,7 +3457,7 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
                 html += `
                     <div style="font-size:10.5px; font-weight:900; background:#DC2626; color:white; padding:6px 10px; border-radius:6px; margin:5px 0 8px 0; text-transform:uppercase; letter-spacing:0.04em; display:flex; justify-content:space-between; align-items:center; box-shadow:0 3px 8px rgba(220,38,38,0.25);">
                         <span>🚨 ZONE D'ÉVACUATION / DANGER</span>
-                        <span style="font-size:9.5px; background:rgba(255,255,255,0.2); padding:1px 6px; border-radius:4px;">\${{evacuationVilles.length}} villes</span>
+                        <span style="font-size:9.5px; background:rgba(255,255,255,0.2); padding:1px 6px; border-radius:4px;">${{evacuationVilles.length}} villes</span>
                     </div>
                 `;
                 
@@ -3456,14 +3465,14 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
                     html += `
                         <div class="threatened-card" style="background:#FFF5F5; border:1.5px solid #FEE2E2; border-radius:8px; padding:9px 11px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; transition:all 0.15s ease; border-left: 5px solid #DC2626;">
                             <div>
-                                <div style="font-weight:900; font-size:12px; color:#991B1B;">\${{c.commune}} <span style="font-size:9.5px; color:#E11D48; font-weight:800;">(\${{c.postcode}})</span></div>
+                                <div style="font-weight:900; font-size:12px; color:#991B1B;">${{c.commune}} <span style="font-size:9.5px; color:#E11D48; font-weight:800;">(${{c.postcode}})</span></div>
                                 <div style="font-size:9.5px; color:#7F1D1D; font-weight:700; margin-top:2px;">
-                                    📍 Menace à <b>\${{c.dist_km}} km</b> (\${{c.fire_source}})
+                                    📍 Menace à <b>${{c.dist_km}} km</b> (${{c.fire_source}})
                                 </div>
                             </div>
                             <div style="text-align:right;">
                                 <span style="background:#DC2626; color:white; font-size:8.5px; font-weight:900; padding:2px 5px; border-radius:4px; text-transform:uppercase; white-space:nowrap; box-shadow: 0 2px 4px rgba(220,38,38,0.2);">
-                                    \${{c.risk_level.split(' ')[0]}} \${{c.risk_level.substring(c.risk_level.indexOf(' ') + 1)}}
+                                    ${{c.risk_level.split(' ')[0]}} ${{c.risk_level.substring(c.risk_level.indexOf(' ') + 1)}}
                                 </span>
                             </div>
                         </div>
@@ -3489,8 +3498,8 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
             depts.forEach(dept => {{
                 html += `
                     <div style="font-size:10px; font-weight:900; background:#0F172A; color:white; padding:4px 8px; border-radius:6px; margin:10px 0 5px 0; text-transform:uppercase; letter-spacing:0.04em; display:flex; justify-content:space-between; align-items:center;">
-                        <span>Département \${{dept}}</span>
-                        <span style="font-size:9px; background:#334155; padding:1px 5px; border-radius:4px;">\${{groups[dept].length}} villes</span>
+                        <span>Département ${{dept}}</span>
+                        <span style="font-size:9px; background:#334155; padding:1px 5px; border-radius:4px;">${{groups[dept].length}} villes</span>
                     </div>
                 `;
                 
@@ -3498,14 +3507,14 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
                     html += `
                         <div class="threatened-card" style="background:#FFFFFF; border:1.5px solid #E2E8F0; border-radius:8px; padding:8px 10px; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center; transition:all 0.15s ease;">
                             <div>
-                                <div style="font-weight:900; font-size:11.5px; color:#0F172A;">\${{c.commune}} <span style="font-size:9px; color:#64748B; font-weight:700;">(\${{c.postcode}})</span></div>
+                                <div style="font-weight:900; font-size:11.5px; color:#0F172A;">${{c.commune}} <span style="font-size:9px; color:#64748B; font-weight:700;">(${{c.postcode}})</span></div>
                                 <div style="font-size:9.5px; color:#64748B; font-weight:700; margin-top:2px;">
-                                    📍 Proximité : <b>\${{c.dist_km}} km</b> (\${{c.fire_source}})
+                                    📍 Proximité : <b>${{c.dist_km}} km</b> (${{c.fire_source}})
                                 </div>
                             </div>
                             <div style="text-align:right;">
-                                <span style="background:\${{c.risk_color}}; color:white; font-size:8.5px; font-weight:900; padding:2px 5px; border-radius:4px; text-transform:uppercase; white-space:nowrap;">
-                                    \${{c.risk_level.split(' ')[0]}} \${{c.risk_level.substring(c.risk_level.indexOf(' ') + 1)}}
+                                <span style="background:${{c.risk_color}}; color:white; font-size:8.5px; font-weight:900; padding:2px 5px; border-radius:4px; text-transform:uppercase; white-space:nowrap;">
+                                    ${{c.risk_level.split(' ')[0]}} ${{c.risk_level.substring(c.risk_level.indexOf(' ') + 1)}}
                                 </span>
                             </div>
                         </div>
