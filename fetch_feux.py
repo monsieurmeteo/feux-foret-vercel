@@ -674,6 +674,7 @@ def fetch_firms_fires():
         "https://firms.modaps.eosdis.nasa.gov/data/active_fire/suomi-npp-viirs-c2/csv/SUOMI_VIIRS_C2_Europe_7d.csv",
         "https://firms.modaps.eosdis.nasa.gov/data/active_fire/noaa-20-viirs-c2/csv/J1_VIIRS_C2_Europe_7d.csv",
         "https://firms.modaps.eosdis.nasa.gov/data/active_fire/noaa-21-viirs-c2/csv/J2_VIIRS_C2_Europe_7d.csv",
+        "https://firms.modaps.eosdis.nasa.gov/data/active_fire/modis-c6.1/csv/MODIS_C6_1_Europe_7d.csv",
     ]
 
     fires = []
@@ -684,7 +685,11 @@ def fetch_firms_fires():
     sat_names = {
         "N": "Suomi-NPP",
         "1": "NOAA-20",
-        "2": "NOAA-21"
+        "2": "NOAA-21",
+        "T": "Terra (MODIS)",
+        "A": "Aqua (MODIS)",
+        "Terra": "Terra (MODIS)",
+        "Aqua": "Aqua (MODIS)"
     }
 
     for url in urls:
@@ -708,12 +713,20 @@ def fetch_firms_fires():
 
                         conf_code = row.get("confidence", "n").lower()
                         conf_name = "nominale"
-                        if conf_code == "h":
+                        if conf_code.isdigit():
+                            conf_val = int(conf_code)
+                            if conf_val >= 80: conf_name = "élevée"
+                            elif conf_val >= 30: conf_name = "nominale"
+                            else: conf_name = "faible"
+                        elif conf_code == "h":
                             conf_name = "élevée"
                         elif conf_code == "l":
                             conf_name = "faible"
                         elif conf_code in ("nominal", "high", "low"):
                             conf_name = {"nominal": "nominale", "high": "élevée", "low": "faible"}[conf_code]
+
+                        brightness_str = row.get("bright_ti4", row.get("brightness", row.get("bright_t31", "0")))
+                        brightness_val = float(brightness_str) if brightness_str else 0.0
 
                         fires.append({
                             "lat": lat,
@@ -723,7 +736,7 @@ def fetch_firms_fires():
                             "sat": sat_name,
                             "confidence": conf_name,
                             "frp": float(row["frp"]),
-                            "brightness": float(row.get("bright_ti4", 0))
+                            "brightness": brightness_val
                         })
                 except Exception:
                     pass
