@@ -1524,11 +1524,17 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
             <div class="legend-title">🛰️ Légende : NASA FIRMS</div>
             <div class="legend-row" style="display: flex; align-items: center; gap: 8px;">
                 <div style="position: relative; width: 12px; height: 12px; display: inline-block;">
-                    <div style="background:#DC2626; width: 12px; height: 12px; border-radius: 50%; border: 1px solid #FFFFFF; box-shadow: 0 0 0 2px #DC2626; display: inline-block;"></div>
+                    <div class="marker-pulse-majeur" style="background:#D946EF; width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid white; display: inline-block;"></div>
                 </div>
-                <span>Foyer très récent (&lt; 3h, actif)</span>
+                <span><b>✨ Tout dernier foyer (&lt; 3h)</b></span>
             </div>
-            <div class="legend-row" style="display: flex; align-items: center; gap: 8px;"><div style="background:#EA580C; width: 10px; height: 10px; border-radius: 50%; border: 1px solid #0F172A; display: inline-block;"></div> <span>Foyer récent (3h - 12h)</span></div>
+            <div class="legend-row" style="display: flex; align-items: center; gap: 8px;">
+                <div style="position: relative; width: 10px; height: 10px; display: inline-block;">
+                    <div style="background:#DC2626; width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid #FFFFFF; box-shadow: 0 0 0 2px #DC2626; display: inline-block;"></div>
+                </div>
+                <span>Foyer très récent (&lt; 3h)</span>
+            </div>
+            <div class="legend-row" style="display: flex; align-items: center; gap: 8px;"><div style="background:#EA580C; width: 9px; height: 9px; border-radius: 50%; border: 1px solid #0F172A; display: inline-block;"></div> <span>Foyer récent (3h - 12h)</span></div>
             <div class="legend-row" style="display: flex; align-items: center; gap: 8px;"><div style="background:#F59E0B; width: 8px; height: 8px; border-radius: 50%; border: 1px solid #0F172A; display: inline-block;"></div> <span>Foyer intermédiaire (12h - 24h)</span></div>
             <div class="legend-row" style="display: flex; align-items: center; gap: 8px;"><div style="background:#64748B; width: 6px; height: 6px; border-radius: 50%; border: 1px solid #0F172A; display: inline-block; opacity: 0.5;"></div> <span>Foyer ancien (&gt; 24h, froid)</span></div>
         </div>
@@ -2334,6 +2340,20 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
             if (!firmsFires || !firmsFires.length) return;
 
             const nowUtc = new Date();
+            let latestTimeMs = 0;
+            let latestHotspot = null;
+
+            // Trouver le tout dernier foyer détecté pour la date sélectionnée
+            firmsFires.forEach(f => {{
+                if (f.date !== selectedDate) return;
+                const parts = f.time.split('h');
+                const detectUtc = new Date(f.date + 'T' + parts[0] + ':' + parts[1] + ':00Z');
+                const timeMs = detectUtc.getTime();
+                if (timeMs > latestTimeMs) {{
+                    latestTimeMs = timeMs;
+                    latestHotspot = f;
+                }}
+            }});
 
             firmsFires.forEach(f => {{
                 if (f.date !== selectedDate) return;
@@ -2347,8 +2367,16 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
                 let weight = 0.8;
                 let radius = 4;
                 let className = '';
+                let isLatest = (latestHotspot && f.lat === latestHotspot.lat && f.lon === latestHotspot.lon && f.time === latestHotspot.time);
 
-                if (ageHours >= 0 && ageHours < 3) {{
+                if (isLatest) {{
+                    // Le tout dernier foyer détecté (fuchsia clignotant et plus grand)
+                    color = '#D946EF';
+                    radius = 8.0;
+                    fillOpacity = 0.95;
+                    weight = 1.5;
+                    className = 'marker-pulse-majeur';
+                }} else if (ageHours >= 0 && ageHours < 3) {{
                     color = '#DC2626';
                     radius = 6.5;
                     fillOpacity = 0.95;
@@ -2381,10 +2409,12 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
                     ? `il y a ${{Math.round(ageHours)}}h` 
                     : `il y a ${{Math.round(ageHours/24)}} jours`;
 
+                const titleText = isLatest ? 'Tout Dernier Foyer Détecté (NASA)' : 'Foyer Satellite (' + ageStr + ')';
+
                 const popupContent = `
                     <div style="font-family: system-ui, sans-serif; font-size: 11.5px; color: #0F172A; line-height: 1.5; padding: 4px;">
                         <h4 style="margin: 0 0 6px 0; font-size: 12.5px; font-weight: 900; color: ${{color}}; display: flex; align-items: center; gap: 4px;">
-                            <span>🔥</span> Foyer Satellite (${{ageStr}})
+                            \${{isLatest ? '✨' : '🔥'}} \${{titleText}}
                         </h4>
                         <div style="margin-bottom: 3px;"><b>Date/Heure :</b> ${{f.date}} à ${{f.time}} UTC</div>
                         <div style="margin-bottom: 3px;"><b>Satellite :</b> ${{f.sat}}</div>
