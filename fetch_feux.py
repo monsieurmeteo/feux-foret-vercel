@@ -865,6 +865,15 @@ def generate_interactive_map(results, latest_news, output_path):
     now_str = datetime.now(tz_paris).strftime("%d/%m/%Y à %H:%M")
     logo_b64 = load_logo_base64()
 
+    regions_geojson_path = os.path.join(DATA_DIR, "regions-version-simplifiee.geojson")
+    regions_geojson_json = "{}"
+    if os.path.exists(regions_geojson_path):
+        try:
+            with open(regions_geojson_path, "r", encoding="utf-8") as f_geojson:
+                regions_geojson_json = f_geojson.read().strip()
+        except Exception as e:
+            print(f"⚠️ Impossible de lire regions-version-simplifiee.geojson : {e}")
+
     valid_fires = [f for f in results if f.get("lat") and f.get("lon")]
     count_under_1h = sum(1 for f in valid_fires if f.get("is_under_1h"))
     count_recent = sum(1 for f in valid_fires if f.get("is_recent"))
@@ -1243,7 +1252,7 @@ def generate_interactive_map(results, latest_news, output_path):
 
             <button class="btn-sidebar-toggle" onclick="toggleSidebar()">📋 Liste</button>
             <a href="Rapport_Feux_de_Foret_Temps_Reel.pdf" target="_blank" class="btn-pdf-download">📥 PDF</a>
-            <button onclick="openNationalInfographieModal()" class="btn-national-infographie" style="background:#7C3AED; color:white; border:none; padding:5px 12px; border-radius:20px; font-size:11.5px; font-weight:800; cursor:pointer; outline:none; transition:background 0.2s; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(124,58,237,0.3);">📸 Bilan</button>
+            <button onclick="openNationalInfographieModal()" class="btn-national-infographie" id="btn-bilan-infographie" style="background:#7C3AED; color:white; border:none; padding:5px 12px; border-radius:20px; font-size:11.5px; font-weight:800; cursor:pointer; outline:none; transition:background 0.2s; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(124,58,237,0.3);">📸 Bilan</button>
         </div>
     </div>
 
@@ -1329,6 +1338,7 @@ def generate_interactive_map(results, latest_news, output_path):
         const fires = {fires_json};
         const pelicandromes = {peli_json};
         const latestNews = {news_json};
+        const regionsGeoJSON = {regions_geojson_json};
 
         let currentStatusFilter = 'en_cours';
         let currentRegionFilter = 'all';
@@ -1634,18 +1644,39 @@ def generate_interactive_map(results, latest_news, output_path):
             }}, 200);
         }}
 
-        function openNationalInfographieModal() {{
-            const validFires = fires.filter(f => f.lat && f.lon);
-            const countEnCours = validFires.filter(f => f.etat_feu !== 'eteint' && f.etat_feu !== 'fausse_alerte').length;
-            const countUnder1h = validFires.filter(f => f.is_under_1h).length;
-            const countMajeurs = validFires.filter(f => f.fire_scale === 'majeur').length;
-            const countAttaque = validFires.filter(f => f.etat_feu === 'attaque').length;
-            const countFixe = validFires.filter(f => f.etat_feu === 'fixe').length;
-            const countMaitrise = validFires.filter(f => f.etat_feu === 'maitrise').length;
+        const REGION_GEOJSON_MAPPING = {{
+            "PACA": "Provence-Alpes-Côte d'Azur",
+            "Nouvelle-Aquitaine": "Nouvelle-Aquitaine",
+            "Occitanie": "Occitanie",
+            "Auvergne-Rhône-Alpes": "Auvergne-Rhône-Alpes",
+            "Corse": "Corse",
+            "Hauts-de-France": "Hauts-de-France",
+            "Bretagne": "Bretagne",
+            "Grand Est": "Grand Est",
+            "Île-de-France": "Île-de-France",
+            "Pays de la Loire": "Pays de la Loire",
+            "Normandie": "Normandie",
+            "Bourgogne-Franche-Comté": "Bourgogne-Franche-Comté",
+            "Centre-Val de Loire": "Centre-Val de Loire"
+        }};
 
-            const activeFires = validFires.filter(f => f.etat_feu !== 'eteint' && f.etat_feu !== 'fausse_alerte');
+        function openNationalInfographieModal() {{
+            const isNational = (currentRegionFilter === 'all');
+            const targetRegionName = isNational ? null : REGION_GEOJSON_MAPPING[currentRegionFilter];
+
+            const validFires = fires.filter(f => f.lat && f.lon);
+            const regionalFires = isNational ? validFires : validFires.filter(f => f.region === currentRegionFilter);
+
+            const countEnCours = regionalFires.filter(f => f.etat_feu !== 'eteint' && f.etat_feu !== 'fausse_alerte').length;
+            const countUnder1h = regionalFires.filter(f => f.is_under_1h).length;
+            const countMajeurs = regionalFires.filter(f => f.fire_scale === 'majeur').length;
+            const countAttaque = regionalFires.filter(f => f.etat_feu === 'attaque').length;
+            const countFixe = regionalFires.filter(f => f.etat_feu === 'fixe').length;
+            const countMaitrise = regionalFires.filter(f => f.etat_feu === 'maitrise').length;
+
+            const activeFires = regionalFires.filter(f => f.etat_feu !== 'eteint' && f.etat_feu !== 'fausse_alerte');
             const countDepts = new Set(activeFires.map(f => f.dept)).size;
-            const countNew24h = validFires.filter(f => (f.minutes_ago || 99999) <= 1440).length;
+            const countNew24h = regionalFires.filter(f => (f.minutes_ago || 99999) <= 1440).length;
 
             const logoHtml = '{logo_b64}'
                 ? `<img src="{logo_b64}" style="height:38px; object-fit:contain;" alt="Météo Climat Pro" />`
@@ -1654,6 +1685,12 @@ def generate_interactive_map(results, latest_news, output_path):
             const dateStr = new Date().toLocaleDateString('fr-FR', {{
                 day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
             }});
+
+            const titleText = isNational ? "SUPERVISION FRANCE EN TEMPS RÉEL" : `SUPERVISION RÉGION ${{currentRegionFilter.toUpperCase()}} EN TEMPS RÉEL`;
+            const badgeLabel = isNational ? "🔥 DIRECT NATIONAL" : `🔥 DIRECT RÉGIONAL - ${{currentRegionFilter.toUpperCase()}}`;
+            const statsLabel = isNational ? "📊 STATISTIQUES NATIONALES" : `📊 STATISTIQUES RÉGIONALES`;
+            const downloadFilename = isNational ? "Bilan_National" : `Bilan_Regional_${{currentRegionFilter.replace(/ /g, '_')}}`;
+            const downloadButtonText = isNational ? "📸 Télécharger le Bilan National PNG" : `📸 Télécharger le Bilan Régional ${{currentRegionFilter}} PNG`;
 
             const html = `
                 <div class="infographie-layout" style="display:flex; gap:16px; padding:4px; font-family:-apple-system, BlinkMacSystemFont, sans-serif; color:#0F172A;">
@@ -1664,9 +1701,9 @@ def generate_interactive_map(results, latest_news, output_path):
                                 <div style="background:#DC2626; color:white; padding:10px 20px; border-radius:10px; font-size:32px; font-weight:900; text-transform:uppercase; letter-spacing:0.04em; box-shadow:0 4px 14px rgba(220,38,38,0.35); border:2px solid #B91C1C; flex:1; text-align:center; margin-right:12px;">🔥 FEUX DE FORÊT EN COURS</div>
                                 <div>${{logoHtml}}</div>
                             </div>
-                            <h2 style="font-size:28px; font-weight:900; text-transform:uppercase; margin:0 0 8px 0; color:#0F172A; letter-spacing:-0.02em;">SUPERVISION FRANCE EN TEMPS RÉEL</h2>
+                            <h2 style="font-size:28px; font-weight:900; text-transform:uppercase; margin:0 0 8px 0; color:#0F172A; letter-spacing:-0.02em;">${{titleText}}</h2>
                             <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-                                <span style="background:#DC2626; color:white; padding:5px 12px; border-radius:6px; font-weight:900; font-size:13px; letter-spacing:0.03em;">🔥 DIRECT NATIONAL</span>
+                                <span style="background:#DC2626; color:white; padding:5px 12px; border-radius:6px; font-weight:900; font-size:13px; letter-spacing:0.03em;">${{badgeLabel}}</span>
                                 <span style="background:#F1F5F9; color:#475569; border:1px solid #CBD5E1; padding:5px 12px; border-radius:6px; font-weight:900; font-size:13px;">BILAN FEUX DE FORÊT</span>
                             </div>
                             <div style="font-size:12px; color:#64748B; font-weight:700; border-top:1px dashed #E2E8F0; padding-top:8px;">⏱️ Situation arrêtée par les secours au : <b style="color:#D97706; font-size:13px;">${{dateStr}}</b></div>
@@ -1680,7 +1717,7 @@ def generate_interactive_map(results, latest_news, output_path):
                     <div style="flex: 0.7; display:flex; flex-direction:column; gap:10px;">
                         <!-- Global metrics card -->
                         <div style="background:#F8FAFC; border:1.5px solid #E2E8F0; border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:8px; box-shadow:0 4px 15px rgba(15,23,42,0.04);">
-                            <div style="font-size:8px; font-weight:900; color:#475569; text-transform:uppercase; border-bottom:1px solid #E2E8F0; padding-bottom:4px; margin-bottom:2px; letter-spacing:0.02em;">📊 STATISTIQUES NATIONALES</div>
+                            <div style="font-size:8px; font-weight:900; color:#475569; text-transform:uppercase; border-bottom:1px solid #E2E8F0; padding-bottom:4px; margin-bottom:2px; letter-spacing:0.02em;">${{statsLabel}}</div>
                             
                             <!-- Feux en cours (Principal) -->
                             <div style="background:#FFF5F5; border:1.5px solid #FECDD3; border-radius:8px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center;">
@@ -1731,7 +1768,7 @@ def generate_interactive_map(results, latest_news, output_path):
                     </div>
                 </div>
 
-                <button class="download-png-btn" onclick="downloadInfographiePNG('Bilan_National')">📸 Télécharger le Bilan National PNG</button>
+                <button class="download-png-btn" onclick="downloadInfographiePNG('${{downloadFilename}}')">${{downloadButtonText}}</button>
             `;
 
             document.getElementById('infographie-modal-content').innerHTML = html;
@@ -1746,11 +1783,41 @@ def generate_interactive_map(results, latest_news, output_path):
                     dragging: false, 
                     scrollWheelZoom: false, 
                     attributionControl: false 
-                }}).setView([46.5, 2.2], 5.15);
+                }});
 
                 L.tileLayer('https://tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
                     crossOrigin: true
                 }}).addTo(modalMiniMapInstance);
+
+                // Dessiner les contours des régions
+                let boundsToFit = null;
+                if (regionsGeoJSON && regionsGeoJSON.features) {{
+                    const geojsonLayer = L.geoJSON(regionsGeoJSON, {{
+                        style: function(feature) {{
+                            const isSelected = !isNational && feature.properties.nom === targetRegionName;
+                            return {{
+                                color: isSelected ? "#DC2626" : "#94A3B8", // Rouge vif si sélectionné, sinon gris bleu très discret
+                                weight: isSelected ? 3.5 : 0.8,
+                                fillColor: isSelected ? "#DC2626" : "transparent",
+                                fillOpacity: isSelected ? 0.08 : 0
+                            }};
+                        }}
+                    }}).addTo(modalMiniMapInstance);
+                    
+                    if (!isNational && targetRegionName) {{
+                        const selectedFeatures = regionsGeoJSON.features.filter(f => f.properties.nom === targetRegionName);
+                        if (selectedFeatures.length > 0) {{
+                            const tempLayer = L.geoJSON({{ type: "FeatureCollection", features: selectedFeatures }});
+                            boundsToFit = tempLayer.getBounds();
+                        }}
+                    }}
+                }}
+
+                if (boundsToFit) {{
+                    modalMiniMapInstance.fitBounds(boundsToFit, {{ padding: [15, 15] }});
+                }} else {{
+                    modalMiniMapInstance.setView([46.4, 2.2], 5.1); // France entière
+                }}
 
                 const placedCoords = {{}};
                 function getOffsetCoords(lat, lon) {{
@@ -1765,7 +1832,7 @@ def generate_interactive_map(results, latest_news, output_path):
                     return [lat + Math.sin(angle) * radius, lon + Math.cos(angle) * radius];
                 }}
 
-                validFires.forEach(f => {{
+                regionalFires.forEach(f => {{
                     const isActive = f.etat_feu !== 'eteint' && f.etat_feu !== 'fausse_alerte';
                     const isEteint24h = f.etat_feu === 'eteint' && (f.minutes_ago || 99999) <= 1440;
                     const isFausse2h = f.etat_feu === 'fausse_alerte' && (f.minutes_ago || 99999) <= 120;
@@ -1779,9 +1846,7 @@ def generate_interactive_map(results, latest_news, output_path):
                                          (currentStatusFilter === 'recent'   && f.is_recent) ||
                                          f.etat_feu === currentStatusFilter);
                                          
-                    const matchRegion = (currentRegionFilter === 'all' || f.region === currentRegionFilter);
-
-                    if (isActive && matchRegion) {{
+                    if (matchStatus) {{
                         const markerColor = getMarkerColor(f);
                         const isMajeur = (f.fire_scale === 'majeur');
                         const isUnder1h = f.is_under_1h;
@@ -2266,6 +2331,15 @@ def generate_interactive_map(results, latest_news, output_path):
             }});
 
             document.getElementById('sidebar-count').innerText = visibleCount;
+
+            const btnBilan = document.getElementById('btn-bilan-infographie');
+            if (btnBilan) {{
+                if (currentRegionFilter === 'all') {{
+                    btnBilan.innerHTML = '📸 Bilan';
+                }} else {{
+                    btnBilan.innerHTML = `📸 Bilan ${{currentRegionFilter}}`;
+                }}
+            }}
         }}
 
         function filterFires(statusType) {{
