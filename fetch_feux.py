@@ -1050,13 +1050,208 @@ def fetch_all_feux():
                 print(f"❌ Erreur lors de la lecture du cache JSON: {cache_read_err}")
         raise scrape_err
 
+def get_dept_from_coords(lat, lon):
+    import urllib.request
+    import json
+    url = f"https://geo.api.gouv.fr/communes?lat={lat}&lon={lon}&fields=codeDepartement&limit=1"
+    try:
+        req = urllib.request.Request(url, headers=ANONYMOUS_HEADERS)
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            if data:
+                return data[0].get("codeDepartement")
+    except Exception:
+        pass
+    return None
+
 def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks, output_path):
     pelicandromes = load_pelicandromes()
     fires_json = json.dumps(results, ensure_ascii=False)
     peli_json = json.dumps(pelicandromes, ensure_ascii=False)
     news_json = json.dumps(latest_news, ensure_ascii=False)
+    
+    # 1. Résoudre les départements des feux pour charger la liste des communes
+    active_depts = set()
+    for f in results:
+        if f.get("dept"):
+            active_depts.add(str(f["dept"]).zfill(2))
+            
+    # Résoudre avec cache les départements des feux satellites (limité aux 80 premiers pour éviter la saturation)
+    cache_dept = {}
+    for f in firms_fires[:80]:
+        lat_k = round(f["lat"], 1)
+        lon_k = round(f["lon"], 1)
+        k = (lat_k, lon_k)
+        if k in cache_dept:
+            dept = cache_dept[k]
+        else:
+            dept = get_dept_from_coords(f["lat"], f["lon"])
+            cache_dept[k] = dept
+        if dept:
+            active_depts.add(str(dept).zfill(2))
+
+    if not active_depts:
+        active_depts = {"83", "33"} # par défaut
+
+    print(f"🌍 Chargement des communes pour les départements : {list(active_depts)}")
+
+    # 2. Récupérer toutes les communes de ces départements
+    all_communes = []
+    for dept in active_depts:
+        url = f"https://geo.api.gouv.fr/departements/{dept}/communes?fields=nom,centre,codesPostaux,population"
+        try:
+            req = urllib.request.Request(url, headers=ANONYMOUS_HEADERS)
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                for c in data:
+                    if c.get("centre") and c["centre"].get("coordinates"):
+                        coords = c["centre"]["coordinates"]
+                        all_communes.append({
+                            "nom": c["nom"],
+                            "postcode": c["codesPostaux"][0] if c.get("codesPostaux") else "",
+                            "dept": dept,
+                            "lat": coords[1],
+                            "lon": coords[0],
+                            "population": c.get("population", 0)
+                        })
+        except Exception as e:
+            print(f"⚠️ Impossible de charger les communes du département {dept} : {e}")
+
+    # 3. Associer la commune la plus proche pour chaque feu satellite (avec filtre de bounding box rapide)
+    for f in firms_fires:
+        closest_name = "Zone isolée / forêt"
+        min_d = float("inf")
+        f_lat, f_lon = f["lat"], f["lon"]
+        for c in all_communes:
+            # Filtre de boîte englobante (~0.15 deg lat, ~0.22 deg lon)
+            if abs(f_lat - c["lat"]) > 0.15:
+                continue
+            if abs(f_lon - c["lon"]) > 0.22:
+                continue
+            dist = haversine(f_lat, f_lon, c["lat"], c["lon"])
+            if dist < min_d:
+                min_d = dist
+                closest_name = c["nom"]
+        if min_d <= 15.0:
+            f["commune_proche"] = f"{closest_name} ({round(min_d, 1)} km)"
+        else:
+            f["commune_proche"] = "Zone isolée / forêt"
+
+    # Ré-sérialiser les feux satellites avec les infos de communes proches
     firms_fires_json = json.dumps(firms_fires, ensure_ascii=False)
     aircraft_tracks_json = json.dumps(aircraft_tracks, ensure_ascii=False)
+
+    # 3.1 Filtrer les feux satellites actifs des dernières 24h pour le calcul des risques
+    from datetime import datetime, timedelta
+    now_utc = datetime.utcnow()
+    active_firms = []
+    for f in firms_fires:
+        try:
+            time_str = f["time"].replace("h", ":")
+            dt = datetime.strptime(f"{f['date']} {time_str}:00", "%Y-%m-%d %H:%M:%S")
+            if now_utc - dt <= timedelta(hours=24):
+                active_firms.append(f)
+        except Exception:
+            pass
+    if not active_firms:
+        active_firms = firms_fires
+
+    # 4. Calculer les risques pour chaque commune (Top 100)
+    threatened_communes = []
+    for c in all_communes:
+        closest_fire = None
+        min_dist = float("inf")
+        fire_type = "sdis"
+        c_lat, c_lon = c["lat"], c["lon"]
+        
+        # Distance avec les feux SDIS
+        for f in results:
+            if not f.get("lat") or not f.get("lon"):
+                continue
+            # Filtre de boîte englobante (~0.25 deg lat, ~0.35 deg lon)
+            if abs(c_lat - f["lat"]) > 0.25:
+                continue
+            if abs(c_lon - f["lon"]) > 0.35:
+                continue
+            dist = haversine(c_lat, c_lon, f["lat"], f["lon"])
+            if dist < min_dist:
+                min_dist = dist
+                closest_fire = f
+                fire_type = "sdis"
+                
+        # Distance avec les feux satellites actifs (dernières 24h)
+        for f in active_firms:
+            # Filtre de boîte englobante (~0.25 deg lat, ~0.35 deg lon)
+            if abs(c_lat - f["lat"]) > 0.25:
+                continue
+            if abs(c_lon - f["lon"]) > 0.35:
+                continue
+            dist = haversine(c_lat, c_lon, f["lat"], f["lon"])
+            if dist < min_dist:
+                min_dist = dist
+                closest_fire = f
+                fire_type = "nasa"
+                
+        if min_dist <= 25.0 and closest_fire:
+            risk_level = "🟢 FAIBLE"
+            risk_color = "#10B981"
+            risk_rank = 4
+            
+            if fire_type == "sdis":
+                weather = closest_fire.get("weather", {})
+                plume_deg = weather.get("plume_deg")
+                is_downwind = False
+                if plume_deg is not None:
+                    bearing = calculate_bearing(closest_fire["lat"], closest_fire["lon"], c["lat"], c["lon"])
+                    diff_angle = abs((bearing - plume_deg + 180) % 360 - 180)
+                    is_downwind = (diff_angle <= 35.0)
+                
+                if min_dist <= 5.0 and is_downwind:
+                    risk_level = "🚨 TRÈS ÉLEVÉ (Évacuation)"
+                    risk_color = "#EF4444"
+                    risk_rank = 1
+                elif min_dist <= 10.0:
+                    risk_level = "🟠 ÉLEVÉ (Vigilance)"
+                    risk_color = "#F97316"
+                    risk_rank = 2
+                elif min_dist <= 20.0:
+                    risk_level = "🟡 MODÉRÉ (Surveillance)"
+                    risk_color = "#F59E0B"
+                    risk_rank = 3
+            else:
+                frp = closest_fire.get("frp", 10)
+                if min_dist <= 3.0 and frp >= 80:
+                    risk_level = "🚨 TRÈS ÉLEVÉ (Évacuation)"
+                    risk_color = "#EF4444"
+                    risk_rank = 1
+                elif min_dist <= 8.0:
+                    risk_level = "🟠 ÉLEVÉ (Vigilance)"
+                    risk_color = "#F97316"
+                    risk_rank = 2
+                elif min_dist <= 18.0:
+                    risk_level = "🟡 MODÉRÉ (Surveillance)"
+                    risk_color = "#F59E0B"
+                    risk_rank = 3
+                    
+            threatened_communes.append({
+                "commune": c["nom"],
+                "postcode": c["postcode"],
+                "dept": c["dept"],
+                "dist_km": round(min_dist, 1),
+                "risk_level": risk_level,
+                "risk_color": risk_color,
+                "risk_rank": risk_rank,
+                "fire_source": "Sécurité Civile" if fire_type == "sdis" else f"Satellite NASA ({closest_fire.get('sat', 'VIIRS')})"
+            })
+            
+    # Trier d'abord pour garder le top 100 le plus à risque
+    threatened_communes.sort(key=lambda x: (x["risk_rank"], x["dist_km"]))
+    top_100_threatened = threatened_communes[:100]
+    
+    # Classer par département puis par ordre alphabétique de la commune
+    top_100_threatened.sort(key=lambda x: (x["dept"], x["commune"]))
+    
+    threatened_communes_json = json.dumps(top_100_threatened, ensure_ascii=False)
     now_str = datetime.now(tz_paris).strftime("%d/%m/%Y à %H:%M")
     logo_b64 = load_logo_base64()
 
@@ -1378,6 +1573,19 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
         .leaflet-top.leaflet-right {{
             margin-top: 110px !important;
         }}
+        .tab-btn {{
+            flex: 1; border: none; background: transparent; padding: 10px;
+            font-weight: 800; font-size: 11px; cursor: pointer; color: #64748B;
+            transition: all 0.15s ease; border-bottom: 2px solid transparent;
+            font-family: inherit; text-transform: uppercase; letter-spacing: 0.03em;
+        }}
+        .tab-btn.active {{
+            color: #7C3AED; border-bottom: 2px solid #7C3AED; background: rgba(124, 58, 237, 0.05);
+        }}
+        .threatened-card:hover {{
+            border-color: #7C3AED !important;
+            box-shadow: 0 4px 12px rgba(124,58,237,0.12);
+        }}
     </style>
 </head>
 <body>
@@ -1471,23 +1679,35 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
             <h2>🔥 Feux en Cours (<span id="sidebar-count" style="font-size:13px; font-weight:900; color:#DC2626;">{count_en_cours}</span> / {len(valid_fires)} sur carte)</h2>
             <div class="count-chip" id="sidebar-chip">RÉCENTS EN PREMIER</div>
         </div>
-        <div style="padding: 8px 10px; border-bottom: 1.5px solid #E2E8F0; background: #FFFFFF;">
-            <input type="text" id="search-input" oninput="handleSearch(this.value)" placeholder="🔍 Filtrer les fiches de feux..." style="width: 100%; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 6px 10px; font-size: 11.5px; font-weight: 700; outline: none; box-sizing: border-box;" />
+        
+        <div class="tab-group" style="display:flex; border-bottom: 1.5px solid #E2E8F0; background:#F8FAFC;">
+            <button id="tab-btn-fires" class="tab-btn active" onclick="switchTab('fires')">🔥 Feux</button>
+            <button id="tab-btn-threatened" class="tab-btn" onclick="switchTab('threatened')">⚠️ Villes Menacées</button>
         </div>
 
-        <!-- Module Proximité / Sécurité -->
-        <div style="padding: 10px; border-bottom: 1.5px solid #E2E8F0; background: #F8FAFC;">
-            <div style="font-size: 10.5px; font-weight: 900; color: #475569; margin-bottom: 6px; text-transform: uppercase; display: flex; align-items: center; gap: 4px; letter-spacing: 0.02em;">
-                <span>📍</span> Diagnostic de Proximité
+        <div id="fires-tab-content" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
+            <div style="padding: 8px 10px; border-bottom: 1.5px solid #E2E8F0; background: #FFFFFF;">
+                <input type="text" id="search-input" oninput="handleSearch(this.value)" placeholder="🔍 Filtrer les fiches de feux..." style="width: 100%; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 6px 10px; font-size: 11.5px; font-weight: 700; outline: none; box-sizing: border-box;" />
             </div>
-            <div style="display: flex; gap: 5px; margin-bottom: 8px;">
-                <input type="text" id="proximity-address-input" placeholder="Entrez votre ville ou adresse..." style="flex: 1; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 6px 10px; font-size: 11px; font-weight: 700; outline: none; box-sizing: border-box;" onkeydown="if(event.key === 'Enter') searchUserAddress()" />
-                <button onclick="searchUserAddress()" style="background:#2563EB; color:white; border:none; padding:6px 12px; border-radius:8px; font-size:11px; font-weight:800; cursor:pointer;" title="Rechercher l'adresse">Rechercher</button>
-                <button onclick="geolocateUserGps()" style="background:#059669; color:white; border:none; padding:6px 10px; border-radius:8px; font-size:11px; font-weight:800; cursor:pointer;" title="Me géolocaliser via GPS">📍 GPS</button>
+
+            <!-- Module Proximité / Sécurité -->
+            <div style="padding: 10px; border-bottom: 1.5px solid #E2E8F0; background: #F8FAFC;">
+                <div style="font-size: 10.5px; font-weight: 900; color: #475569; margin-bottom: 6px; text-transform: uppercase; display: flex; align-items: center; gap: 4px; letter-spacing: 0.02em;">
+                    <span>📍</span> Diagnostic de Proximité
+                </div>
+                <div style="display: flex; gap: 5px; margin-bottom: 8px;">
+                    <input type="text" id="proximity-address-input" placeholder="Entrez votre ville ou adresse..." style="flex: 1; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 6px 10px; font-size: 11px; font-weight: 700; outline: none; box-sizing: border-box;" onkeydown="if(event.key === 'Enter') searchUserAddress()" />
+                    <button onclick="searchUserAddress()" style="background:#2563EB; color:white; border:none; padding:6px 12px; border-radius:8px; font-size:11px; font-weight:800; cursor:pointer;" title="Rechercher l'adresse">Rechercher</button>
+                    <button onclick="geolocateUserGps()" style="background:#059669; color:white; border:none; padding:6px 10px; border-radius:8px; font-size:11px; font-weight:800; cursor:pointer;" title="Me géolocaliser via GPS">📍 GPS</button>
+                </div>
+                <div id="proximity-result" style="display:none; padding:8px 10px; border-radius:8px; font-size:11px; font-weight:700; border:1px solid transparent; line-height: 1.45;"></div>
             </div>
-            <div id="proximity-result" style="display:none; padding:8px 10px; border-radius:8px; font-size:11px; font-weight:700; border:1px solid transparent; line-height: 1.45;"></div>
+            <div class="fire-list" id="fire-list-container" style="flex:1; overflow-y:auto; padding:8px;"></div>
         </div>
-        <div class="fire-list" id="fire-list-container"></div>
+
+        <div id="threatened-tab-content" style="display:none; flex:1; overflow-y:auto; padding:8px; background:#FFFFFF;">
+            <div id="threatened-list-container"></div>
+        </div>
     </div>
 
     <div id="legend">
@@ -1580,6 +1800,7 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
         const regionsGeoJSON = {regions_geojson_json};
         const firmsFires = {firms_fires_json};
         const aircraftTracks = {aircraft_tracks_json};
+        const threatenedCommunes = {threatened_communes_json};
 
         const REGION_GEOJSON_MAPPING = {{
             "PACA": "Provence-Alpes-Côte d'Azur",
@@ -2416,6 +2637,7 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
                         <h4 style="margin: 0 0 6px 0; font-size: 12.5px; font-weight: 900; color: ${{color}}; display: flex; align-items: center; gap: 4px;">
                             \${{isLatest ? '✨' : '🔥'}} \${{titleText}}
                         </h4>
+                        <div style="margin-bottom: 3px; font-weight: 800; color: #E11D48;">📍 Commune proche : ${{f.commune_proche}}</div>
                         <div style="margin-bottom: 3px;"><b>Date/Heure :</b> ${{f.date}} à ${{f.time}} UTC</div>
                         <div style="margin-bottom: 3px;"><b>Satellite :</b> ${{f.sat}}</div>
                         <div style="margin-bottom: 3px;"><b>Puissance (FRP) :</b> ${{f.frp}} MW</div>
@@ -3138,6 +3360,118 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
             const safeName = p.name ? p.name.replace(/'/g, "&apos;") : '';
             L.marker([p.lat, p.lon], {{ icon: pIcon }}).addTo(pelicandromesLayerGroup).bindPopup('<div style="padding:6px 8px; font-weight:900; font-size:11px; color:#0F172A;">✈️ Base Canadair : ' + safeName + '</div>');
         }});
+
+        function switchTab(tabName) {{
+            const firesBtn = document.getElementById('tab-btn-fires');
+            const threatBtn = document.getElementById('tab-btn-threatened');
+            const firesContent = document.getElementById('fires-tab-content');
+            const threatContent = document.getElementById('threatened-tab-content');
+            
+            if (tabName === 'fires') {{
+                firesBtn.classList.add('active');
+                threatBtn.classList.remove('active');
+                firesContent.style.display = 'flex';
+                threatContent.style.display = 'none';
+            }} else {{
+                firesBtn.classList.remove('active');
+                threatBtn.classList.add('active');
+                firesContent.style.display = 'none';
+                threatContent.style.display = 'block';
+                renderThreatenedCommunes();
+            }}
+        }}
+
+        function renderThreatenedCommunes() {{
+            const container = document.getElementById('threatened-list-container');
+            if (!container) return;
+            
+            if (!threatenedCommunes || !threatenedCommunes.length) {{
+                container.innerHTML = `
+                    <div style="text-align:center; padding:20px; color:#64748B; font-weight:800; font-size:11px;">
+                        🟢 Aucune commune menacée détectée dans un rayon de 25 km des feux actifs.
+                    </div>
+                `;
+                return;
+            }}
+            
+            let html = '';
+            
+            // 1. SECTION ALERTE ÉVACUATION (Risque Très Élevé ou Élevé)
+            const evacuationVilles = threatenedCommunes.filter(c => c.risk_rank === 1 || c.risk_rank === 2);
+            // Trier les alertes par proximité (les plus proches en premier)
+            evacuationVilles.sort((a, b) => a.dist_km - b.dist_km);
+            
+            if (evacuationVilles.length > 0) {{
+                html += `
+                    <div style="font-size:10.5px; font-weight:900; background:#DC2626; color:white; padding:6px 10px; border-radius:6px; margin:5px 0 8px 0; text-transform:uppercase; letter-spacing:0.04em; display:flex; justify-content:space-between; align-items:center; box-shadow:0 3px 8px rgba(220,38,38,0.25);">
+                        <span>🚨 ZONE D'ÉVACUATION / DANGER</span>
+                        <span style="font-size:9.5px; background:rgba(255,255,255,0.2); padding:1px 6px; border-radius:4px;">\${{evacuationVilles.length}} villes</span>
+                    </div>
+                `;
+                
+                evacuationVilles.forEach(c => {{
+                    html += `
+                        <div class="threatened-card" style="background:#FFF5F5; border:1.5px solid #FEE2E2; border-radius:8px; padding:9px 11px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; transition:all 0.15s ease; border-left: 5px solid #DC2626;">
+                            <div>
+                                <div style="font-weight:900; font-size:12px; color:#991B1B;">\${{c.commune}} <span style="font-size:9.5px; color:#E11D48; font-weight:800;">(\${{c.postcode}})</span></div>
+                                <div style="font-size:9.5px; color:#7F1D1D; font-weight:700; margin-top:2px;">
+                                    📍 Menace à <b>\${{c.dist_km}} km</b> (\${{c.fire_source}})
+                                </div>
+                            </div>
+                            <div style="text-align:right;">
+                                <span style="background:#DC2626; color:white; font-size:8.5px; font-weight:900; padding:2px 5px; border-radius:4px; text-transform:uppercase; white-space:nowrap; box-shadow: 0 2px 4px rgba(220,38,38,0.2);">
+                                    \${{c.risk_level.split(' ')[0]}} \${{c.risk_level.substring(c.risk_level.indexOf(' ') + 1)}}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                }});
+            }}
+            
+            // 2. SECTION INDEX GLOBAL (Classé par département et ordre alphabétique)
+            html += `
+                <div style="font-size:10px; font-weight:900; background:#475569; color:white; padding:5px 9px; border-radius:6px; margin:15px 0 6px 0; text-transform:uppercase; letter-spacing:0.04em;">
+                    📋 Index de Surveillance Général
+                </div>
+            `;
+            
+            const groups = {{}};
+            threatenedCommunes.forEach(c => {{
+                if (!groups[c.dept]) groups[c.dept] = [];
+                groups[c.dept].push(c);
+            }});
+            
+            const depts = Object.keys(groups).sort();
+            
+            depts.forEach(dept => {{
+                html += `
+                    <div style="font-size:10px; font-weight:900; background:#0F172A; color:white; padding:4px 8px; border-radius:6px; margin:10px 0 5px 0; text-transform:uppercase; letter-spacing:0.04em; display:flex; justify-content:space-between; align-items:center;">
+                        <span>Département \${{dept}}</span>
+                        <span style="font-size:9px; background:#334155; padding:1px 5px; border-radius:4px;">\${{groups[dept].length}} villes</span>
+                    </div>
+                `;
+                
+                groups[dept].forEach(c => {{
+                    html += `
+                        <div class="threatened-card" style="background:#FFFFFF; border:1.5px solid #E2E8F0; border-radius:8px; padding:8px 10px; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center; transition:all 0.15s ease;">
+                            <div>
+                                <div style="font-weight:900; font-size:11.5px; color:#0F172A;">\${{c.commune}} <span style="font-size:9px; color:#64748B; font-weight:700;">(\${{c.postcode}})</span></div>
+                                <div style="font-size:9.5px; color:#64748B; font-weight:700; margin-top:2px;">
+                                    📍 Proximité : <b>\${{c.dist_km}} km</b> (\${{c.fire_source}})
+                                </div>
+                            </div>
+                            <div style="text-align:right;">
+                                <span style="background:\${{c.risk_color}}; color:white; font-size:8.5px; font-weight:900; padding:2px 5px; border-radius:4px; text-transform:uppercase; white-space:nowrap;">
+                                    \${{c.risk_level.split(' ')[0]}} \${{c.risk_level.substring(c.risk_level.indexOf(' ') + 1)}}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                }});
+            }});
+            
+            container.innerHTML = html;
+        }}
     </script>
 </body>
 </html>"""
