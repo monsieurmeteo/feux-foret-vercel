@@ -1509,9 +1509,15 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
 
         <div id="legend-firms" style="margin-top: 10px; border-top: 1px solid rgba(226, 232, 240, 0.8); padding-top: 8px;">
             <div class="legend-title">🛰️ Légende : NASA FIRMS</div>
-            <div class="legend-row" style="display: flex; align-items: center; gap: 8px;"><div style="background:#DC2626; width: 12px; height: 12px; border-radius: 50%; border: 1px solid #0F172A; display: inline-block;"></div> <span>Foyer intense (FRP &ge; 100 MW)</span></div>
-            <div class="legend-row" style="display: flex; align-items: center; gap: 8px;"><div style="background:#EA580C; width: 10px; height: 10px; border-radius: 50%; border: 1px solid #0F172A; display: inline-block;"></div> <span>Foyer modéré (FRP 30-99 MW)</span></div>
-            <div class="legend-row" style="display: flex; align-items: center; gap: 8px;"><div style="background:#FBBF24; width: 8px; height: 8px; border-radius: 50%; border: 1px solid #0F172A; display: inline-block;"></div> <span>Foyer faible (FRP &lt; 30 MW)</span></div>
+            <div class="legend-row" style="display: flex; align-items: center; gap: 8px;">
+                <div style="position: relative; width: 12px; height: 12px; display: inline-block;">
+                    <div style="background:#DC2626; width: 12px; height: 12px; border-radius: 50%; border: 1px solid #FFFFFF; box-shadow: 0 0 0 2px #DC2626; display: inline-block;"></div>
+                </div>
+                <span>Foyer très récent (&lt; 3h, actif)</span>
+            </div>
+            <div class="legend-row" style="display: flex; align-items: center; gap: 8px;"><div style="background:#EA580C; width: 10px; height: 10px; border-radius: 50%; border: 1px solid #0F172A; display: inline-block;"></div> <span>Foyer récent (3h - 12h)</span></div>
+            <div class="legend-row" style="display: flex; align-items: center; gap: 8px;"><div style="background:#F59E0B; width: 8px; height: 8px; border-radius: 50%; border: 1px solid #0F172A; display: inline-block;"></div> <span>Foyer intermédiaire (12h - 24h)</span></div>
+            <div class="legend-row" style="display: flex; align-items: center; gap: 8px;"><div style="background:#64748B; width: 6px; height: 6px; border-radius: 50%; border: 1px solid #0F172A; display: inline-block; opacity: 0.5;"></div> <span>Foyer ancien (&gt; 24h, froid)</span></div>
         </div>
     </div>
     
@@ -2310,32 +2316,62 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
             }});
         }}
 
-        function getFirmsColor(frp) {{
-            if (frp >= 100) return '#DC2626';
-            if (frp >= 30)  return '#EA580C';
-            if (frp >= 10)  return '#F59E0B';
-            return '#FBBF24';
-        }}
-
         function renderFirmsFires(selectedDate) {{
             firmsLayerGroup.clearLayers();
             if (!firmsFires || !firmsFires.length) return;
 
+            const nowUtc = new Date();
+
             firmsFires.forEach(f => {{
                 if (f.date !== selectedDate) return;
 
+                const parts = f.time.split('h');
+                const detectUtc = new Date(f.date + 'T' + parts[0] + ':' + parts[1] + ':00Z');
+                const ageHours = (nowUtc - detectUtc) / (3600 * 1000);
+
+                let color = '#FBBF24';
+                let fillOpacity = 0.8;
+                let weight = 0.8;
+                let radius = 4;
+                let className = '';
+
+                if (ageHours >= 0 && ageHours < 3) {{
+                    color = '#DC2626';
+                    radius = 6.5;
+                    fillOpacity = 0.95;
+                    weight = 1.2;
+                    className = 'marker-pulse-attaque';
+                }} else if (ageHours >= 3 && ageHours < 12) {{
+                    color = '#EA580C';
+                    radius = 5.5;
+                    fillOpacity = 0.85;
+                }} else if (ageHours >= 12 && ageHours < 24) {{
+                    color = '#F59E0B';
+                    radius = 4.5;
+                }} else {{
+                    color = '#64748B';
+                    fillOpacity = 0.35;
+                    weight = 0.5;
+                    radius = 3.5;
+                }}
+
                 const marker = L.circleMarker([f.lat, f.lon], {{
-                    radius: f.frp >= 100 ? 7 : (f.frp >= 30 ? 5.5 : 4),
-                    color: '#0F172A',
-                    weight: 0.8,
-                    fillColor: getFirmsColor(f.frp),
-                    fillOpacity: 0.85
+                    radius: radius,
+                    color: className ? '#FFFFFF' : '#0F172A',
+                    weight: weight,
+                    fillColor: color,
+                    fillOpacity: fillOpacity,
+                    className: className
                 }});
+
+                const ageStr = ageHours < 24 
+                    ? `il y a ${{Math.round(ageHours)}}h` 
+                    : `il y a ${{Math.round(ageHours/24)}} jours`;
 
                 const popupContent = `
                     <div style="font-family: system-ui, sans-serif; font-size: 11.5px; color: #0F172A; line-height: 1.5; padding: 4px;">
-                        <h4 style="margin: 0 0 6px 0; font-size: 12.5px; font-weight: 900; color: #DC2626; display: flex; align-items: center; gap: 4px;">
-                            <span>🔥</span> Foyer Thermique Satellite
+                        <h4 style="margin: 0 0 6px 0; font-size: 12.5px; font-weight: 900; color: ${{color}}; display: flex; align-items: center; gap: 4px;">
+                            <span>🔥</span> Foyer Satellite (${{ageStr}})
                         </h4>
                         <div style="margin-bottom: 3px;"><b>Date/Heure :</b> ${{f.date}} à ${{f.time}} UTC</div>
                         <div style="margin-bottom: 3px;"><b>Satellite :</b> ${{f.sat}}</div>
