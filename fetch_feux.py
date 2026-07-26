@@ -77,8 +77,22 @@ def init_db():
             sent_at_utc TEXT
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS aircraft_tracks (
+            icao24 TEXT,
+            callsign TEXT,
+            lat REAL,
+            lon REAL,
+            altitude REAL,
+            velocity REAL,
+            heading REAL,
+            timestamp INTEGER,
+            PRIMARY KEY (icao24, timestamp)
+        )
+    """)
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_fire_id ON feux_snapshots(fire_id)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_timestamp ON feux_snapshots(timestamp_utc)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_aircraft_timestamp ON aircraft_tracks(timestamp)")
     conn.commit()
     conn.close()
 
@@ -719,6 +733,105 @@ def fetch_firms_fires():
     print(f"🔥 Total détections FIRMS filtrées pour la France : {len(fires)}")
     return fires
 
+def fetch_and_store_aircraft_positions():
+    import time
+    
+    init_db()
+    
+    # Bounding box coordinates for France
+    lamin, lomin = 41.0, -5.5
+    lamax, lomax = 51.5, 10.0
+    url = f"https://opensky-network.org/api/states/all?lamin={lamin}&lomin={lomin}&lamax={lamax}&lomax={lomax}"
+    
+    print(f"📡 Récupération des données d'aéronefs depuis OpenSky Network...")
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        
+        states = data.get("states", [])
+        if not states:
+            print("✈️ Aucun avion actif trouvé dans la bounding box France.")
+            return
+            
+        target_prefixes = ["CANAD", "BAYA", "DRAGO", "MARCO", "BLADE"]
+        now_ts = int(time.time())
+        
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        added_count = 0
+        for s in states:
+            callsign = s[1].strip() if s[1] else ""
+            if any(callsign.startswith(prefix) for prefix in target_prefixes) or "BLADE38" in callsign:
+                icao24 = s[0]
+                lon = s[5]
+                lat = s[6]
+                altitude = s[7]
+                velocity = s[9]
+                heading = s[10]
+                
+                if lat is not None and lon is not None:
+                    cursor.execute("""
+                        INSERT OR REPLACE INTO aircraft_tracks (icao24, callsign, lat, lon, altitude, velocity, heading, timestamp)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (icao24, callsign, lat, lon, altitude, velocity, heading, now_ts))
+                    added_count += 1
+        
+        # Cleanup coordinates older than 12 hours
+        cutoff = now_ts - (12 * 3600)
+        cursor.execute("DELETE FROM aircraft_tracks WHERE timestamp < ?", (cutoff,))
+        conn.commit()
+        conn.close()
+        
+        print(f"✈️ Positions d'aéronefs de secours enregistrées/mises à jour : {added_count}")
+    except Exception as e:
+        print(f"⚠️ Erreur lors de l'accès à l'API OpenSky : {e}")
+
+def get_recent_aircraft_tracks():
+    import time
+    
+    init_db()
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    # Get tracks from the last 12 hours
+    cutoff = int(time.time()) - (12 * 3600)
+    cursor.execute("""
+        SELECT icao24, callsign, lat, lon, altitude, velocity, heading, timestamp
+        FROM aircraft_tracks
+        WHERE timestamp >= ?
+        ORDER BY icao24, timestamp ASC
+    """, (cutoff,))
+    
+    rows = cursor.fetchall()
+    conn.close()
+    
+    # Group by icao24
+    tracks = {}
+    for r in rows:
+        icao24 = r[0]
+        if icao24 not in tracks:
+            tracks[icao24] = {
+                "icao24": icao24,
+                "callsign": r[1],
+                "path": [],
+                "last_pos": None
+            }
+        
+        pt = {
+            "lat": r[2],
+            "lon": r[3],
+            "altitude": r[4],
+            "velocity": round(r[5] * 3.6, 1) if r[5] is not None else None, # conversion m/s -> km/h
+            "heading": r[6],
+            "timestamp": r[7]
+        }
+        tracks[icao24]["path"].append(pt)
+        tracks[icao24]["last_pos"] = pt
+
+    return list(tracks.values())
+
 def fetch_all_feux():
     cache_path = os.path.join(DATA_DIR, "last_fires.json")
     try:
@@ -924,12 +1037,13 @@ def fetch_all_feux():
                 print(f"❌ Erreur lors de la lecture du cache JSON: {cache_read_err}")
         raise scrape_err
 
-def generate_interactive_map(results, latest_news, firms_fires, output_path):
+def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks, output_path):
     pelicandromes = load_pelicandromes()
     fires_json = json.dumps(results, ensure_ascii=False)
     peli_json = json.dumps(pelicandromes, ensure_ascii=False)
     news_json = json.dumps(latest_news, ensure_ascii=False)
     firms_fires_json = json.dumps(firms_fires, ensure_ascii=False)
+    aircraft_tracks_json = json.dumps(aircraft_tracks, ensure_ascii=False)
     now_str = datetime.now(tz_paris).strftime("%d/%m/%Y à %H:%M")
     logo_b64 = load_logo_base64()
 
@@ -1436,6 +1550,7 @@ def generate_interactive_map(results, latest_news, firms_fires, output_path):
         const latestNews = {news_json};
         const regionsGeoJSON = {regions_geojson_json};
         const firmsFires = {firms_fires_json};
+        const aircraftTracks = {aircraft_tracks_json};
 
         const REGION_GEOJSON_MAPPING = {{
             "PACA": "Provence-Alpes-Côte d'Azur",
@@ -2141,6 +2256,7 @@ def generate_interactive_map(results, latest_news, firms_fires, output_path):
         const pelicandromesLayerGroup = L.layerGroup().addTo(map); // ponytail: affiché par défaut
 
         const firmsLayerGroup = L.layerGroup().addTo(map);
+        const aircraftLayerGroup = L.layerGroup().addTo(map);
 
         const osmLayer = L.tileLayer('https://tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
             maxZoom: 19,
@@ -2172,7 +2288,8 @@ def generate_interactive_map(results, latest_news, firms_fires, output_path):
             "🛰️ Satellite NASA Suomi-NPP (Vraies Couleurs)": nasaGibsSuomi
         }}, {{
             "🔥 Feux Détectés (NASA FIRMS)": firmsLayerGroup,
-            "✈️ Bases Canadair": pelicandromesLayerGroup
+            "✈️ Bases Canadair": pelicandromesLayerGroup,
+            "✈️ Avions & Hélicos de Secours": aircraftLayerGroup
         }}, {{ position: 'bottomright' }}).addTo(map);
 
         const datePicker = document.getElementById('gibs-date-picker');
@@ -2447,6 +2564,62 @@ def generate_interactive_map(results, latest_news, firms_fires, output_path):
                     if (resultBox) resultBox.style.display = 'none';
                 }});
         }}
+
+        // ============================================================
+        // RENDU DES TRAJECTOIRES D'AÉRONEFS (OPENSKY)
+        // ============================================================
+        function renderAircraftTracks() {{
+            aircraftLayerGroup.clearLayers();
+            if (!aircraftTracks || !aircraftTracks.length) return;
+
+            aircraftTracks.forEach(t => {{
+                if (!t.path || !t.path.length) return;
+
+                const latlngs = t.path.map(p => [p.lat, p.lon]);
+                const polyline = L.polyline(latlngs, {{
+                    color: '#06B6D4',
+                    weight: 2.5,
+                    opacity: 0.85,
+                    dashArray: '4,6'
+                }});
+                aircraftLayerGroup.addLayer(polyline);
+
+                const last = t.last_pos;
+                if (!last) return;
+
+                const heading = last.heading || 0;
+                const planeIcon = L.divIcon({{
+                    html: `<div style="transform: rotate(${{heading - 45}}deg); font-size: 20px; text-shadow: 0 1px 3px rgba(0,0,0,0.5); text-align: center; width: 24px; height: 24px; line-height: 24px;">✈️</div>`,
+                    className: 'plane-icon-rotated',
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12]
+                }});
+
+                const marker = L.marker([last.lat, last.lon], {{ icon: planeIcon }});
+                
+                const velocityStr = last.velocity ? `${{last.velocity}} km/h` : 'N/A';
+                const altitudeStr = last.altitude ? `${{Math.round(last.altitude)}} m` : 'N/A';
+                const timeStr = new Date(last.timestamp * 1000).toLocaleTimeString('fr-FR', {{ hour: '2-digit', minute: '2-digit' }});
+
+                const popupContent = `
+                    <div style="font-family: system-ui, sans-serif; font-size: 11.5px; color: #0F172A; line-height: 1.5; padding: 4px;">
+                        <h4 style="margin: 0 0 6px 0; font-size: 12px; font-weight: 900; color: #06B6D4; display: flex; align-items: center; gap: 4px;">
+                            <span>✈️</span> Aéronef de Secours : ${{t.callsign || 'Inconnu'}}
+                        </h4>
+                        <div style="margin-bottom: 3px;"><b>Indicatif :</b> ${{t.callsign || 'N/A'}}</div>
+                        <div style="margin-bottom: 3px;"><b>Vitesse :</b> ${{velocityStr}}</div>
+                        <div style="margin-bottom: 3px;"><b>Altitude :</b> ${{altitudeStr}}</div>
+                        <div style="margin-bottom: 3px;"><b>Dernier relevé :</b> ${{timeStr}}</div>
+                        <div><small style="color: #64748B;">Identifiant : ${{t.icao24}}</small></div>
+                    </div>
+                `;
+                
+                marker.bindPopup(popupContent);
+                aircraftLayerGroup.addLayer(marker);
+            }});
+        }}
+
+        renderAircraftTracks();
 
         map.on('popupopen', function(e) {{
             console.log('POPUP OPENED', e.popup);
@@ -3074,19 +3247,22 @@ def main():
         ]
         latest_news = []
         firms_fires = []
+        aircraft_tracks = []
     else:
         results, latest_news = fetch_all_feux()
         firms_fires = fetch_firms_fires()
+        fetch_and_store_aircraft_positions()
+        aircraft_tracks = get_recent_aircraft_tracks()
 
     if args.ci:
         # ponytail: --ci écrit dans le répertoire courant, compatible runner Ubuntu sans Bureau
-        generate_interactive_map(results, latest_news, firms_fires, "index.html")
+        generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks, "index.html")
         export_pdf(results, latest_news, "Rapport_Feux_de_Foret_Temps_Reel.pdf")
         return
 
     if args.format == "map" or args.desktop:
         desktop_map = os.path.join(os.path.expanduser("~"), "Desktop", "carte_feux.html")
-        generate_interactive_map(results, latest_news, firms_fires, desktop_map)
+        generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks, desktop_map)
 
     if args.format == "pdf" or args.desktop:
         desktop_pdf = os.path.join(os.path.expanduser("~"), "Desktop", "Rapport_Feux_de_Foret_Temps_Reel.pdf")
