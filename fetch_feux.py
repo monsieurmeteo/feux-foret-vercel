@@ -1320,6 +1320,7 @@ def generate_interactive_map(results, latest_news, firms_fires, output_path):
             </select>
 
             <input type="date" class="clean-date" id="gibs-date-picker" style="display:none;" title="Date pour l'imagerie satellite NASA & les feux FIRMS" />
+            <button id="btn-timelapse" onclick="toggleTimelapse()" style="display:none; background:#0F172A; border: 1.5px solid #334155; color:#FFFFFF; padding:5px 12px; border-radius:20px; font-size:11.5px; font-weight:800; cursor:pointer; outline:none; transition:all 0.15s ease; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(0,0,0,0.05);">▶️ Animation</button>
 
             <button id="btn-lock-map" onclick="toggleMapLock()" style="background:#DC2626; border: 1.5px solid #B91C1C; color:#FFFFFF; padding:5px 12px; border-radius:20px; font-size:11.5px; font-weight:800; cursor:pointer; outline:none; transition:all 0.15s ease; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(0,0,0,0.05);">🔒 Carte figée</button>
             <button class="btn-sidebar-toggle" onclick="toggleSidebar()">📋 Liste</button>
@@ -1340,7 +1341,20 @@ def generate_interactive_map(results, latest_news, firms_fires, output_path):
             <div class="count-chip" id="sidebar-chip">RÉCENTS EN PREMIER</div>
         </div>
         <div style="padding: 8px 10px; border-bottom: 1.5px solid #E2E8F0; background: #FFFFFF;">
-            <input type="text" id="search-input" oninput="handleSearch(this.value)" placeholder="🔍 Rechercher une commune ou dépt..." style="width: 100%; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 6px 10px; font-size: 11.5px; font-weight: 700; outline: none; box-sizing: border-box;" />
+            <input type="text" id="search-input" oninput="handleSearch(this.value)" placeholder="🔍 Filtrer les fiches de feux..." style="width: 100%; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 6px 10px; font-size: 11.5px; font-weight: 700; outline: none; box-sizing: border-box;" />
+        </div>
+
+        <!-- Module Proximité / Sécurité -->
+        <div style="padding: 10px; border-bottom: 1.5px solid #E2E8F0; background: #F8FAFC;">
+            <div style="font-size: 10.5px; font-weight: 900; color: #475569; margin-bottom: 6px; text-transform: uppercase; display: flex; align-items: center; gap: 4px; letter-spacing: 0.02em;">
+                <span>📍</span> Diagnostic de Proximité
+            </div>
+            <div style="display: flex; gap: 5px; margin-bottom: 8px;">
+                <input type="text" id="proximity-address-input" placeholder="Entrez votre ville ou adresse..." style="flex: 1; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 6px 10px; font-size: 11px; font-weight: 700; outline: none; box-sizing: border-box;" onkeydown="if(event.key === 'Enter') searchUserAddress()" />
+                <button onclick="searchUserAddress()" style="background:#2563EB; color:white; border:none; padding:6px 12px; border-radius:8px; font-size:11px; font-weight:800; cursor:pointer;" title="Rechercher l'adresse">Rechercher</button>
+                <button onclick="geolocateUserGps()" style="background:#059669; color:white; border:none; padding:6px 10px; border-radius:8px; font-size:11px; font-weight:800; cursor:pointer;" title="Me géolocaliser via GPS">📍 GPS</button>
+            </div>
+            <div id="proximity-result" style="display:none; padding:8px 10px; border-radius:8px; font-size:11px; font-weight:700; border:1px solid transparent; line-height: 1.45;"></div>
         </div>
         <div class="fire-list" id="fire-list-container"></div>
     </div>
@@ -1373,6 +1387,13 @@ def generate_interactive_map(results, latest_news, firms_fires, output_path):
                 <div class="symbol" style="background:#059669; border:1.5px solid white;">🟢</div>
                 <span><b>Risque FAIBLE</b></span>
             </div>
+        </div>
+
+        <div id="legend-firms" style="margin-top: 10px; border-top: 1px solid rgba(226, 232, 240, 0.8); padding-top: 8px;">
+            <div class="legend-title">🛰️ Légende : NASA FIRMS</div>
+            <div class="legend-row" style="display: flex; align-items: center; gap: 8px;"><div style="background:#DC2626; width: 12px; height: 12px; border-radius: 50%; border: 1px solid #0F172A; display: inline-block;"></div> <span>Foyer intense (FRP &ge; 100 MW)</span></div>
+            <div class="legend-row" style="display: flex; align-items: center; gap: 8px;"><div style="background:#EA580C; width: 10px; height: 10px; border-radius: 50%; border: 1px solid #0F172A; display: inline-block;"></div> <span>Foyer modéré (FRP 30-99 MW)</span></div>
+            <div class="legend-row" style="display: flex; align-items: center; gap: 8px;"><div style="background:#FBBF24; width: 8px; height: 8px; border-radius: 50%; border: 1px solid #0F172A; display: inline-block;"></div> <span>Foyer faible (FRP &lt; 30 MW)</span></div>
         </div>
     </div>
     
@@ -2208,6 +2229,224 @@ def generate_interactive_map(results, latest_news, firms_fires, output_path):
         }}
 
         renderFirmsFires(todayUtc);
+
+        // ============================================================
+        // LECTEUR DE TIMELAPSE (ANIMATION)
+        // ============================================================
+        let firmsDates = [];
+        if (firmsFires && firmsFires.length) {{
+            const dateSet = new Set(firmsFires.map(f => f.date).filter(Boolean));
+            firmsDates = Array.from(dateSet);
+            firmsDates.sort();
+        }}
+
+        const playBtn = document.getElementById('btn-timelapse');
+        if (playBtn && firmsDates.length > 1) {{
+            playBtn.style.display = 'inline-flex';
+        }}
+
+        let timelapseInterval = null;
+        let isAnimating = false;
+
+        function toggleTimelapse() {{
+            const btn = document.getElementById('btn-timelapse');
+            const picker = document.getElementById('gibs-date-picker');
+            if (!btn || !picker || !firmsDates.length) return;
+
+            if (isAnimating) {{
+                clearInterval(timelapseInterval);
+                isAnimating = false;
+                btn.innerHTML = '▶️ Animation';
+                btn.style.background = '#0F172A';
+            }} else {{
+                isAnimating = true;
+                btn.innerHTML = '⏸️ Pause';
+                btn.style.background = '#DC2626';
+
+                let currentIndex = firmsDates.indexOf(picker.value);
+                if (currentIndex === -1 || currentIndex === firmsDates.length - 1) {{
+                    currentIndex = 0;
+                }}
+
+                picker.value = firmsDates[currentIndex];
+                nasaGibsSuomi.setUrl('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_CorrectedReflectance_TrueColor/default/' + firmsDates[currentIndex] + '/GoogleMapsCompatible_Level9/{{z}}/{{y}}/{{x}}.jpg');
+                renderFirmsFires(firmsDates[currentIndex]);
+
+                timelapseInterval = setInterval(() => {{
+                    currentIndex++;
+                    if (currentIndex >= firmsDates.length) {{
+                        clearInterval(timelapseInterval);
+                        isAnimating = false;
+                        btn.innerHTML = '▶️ Animation';
+                        btn.style.background = '#0F172A';
+                        return;
+                    }}
+                    picker.value = firmsDates[currentIndex];
+                    nasaGibsSuomi.setUrl('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_CorrectedReflectance_TrueColor/default/' + firmsDates[currentIndex] + '/GoogleMapsCompatible_Level9/{{z}}/{{y}}/{{x}}.jpg');
+                    renderFirmsFires(firmsDates[currentIndex]);
+                }}, 1500);
+            }}
+        }}
+
+        // ============================================================
+        // RECHERCHE D'ADRESSE ET GÉOLOCALISATION PROXIMITÉ
+        // ============================================================
+        let userMarker = null;
+
+        function updateProximityDiagnostic(lat, lon, label) {{
+            const resultBox = document.getElementById('proximity-result');
+            if (!resultBox) return;
+
+            const homeIcon = L.divIcon({{
+                html: '<div style="font-size: 24px; text-shadow: 0 2px 5px rgba(0,0,0,0.3); text-align: center;">🏠</div>',
+                className: 'user-home-icon',
+                iconSize: [24, 24],
+                iconAnchor: [12, 12]
+            }});
+
+            if (userMarker) {{
+                userMarker.setLatLng([lat, lon]);
+            }} else {{
+                userMarker = L.marker([lat, lon], {{ icon: homeIcon }}).addTo(map);
+            }}
+
+            userMarker.bindPopup(`<b>📍 Votre position :</b><br>${{label}}`).openPopup();
+            map.flyTo([lat, lon], 10, {{ duration: 1.2 }});
+
+            let minDistance = Infinity;
+            let closestFire = null;
+
+            if (fires && fires.length) {{
+                fires.forEach(f => {{
+                    if (!f.lat || !f.lon || f.etat_feu === 'eteint' || f.etat_feu === 'fausse_alerte') return;
+                    const d = getDistance(lat, lon, f.lat, f.lon);
+                    if (d < minDistance) {{
+                        minDistance = d;
+                        closestFire = {{ name: f.commune || 'Incendie', type: 'Officiel SDIS' }};
+                    }}
+                }});
+            }}
+
+            const picker = document.getElementById('gibs-date-picker');
+            const currentDate = picker ? picker.value : todayUtc;
+            if (firmsFires && firmsFires.length) {{
+                firmsFires.forEach(f => {{
+                    if (f.date !== currentDate) return;
+                    const d = getDistance(lat, lon, f.lat, f.lon);
+                    if (d < minDistance) {{
+                        minDistance = d;
+                        closestFire = {{ name: `Foyer thermique satellite (${{f.sat}} à ${{f.time}} UTC)`, type: 'Satellite NASA' }};
+                    }}
+                }});
+            }}
+
+            resultBox.style.display = 'block';
+
+            if (minDistance === Infinity) {{
+                resultBox.style.background = '#ECFDF5';
+                resultBox.style.borderColor = '#10B981';
+                resultBox.style.color = '#065F46';
+                resultBox.innerHTML = `<b>✅ Diagnostic :</b> Aucun incendie actif ou foyer thermique détecté en France aujourd'hui.`;
+                return;
+            }}
+
+            const roundedDist = Math.round(minDistance * 10) / 10;
+
+            if (minDistance < 15) {{
+                resultBox.style.background = '#FEF2F2';
+                resultBox.style.borderColor = '#EF4444';
+                resultBox.style.color = '#991B1B';
+                resultBox.innerHTML = `<b>🚨 DANGER IMMÉDIAT !</b><br>L'incendie le plus proche est à seulement <b>${{roundedDist}} km</b> de votre position.<br><small>(${{closestFire.name}} - ${{closestFire.type}})</small><br><b>Consigne :</b> Restez à l'écoute des secours et préparez-vous aux consignes d'évacuation.`;
+            }} else if (minDistance < 35) {{
+                resultBox.style.background = '#FFFBEB';
+                resultBox.style.borderColor = '#F59E0B';
+                resultBox.style.color = '#92400E';
+                resultBox.innerHTML = `<b>🟡 VIGILANCE CONSEILLÉE</b><br>Un incendie est localisé à <b>${{roundedDist}} km</b> de votre position.<br><small>(${{closestFire.name}} - ${{closestFire.type}})</small><br><b>Consigne :</b> Suivez régulièrement l'évolution de la situation météorologique et des vents.`;
+            }} else {{
+                resultBox.style.background = '#F0FDF4';
+                resultBox.style.borderColor = '#10B981';
+                resultBox.style.color = '#065F46';
+                resultBox.innerHTML = `<b>🟢 HORS DE DANGER</b><br>Aucun incendie menaçant à proximité immédiate.<br>Le feu actif le plus proche est à <b>${{roundedDist}} km</b>.<br><small>(${{closestFire.name}})</small>`;
+            }}
+        }}
+
+        function getDistance(lat1, lon1, lat2, lon2) {{
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }}
+
+        function geolocateUserGps() {{
+            const resultBox = document.getElementById('proximity-result');
+            if (!navigator.geolocation) {{
+                alert("La géolocalisation n'est pas supportée par votre navigateur.");
+                return;
+            }}
+            if (resultBox) {{
+                resultBox.style.display = 'block';
+                resultBox.style.background = '#F1F5F9';
+                resultBox.style.borderColor = '#CBD5E1';
+                resultBox.style.color = '#334155';
+                resultBox.innerHTML = `⚡ Obtention de votre position GPS en cours...`;
+            }}
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {{
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    updateProximityDiagnostic(lat, lon, "Votre position GPS actuelle");
+                }},
+                (error) => {{
+                    console.error(error);
+                    alert("Impossible d'obtenir votre position GPS. Veuillez vérifier vos autorisations.");
+                    if (resultBox) resultBox.style.display = 'none';
+                }},
+                {{ enableHighAccuracy: true, timeout: 8000 }}
+            );
+        }}
+
+        function searchUserAddress() {{
+            const query = document.getElementById('proximity-address-input').value.trim();
+            const resultBox = document.getElementById('proximity-result');
+            if (!query) {{
+                alert("Veuillez saisir une adresse ou une ville.");
+                return;
+            }}
+
+            if (resultBox) {{
+                resultBox.style.display = 'block';
+                resultBox.style.background = '#F1F5F9';
+                resultBox.style.borderColor = '#CBD5E1';
+                resultBox.style.color = '#334155';
+                resultBox.innerHTML = `⚡ Recherche de l'adresse en cours...`;
+            }}
+
+            const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(query);
+            fetch(url)
+                .then(r => r.json())
+                .then(data => {{
+                    if (data && data.length) {{
+                        const lat = parseFloat(data[0].lat);
+                        const lon = parseFloat(data[0].lon);
+                        const label = data[0].display_name;
+                        updateProximityDiagnostic(lat, lon, label);
+                    }} else {{
+                        alert("Adresse ou commune introuvable. Veuillez réessayer.");
+                        if (resultBox) resultBox.style.display = 'none';
+                    }}
+                }})
+                .catch(err => {{
+                    console.error(err);
+                    alert("Erreur lors de la recherche de l'adresse.");
+                    if (resultBox) resultBox.style.display = 'none';
+                }});
+        }}
 
         map.on('popupopen', function(e) {{
             console.log('POPUP OPENED', e.popup);
