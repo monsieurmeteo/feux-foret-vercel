@@ -305,15 +305,9 @@ def fetch_firefighter_news():
     return news_list
 
 def send_new_fire_email_alert(fire):
-    smtp_user = os.environ.get("SMTP_USER", "gregory.langlet@sfr.fr")
-    smtp_pass = os.environ.get("SMTP_PASS")
-    smtp_server = os.environ.get("SMTP_SERVER", "smtp.sfr.fr")
-    smtp_port = int(os.environ.get("SMTP_PORT", 465))
-    target_email = "gregory.langlet@sfr.fr"
-
-    if not smtp_pass:
-        print("⚠️ Pas de mot de passe SMTP configuré — alerte e-mail ignorée.")
-        return False
+    # ponytail: email alert disabled by user request
+    print("📧 Alertes e-mail désactivées par l'utilisateur.")
+    return False
 
     commune = fire.get("commune", "Inconnue").upper()
     dept = fire.get("dept", "N/A")
