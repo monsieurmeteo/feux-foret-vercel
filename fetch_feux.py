@@ -1804,12 +1804,12 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
                 <span style="font-size: 10.5px; cursor: pointer;" onclick="toggleFirmLabel('vrecent')">Très récent (&lt; 3h)</span>
             </div>
             <div class="legend-row" style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-                <input type="checkbox" id="chk-firms-recent" onchange="updateFirmsFilters()" style="cursor: pointer; margin: 0;" />
+                <input type="checkbox" id="chk-firms-recent" checked onchange="updateFirmsFilters()" style="cursor: pointer; margin: 0;" />
                 <div style="background:#EA580C; width: 9px; height: 9px; border-radius: 50%; border: 1px solid #0F172A; display: inline-block;"></div>
                 <span style="font-size: 10.5px; cursor: pointer;" onclick="toggleFirmLabel('recent')">Récent (3h - 12h)</span>
             </div>
             <div class="legend-row" style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-                <input type="checkbox" id="chk-firms-inter" onchange="updateFirmsFilters()" style="cursor: pointer; margin: 0;" />
+                <input type="checkbox" id="chk-firms-inter" checked onchange="updateFirmsFilters()" style="cursor: pointer; margin: 0;" />
                 <div style="background:#F59E0B; width: 8px; height: 8px; border-radius: 50%; border: 1px solid #0F172A; display: inline-block;"></div>
                 <span style="font-size: 10.5px; cursor: pointer;" onclick="toggleFirmLabel('inter')">Intermédiaire (12h - 24h)</span>
             </div>
@@ -1892,8 +1892,8 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
         let firmsFilters = {{
             latest: true,
             vrecent: true,
-            recent: false,
-            inter: false,
+            recent: true,
+            inter: true,
             old: false
         }};
 
@@ -2739,16 +2739,20 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
                 let className = '';
                 let isLatest = (latestHotspot && f.lat === latestHotspot.lat && f.lon === latestHotspot.lon && f.time === latestHotspot.time);
 
-                if (isLatest) {{
-                    if (!firmsFilters.latest) return;
-                }} else if (ageHours >= 0 && ageHours < 3) {{
-                    if (!firmsFilters.vrecent) return;
-                }} else if (ageHours >= 3 && ageHours < 12) {{
-                    if (!firmsFilters.recent) return;
-                }} else if (ageHours >= 12 && ageHours < 24) {{
-                    if (!firmsFilters.inter) return;
-                }} else if (ageHours >= 24) {{
-                    if (!firmsFilters.old) return;
+                const isSelectedDateToday = (selectedDate === todayUtc);
+
+                if (isSelectedDateToday) {{
+                    if (isLatest) {{
+                        if (!firmsFilters.latest) return;
+                    }} else if (ageHours >= 0 && ageHours < 3) {{
+                        if (!firmsFilters.vrecent) return;
+                    }} else if (ageHours >= 3 && ageHours < 12) {{
+                        if (!firmsFilters.recent) return;
+                    }} else if (ageHours >= 12 && ageHours < 24) {{
+                        if (!firmsFilters.inter) return;
+                    }} else if (ageHours >= 24) {{
+                        if (!firmsFilters.old) return;
+                    }}
                 }}
 
                 if (isLatest) {{
