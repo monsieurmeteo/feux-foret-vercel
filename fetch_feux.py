@@ -1545,8 +1545,17 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
             animation: pulse-fire-new 1.2s infinite ease-in-out !important;
             border-radius: 50%;
         }}
+        @keyframes blink-vrecent {{
+            0%   {{ opacity: 1; }}
+            50%  {{ opacity: 0.15; }}
+            100% {{ opacity: 1; }}
+        }}
         .marker-blink-latest {{
             animation: blink-latest 0.75s infinite ease-in-out !important;
+            border-radius: 50%;
+        }}
+        .marker-blink-vrecent {{
+            animation: blink-vrecent 0.9s infinite ease-in-out !important;
             border-radius: 50%;
         }}
 
@@ -1688,7 +1697,7 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
 
             <input type="date" class="clean-date" id="gibs-date-picker" style="display:none;" title="Date pour l'imagerie satellite NASA & les feux FIRMS" />
             <button id="btn-timelapse" onclick="toggleTimelapse()" style="display:none; background:#0F172A; border: 1.5px solid #334155; color:#FFFFFF; padding:5px 12px; border-radius:20px; font-size:11.5px; font-weight:800; cursor:pointer; outline:none; transition:all 0.15s ease; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(0,0,0,0.05);">▶️ Animation</button>
-            <button id="btn-filter-latest-firms" onclick="toggleLatestFirmsFilter()" style="background:#D946EF; border: 1.5px solid #C026D3; color:#FFFFFF; padding:5px 12px; border-radius:20px; font-size:11.5px; font-weight:800; cursor:pointer; outline:none; transition:all 0.15s ease; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(0,0,0,0.05);">✨ Derniers foyers (< 3h)</button>
+            <button id="btn-filter-latest-firms" onclick="toggleLatestFirmsFilter()" style="background:#FFFFFF; border: 1.5px solid #CBD5E1; color:#0F172A; padding:5px 12px; border-radius:20px; font-size:11.5px; font-weight:800; cursor:pointer; outline:none; transition:all 0.15s ease; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(0,0,0,0.05);">✨ Tous les foyers</button>
 
             <button id="btn-mobile-mode" onclick="toggleMobileListMode()" style="background:#F1F5F9; border: 1.5px solid #CBD5E1; color:#0F172A; padding:5px 12px; border-radius:20px; font-size:11.5px; font-weight:800; cursor:pointer; outline:none; transition:all 0.15s ease; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(0,0,0,0.05);">📲 Liste seule (Mobile)</button>
             <button id="btn-lock-map" onclick="toggleMapLock()" style="background:#DC2626; border: 1.5px solid #B91C1C; color:#FFFFFF; padding:5px 12px; border-radius:20px; font-size:11.5px; font-weight:800; cursor:pointer; outline:none; transition:all 0.15s ease; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(0,0,0,0.05);">🔒 Carte figée</button>
@@ -1793,7 +1802,7 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
             <div class="legend-row" style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
                 <input type="checkbox" id="chk-firms-vrecent" checked onchange="updateFirmsFilters()" style="cursor: pointer; margin: 0;" />
                 <div style="position: relative; width: 10px; height: 10px; display: inline-block;">
-                    <div style="background:#DC2626; width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid #FFFFFF; box-shadow: 0 0 0 2px #DC2626; display: inline-block;"></div>
+                    <div class="marker-blink-vrecent" style="background:#FF0000; width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid #FFFFFF; display: inline-block;"></div>
                 </div>
                 <span style="font-size: 10.5px; cursor: pointer;" onclick="toggleFirmLabel('vrecent')">Très récent (&lt; 3h)</span>
             </div>
@@ -1808,7 +1817,7 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
                 <span style="font-size: 10.5px; cursor: pointer;" onclick="toggleFirmLabel('inter')">Intermédiaire (12h - 24h)</span>
             </div>
             <div class="legend-row" style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-                <input type="checkbox" id="chk-firms-old" onchange="updateFirmsFilters()" style="cursor: pointer; margin: 0;" />
+                <input type="checkbox" id="chk-firms-old" checked onchange="updateFirmsFilters()" style="cursor: pointer; margin: 0;" />
                 <div style="background:#64748B; width: 6px; height: 6px; border-radius: 50%; border: 1px solid #0F172A; display: inline-block; opacity: 0.5;"></div>
                 <span style="font-size: 10.5px; cursor: pointer;" onclick="toggleFirmLabel('old')">Ancien (&gt; 24h, froid)</span>
             </div>
@@ -1888,7 +1897,7 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
             vrecent: true,
             recent: true,
             inter: true,
-            old: false
+            old: true
         }};
 
         function updateFirmsFilters() {{
@@ -2757,11 +2766,11 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
                     weight = 1.5;
                     className = 'marker-blink-latest';
                 }} else if (ageHours >= 0 && ageHours < 3) {{
-                    color = '#DC2626';
+                    color = '#FF0000';
                     radius = 6.5;
                     fillOpacity = 0.95;
                     weight = 1.2;
-                    className = 'marker-pulse-attaque';
+                    className = 'marker-blink-vrecent';
                 }} else if (ageHours >= 3 && ageHours < 12) {{
                     color = '#EA580C';
                     radius = 5.5;
