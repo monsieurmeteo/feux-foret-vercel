@@ -1782,22 +1782,42 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
         </div>
 
         <div id="legend-firms" style="margin-top: 10px; border-top: 1px solid rgba(226, 232, 240, 0.8); padding-top: 8px;">
-            <div class="legend-title">🛰️ Légende : NASA FIRMS</div>
-            <div class="legend-row" style="display: flex; align-items: center; gap: 8px;">
+            <div class="legend-title" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>🛰️ NASA FIRMS</span>
+            </div>
+            <div style="display: flex; gap: 8px; font-size: 9.5px; margin-bottom: 7px; font-weight: 800; border-bottom: 1px dashed #E2E8F0; padding-bottom: 5px;">
+                <span onclick="setAllFirmsFilters(true)" style="color: #2563EB; cursor: pointer; text-decoration: underline;">Tout cocher</span>
+                <span onclick="setAllFirmsFilters(false)" style="color: #64748B; cursor: pointer; text-decoration: underline;">Tout décocher</span>
+            </div>
+            <div class="legend-row" style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                <input type="checkbox" id="chk-firms-latest" checked onchange="updateFirmsFilters()" style="cursor: pointer; margin: 0;" />
                 <div style="position: relative; width: 12px; height: 12px; display: inline-block;">
                     <div class="marker-pulse-majeur" style="background:#D946EF; width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid white; display: inline-block;"></div>
                 </div>
-                <span><b>✨ Tout dernier foyer (&lt; 3h)</b></span>
+                <span style="font-size: 10.5px; font-weight: 800; cursor: pointer;" onclick="toggleFirmLabel('latest')">Tout dernier (&lt; 3h)</span>
             </div>
-            <div class="legend-row" style="display: flex; align-items: center; gap: 8px;">
+            <div class="legend-row" style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                <input type="checkbox" id="chk-firms-vrecent" checked onchange="updateFirmsFilters()" style="cursor: pointer; margin: 0;" />
                 <div style="position: relative; width: 10px; height: 10px; display: inline-block;">
                     <div style="background:#DC2626; width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid #FFFFFF; box-shadow: 0 0 0 2px #DC2626; display: inline-block;"></div>
                 </div>
-                <span>Foyer très récent (&lt; 3h)</span>
+                <span style="font-size: 10.5px; cursor: pointer;" onclick="toggleFirmLabel('vrecent')">Très récent (&lt; 3h)</span>
             </div>
-            <div class="legend-row" style="display: flex; align-items: center; gap: 8px;"><div style="background:#EA580C; width: 9px; height: 9px; border-radius: 50%; border: 1px solid #0F172A; display: inline-block;"></div> <span>Foyer récent (3h - 12h)</span></div>
-            <div class="legend-row" style="display: flex; align-items: center; gap: 8px;"><div style="background:#F59E0B; width: 8px; height: 8px; border-radius: 50%; border: 1px solid #0F172A; display: inline-block;"></div> <span>Foyer intermédiaire (12h - 24h)</span></div>
-            <div class="legend-row" style="display: flex; align-items: center; gap: 8px;"><div style="background:#64748B; width: 6px; height: 6px; border-radius: 50%; border: 1px solid #0F172A; display: inline-block; opacity: 0.5;"></div> <span>Foyer ancien (&gt; 24h, froid)</span></div>
+            <div class="legend-row" style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                <input type="checkbox" id="chk-firms-recent" onchange="updateFirmsFilters()" style="cursor: pointer; margin: 0;" />
+                <div style="background:#EA580C; width: 9px; height: 9px; border-radius: 50%; border: 1px solid #0F172A; display: inline-block;"></div>
+                <span style="font-size: 10.5px; cursor: pointer;" onclick="toggleFirmLabel('recent')">Récent (3h - 12h)</span>
+            </div>
+            <div class="legend-row" style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                <input type="checkbox" id="chk-firms-inter" onchange="updateFirmsFilters()" style="cursor: pointer; margin: 0;" />
+                <div style="background:#F59E0B; width: 8px; height: 8px; border-radius: 50%; border: 1px solid #0F172A; display: inline-block;"></div>
+                <span style="font-size: 10.5px; cursor: pointer;" onclick="toggleFirmLabel('inter')">Intermédiaire (12h - 24h)</span>
+            </div>
+            <div class="legend-row" style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                <input type="checkbox" id="chk-firms-old" onchange="updateFirmsFilters()" style="cursor: pointer; margin: 0;" />
+                <div style="background:#64748B; width: 6px; height: 6px; border-radius: 50%; border: 1px solid #0F172A; display: inline-block; opacity: 0.5;"></div>
+                <span style="font-size: 10.5px; cursor: pointer;" onclick="toggleFirmLabel('old')">Ancien (&gt; 24h, froid)</span>
+            </div>
         </div>
     </div>
     
@@ -1869,24 +1889,72 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
         let refreshSeconds = 300; // ponytail: 5 minutes refresh interval
         let activeLinkLine = null;
         let activeCommuneMarker = null;
-        let onlyLatestFirms = true;
+        let firmsFilters = {{
+            latest: true,
+            vrecent: true,
+            recent: false,
+            inter: false,
+            old: false
+        }};
 
-        function toggleLatestFirmsFilter() {{
-            onlyLatestFirms = !onlyLatestFirms;
+        function updateFirmsFilters() {{
+            firmsFilters.latest = document.getElementById('chk-firms-latest').checked;
+            firmsFilters.vrecent = document.getElementById('chk-firms-vrecent').checked;
+            firmsFilters.recent = document.getElementById('chk-firms-recent').checked;
+            firmsFilters.inter = document.getElementById('chk-firms-inter').checked;
+            firmsFilters.old = document.getElementById('chk-firms-old').checked;
+
             const btn = document.getElementById('btn-filter-latest-firms');
-            if (onlyLatestFirms) {{
-                btn.style.background = '#D946EF';
-                btn.style.color = '#FFFFFF';
-                btn.style.borderColor = '#C026D3';
-                btn.textContent = '✨ Derniers foyers (< 3h)';
-            }} else {{
+            const showAll = (firmsFilters.latest && firmsFilters.vrecent && firmsFilters.recent && firmsFilters.inter && firmsFilters.old);
+            if (showAll) {{
                 btn.style.background = '#FFFFFF';
                 btn.style.color = '#0F172A';
                 btn.style.borderColor = '#CBD5E1';
                 btn.textContent = '✨ Tous les foyers';
+            }} else {{
+                btn.style.background = '#D946EF';
+                btn.style.color = '#FFFFFF';
+                btn.style.borderColor = '#C026D3';
+                btn.textContent = '✨ Derniers foyers (< 3h)';
             }}
+
             const picker = document.getElementById('gibs-date-picker');
             renderFirmsFires(picker.value || todayUtc);
+        }}
+
+        function setAllFirmsFilters(val) {{
+            document.getElementById('chk-firms-latest').checked = val;
+            document.getElementById('chk-firms-vrecent').checked = val;
+            document.getElementById('chk-firms-recent').checked = val;
+            document.getElementById('chk-firms-inter').checked = val;
+            document.getElementById('chk-firms-old').checked = val;
+            updateFirmsFilters();
+        }}
+
+        function toggleFirmLabel(id) {{
+            const chk = document.getElementById('chk-firms-' + id);
+            if (chk) {{
+                chk.checked = !chk.checked;
+                updateFirmsFilters();
+            }}
+        }}
+
+        function toggleLatestFirmsFilter() {{
+            const showAll = (firmsFilters.latest && firmsFilters.vrecent && firmsFilters.recent && firmsFilters.inter && firmsFilters.old);
+            if (showAll) {{
+                document.getElementById('chk-firms-latest').checked = true;
+                document.getElementById('chk-firms-vrecent').checked = true;
+                document.getElementById('chk-firms-recent').checked = false;
+                document.getElementById('chk-firms-inter').checked = false;
+                document.getElementById('chk-firms-old').checked = false;
+            }} else {{
+                document.getElementById('chk-firms-latest').checked = true;
+                document.getElementById('chk-firms-vrecent').checked = true;
+                document.getElementById('chk-firms-recent').checked = true;
+                document.getElementById('chk-firms-inter').checked = true;
+                document.getElementById('chk-firms-old').checked = true;
+            }}
+            updateFirmsFilters();
         }}
 
         function handleSearch(val) {{
@@ -2671,8 +2739,16 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
                 let className = '';
                 let isLatest = (latestHotspot && f.lat === latestHotspot.lat && f.lon === latestHotspot.lon && f.time === latestHotspot.time);
 
-                if (onlyLatestFirms && !isLatest && ageHours >= 3) {{
-                    return;
+                if (isLatest) {{
+                    if (!firmsFilters.latest) return;
+                }} else if (ageHours >= 0 && ageHours < 3) {{
+                    if (!firmsFilters.vrecent) return;
+                }} else if (ageHours >= 3 && ageHours < 12) {{
+                    if (!firmsFilters.recent) return;
+                }} else if (ageHours >= 12 && ageHours < 24) {{
+                    if (!firmsFilters.inter) return;
+                }} else if (ageHours >= 24) {{
+                    if (!firmsFilters.old) return;
                 }}
 
                 if (isLatest) {{
