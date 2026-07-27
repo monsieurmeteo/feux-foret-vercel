@@ -1078,7 +1078,7 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
             
     # Résoudre avec cache les départements des feux satellites (limité aux 80 premiers pour éviter la saturation)
     cache_dept = {}
-    for f in firms_fires[:80]:
+    for f in firms_fires:
         lat_k = round(f["lat"], 1)
         lon_k = round(f["lon"], 1)
         k = (lat_k, lon_k)
@@ -1124,17 +1124,17 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
         min_d = float("inf")
         f_lat, f_lon = f["lat"], f["lon"]
         for c in all_communes:
-            # Filtre de boîte englobante (~0.15 deg lat, ~0.22 deg lon)
-            if abs(f_lat - c["lat"]) > 0.15:
+            # Filtre de boîte englobante (~0.5 deg lat, ~0.7 deg lon)
+            if abs(f_lat - c["lat"]) > 0.5:
                 continue
-            if abs(f_lon - c["lon"]) > 0.22:
+            if abs(f_lon - c["lon"]) > 0.7:
                 continue
             dist = haversine(f_lat, f_lon, c["lat"], c["lon"])
             if dist < min_d:
                 min_d = dist
                 closest_name = c["nom"]
                 closest_c = c
-        if min_d <= 15.0 and closest_c:
+        if min_d <= 50.0 and closest_c:
             f["commune_proche"] = f"{closest_name} ({round(min_d, 1)} km)"
             f["commune_proche_lat"] = closest_c["lat"]
             f["commune_proche_lon"] = closest_c["lon"]
@@ -1487,6 +1487,25 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
             .leaflet-popup-content {{ width: 270px !important; }}
         }}
 
+        body.mode-liste-only #map {{ display: none !important; }}
+        body.mode-liste-only #legend {{ display: none !important; }}
+        body.mode-liste-only #sidebar {{
+            top: 58px !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            max-width: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            transform: none !important;
+        }}
+        @media (max-width: 768px) {{
+            body.mode-liste-only #sidebar {{
+                top: 90px !important;
+                bottom: 0 !important;
+            }}
+        }}
+
         #legend {{
             position: absolute; bottom: 20px; right: 14px; z-index: 1000;
             background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px);
@@ -1675,8 +1694,9 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
 
             <input type="date" class="clean-date" id="gibs-date-picker" style="display:none;" title="Date pour l'imagerie satellite NASA & les feux FIRMS" />
             <button id="btn-timelapse" onclick="toggleTimelapse()" style="display:none; background:#0F172A; border: 1.5px solid #334155; color:#FFFFFF; padding:5px 12px; border-radius:20px; font-size:11.5px; font-weight:800; cursor:pointer; outline:none; transition:all 0.15s ease; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(0,0,0,0.05);">▶️ Animation</button>
-            <button id="btn-filter-latest-firms" onclick="toggleLatestFirmsFilter()" style="background:#FFFFFF; border: 1.5px solid #CBD5E1; color:#0F172A; padding:5px 12px; border-radius:20px; font-size:11.5px; font-weight:800; cursor:pointer; outline:none; transition:all 0.15s ease; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(0,0,0,0.05);">✨ Tous les foyers</button>
+            <button id="btn-filter-latest-firms" onclick="toggleLatestFirmsFilter()" style="background:#D946EF; border: 1.5px solid #C026D3; color:#FFFFFF; padding:5px 12px; border-radius:20px; font-size:11.5px; font-weight:800; cursor:pointer; outline:none; transition:all 0.15s ease; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(0,0,0,0.05);">✨ Derniers foyers (< 3h)</button>
 
+            <button id="btn-mobile-mode" onclick="toggleMobileListMode()" style="background:#F1F5F9; border: 1.5px solid #CBD5E1; color:#0F172A; padding:5px 12px; border-radius:20px; font-size:11.5px; font-weight:800; cursor:pointer; outline:none; transition:all 0.15s ease; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(0,0,0,0.05);">📲 Liste seule (Mobile)</button>
             <button id="btn-lock-map" onclick="toggleMapLock()" style="background:#DC2626; border: 1.5px solid #B91C1C; color:#FFFFFF; padding:5px 12px; border-radius:20px; font-size:11.5px; font-weight:800; cursor:pointer; outline:none; transition:all 0.15s ease; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(0,0,0,0.05);">🔒 Carte figée</button>
             <button class="btn-sidebar-toggle" onclick="toggleSidebar()">📋 Liste</button>
             <a href="Rapport_Feux_de_Foret_Temps_Reel.pdf" target="_blank" class="btn-pdf-download">📥 PDF</a>
@@ -1849,7 +1869,7 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
         let refreshSeconds = 300; // ponytail: 5 minutes refresh interval
         let activeLinkLine = null;
         let activeCommuneMarker = null;
-        let onlyLatestFirms = false;
+        let onlyLatestFirms = true;
 
         function toggleLatestFirmsFilter() {{
             onlyLatestFirms = !onlyLatestFirms;
@@ -1901,6 +1921,25 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
                 if (map.tap) map.tap.enable();
                 
                 btn.innerHTML = '🔓 Carte libre';
+                btn.style.background = '#F1F5F9';
+                btn.style.color = '#0F172A';
+                btn.style.borderColor = '#CBD5E1';
+            }}
+        }}
+
+        let isMobileListMode = false;
+        function toggleMobileListMode() {{
+            isMobileListMode = !isMobileListMode;
+            const btn = document.getElementById('btn-mobile-mode');
+            if (isMobileListMode) {{
+                document.body.classList.add('mode-liste-only');
+                btn.innerHTML = '🗺️ Afficher la Carte';
+                btn.style.background = '#2563EB';
+                btn.style.color = '#FFFFFF';
+                btn.style.borderColor = '#1D4ED8';
+            }} else {{
+                document.body.classList.remove('mode-liste-only');
+                btn.innerHTML = '📲 Liste seule (Mobile)';
                 btn.style.background = '#F1F5F9';
                 btn.style.color = '#0F172A';
                 btn.style.borderColor = '#CBD5E1';
@@ -2681,7 +2720,7 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
                 const popupContent = `
                     <div style="font-family: system-ui, sans-serif; font-size: 11.5px; color: #0F172A; line-height: 1.5; padding: 4px;">
                         <h4 style="margin: 0 0 6px 0; font-size: 12.5px; font-weight: 900; color: ${{color}}; display: flex; align-items: center; gap: 4px;">
-                            \${{isLatest ? '✨' : '🔥'}} \${{titleText}}
+                            ${{isLatest ? '✨' : '🔥'}} ${{titleText}}
                         </h4>
                         <div style="margin-bottom: 3px; font-weight: 800; color: #E11D48;">📍 Commune proche : ${{f.commune_proche}}</div>
                         <div style="margin-bottom: 3px;"><b>Date/Heure :</b> ${{f.date}} à ${{f.time}} UTC</div>
@@ -3134,11 +3173,12 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
             if (downwindItems.length > 0) {{
                 const firstExp = downwindItems[0];
                 const expName = firstExp.commune;
+                const expDept = firstExp.dept ? ' (' + firstExp.dept + ')' : '';
                 const expEta = firstExp.eta_smoke;
                 popupExposureHtml = `
                     <div class="info-row" style="background:#FFFBEB; padding:3px 5px; border-radius:4px; margin-top:2px;">
                         <span class="lbl" style="color:#B45309; font-weight:800;">🏠 Sous le vent :</span>
-                        <span class="val" style="color:#D97706; font-weight:900;" title="${{expName}} (Fumées en ${{expEta}})">${{expName}} (⏱️ ${{expEta}})</span>
+                        <span class="val" style="color:#D97706; font-weight:900;" title="${{expName}}${{expDept}} (Fumées en ${{expEta}})">${{expName}}${{expDept}} (⏱️ ${{expEta}})</span>
                     </div>
                 `;
             }}
@@ -3339,8 +3379,12 @@ def generate_interactive_map(results, latest_news, firms_fires, aircraft_tracks,
 
                     card.className = cardClass;
                     card.onclick = () => {{
-                        map.flyTo([f.lat, f.lon], 12, {{ duration: 1.2 }});
-                        setTimeout(() => marker.openPopup(), 1200);
+                        if (isMobileListMode) {{
+                            openInfographieModal(idx);
+                        }} else {{
+                            map.flyTo([f.lat, f.lon], 12, {{ duration: 1.2 }});
+                            setTimeout(() => marker.openPopup(), 1200);
+                        }}
                     }};
 
                     const speedVal = (w.wind_speed_kmh !== undefined && w.wind_speed_kmh !== null) ? w.wind_speed_kmh : 15;
