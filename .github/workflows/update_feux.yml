@@ -48,11 +48,12 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "Feux Bot"
           git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/monsieurmeteo/feux-foret-vercel.git"
-          git pull --rebase origin main || true
           git add index.html Rapport_Feux_de_Foret_Temps_Reel.pdf data/ || true
           git diff --staged --quiet && echo "Rien à committer" && exit 0
           git commit -m "🔥 Auto-refresh feux $(date -u +'%H:%M UTC') [skip ci]"
-          git push
+          for i in {1..5}; do
+            git pull --rebase origin main && git push && break || sleep 3
+          done
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
