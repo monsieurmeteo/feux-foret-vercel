@@ -6,17 +6,17 @@
       "commune": "Caissargues",
       "dept": "30",
       "url": "/gard-30/caissargues-22-08-2026-10861/",
-      "dateIso": "2026-08-22T16:17:13.420Z",
-      "timeAgo": "Mise à jour il y a 4 minutes",
+      "dateIso": "2026-08-22T16:23:47.097Z",
+      "timeAgo": "Mise à jour il y a 1 minute",
       "enCours": true,
       "epingle": false,
       "thumbnail": "https://fdfdata.fr/storage/signalements/10861/article/hero_notmark.jpg",
-      "mcCount": 3,
-      "mediaCount": 0,
+      "mcCount": 4,
+      "mediaCount": 3,
       "createdIso": "2026-08-22T15:55:34.000Z",
-      "createdLabel": "il y a 25 min",
-      "updatedIso": "2026-08-22T16:17:13.420Z",
-      "updatedLabel": "il y a 3 min",
+      "createdLabel": "il y a 29 min",
+      "updatedIso": "2026-08-22T16:23:47.097Z",
+      "updatedLabel": "il y a 1 min",
       "date_signal": "2026-08-22T15:55:34.000Z",
       "date_meta": "22 août 2026 à 17h55 · mise à jour à 18h13",
       "etat_feu": "attaque",
@@ -27,7 +27,7 @@
       "superficie": 0,
       "hero": "https://fdfdata.fr/storage/signalements/10861/article/hero.jpg",
       "region": "Occitanie",
-      "minutes_ago": 25,
+      "minutes_ago": 29,
       "detect_time_fr": "17h55",
       "is_under_1h": true,
       "is_recent": true,
@@ -39,19 +39,19 @@
       "pelicandrome_eta": "1 min",
       "meteociel_station": "Nimes-garons",
       "meteociel_dist": 4.1,
-      "meteociel_time": "2026-08-22 18:10:00+02",
+      "meteociel_time": "2026-08-22 18:20:00+02",
       "weather": {
-        "temp_c": 29.3,
-        "humidity_pct": 26.0,
-        "wind_speed_kmh": 10,
+        "temp_c": 29.4,
+        "humidity_pct": 27.0,
+        "wind_speed_kmh": 11,
         "wind_gusts_kmh": 18,
         "wind_origin": "NE",
         "plume_arrow": "↙️",
         "plume_dir": "Sud-Ouest",
         "plume_deg": 225,
-        "spread_risk": "🚨 EXTRÊME",
-        "spread_risk_color": "#DC2626",
-        "fwi_score": 20.3,
+        "spread_risk": "🔴 ÉLEVÉ",
+        "spread_risk_color": "#EA580C",
+        "fwi_score": 19.6,
         "is_obs": true
       },
       "downwind_exposure": [
@@ -73,11 +73,99 @@
       "news_items": [],
       "history_points": [
         {
+          "time": "18h25",
+          "wind": 11,
+          "gusts": 18,
+          "temp": 29.4,
+          "hum": 27.0
+        },
+        {
           "time": "18h20",
           "wind": 10,
           "gusts": 18,
           "temp": 29.3,
           "hum": 26.0
+        }
+      ]
+    },
+    {
+      "id": 4098,
+      "title": "Incendie à Église-Neuve-d'Issac (24) : les pompiers interviennent",
+      "commune": "Église-Neuve-d'Issac",
+      "dept": "24",
+      "url": "/dordogne-24/eglise-neuve-d-issac-22-08-2026-10860/",
+      "dateIso": "2026-08-22T16:23:05.797Z",
+      "timeAgo": "Mise à jour il y a 2 minutes",
+      "enCours": true,
+      "epingle": false,
+      "thumbnail": "https://fdfdata.fr/storage/signalements/10860/article/hero_notmark.jpg",
+      "mcCount": 13,
+      "mediaCount": 10,
+      "createdIso": "2026-08-22T15:53:46.000Z",
+      "createdLabel": "il y a 31 min",
+      "updatedIso": "2026-08-22T16:23:05.797Z",
+      "updatedLabel": "il y a 1 min",
+      "date_signal": "2026-08-22T15:53:46.000Z",
+      "date_meta": "22 août 2026 à 17h53 · mise à jour à 18h22",
+      "etat_feu": "attaque",
+      "lat": 44.973312,
+      "lon": 0.417278,
+      "avions": 0,
+      "helico": 0,
+      "superficie": 0,
+      "hero": "https://fdfdata.fr/storage/signalements/10860/article/hero.jpg",
+      "region": "Nouvelle-Aquitaine",
+      "minutes_ago": 31,
+      "detect_time_fr": "17h53",
+      "is_under_1h": true,
+      "is_recent": true,
+      "scale_label": "🔥 EN ATTAQUE",
+      "scale_color": "#DC2626",
+      "marker_size": 28,
+      "pelicandrome_name": "Bordeaux-Mérignac",
+      "pelicandrome_dist": 90.6,
+      "pelicandrome_eta": "17 min",
+      "meteociel_station": "Queyssac",
+      "meteociel_dist": 12.1,
+      "meteociel_time": "2026-08-22 18:20:00+02",
+      "weather": {
+        "temp_c": 27.7,
+        "humidity_pct": 37.0,
+        "wind_speed_kmh": 12,
+        "wind_gusts_kmh": 22,
+        "wind_origin": "SSO",
+        "plume_arrow": "↗️",
+        "plume_dir": "Nord-Est",
+        "plume_deg": 22.5,
+        "spread_risk": "🟡 MODÉRÉ",
+        "spread_risk_color": "#D97706",
+        "fwi_score": 4.5,
+        "is_obs": true
+      },
+      "downwind_exposure": [
+        {
+          "commune": "Axe Nord (0-5 km)",
+          "dept": "",
+          "dist_km": 5.0,
+          "eta_smoke": "14 min",
+          "is_sector": true
+        },
+        {
+          "commune": "Axe Nord (5-15 km)",
+          "dept": "",
+          "dist_km": 15.0,
+          "eta_smoke": "41 min",
+          "is_sector": true
+        }
+      ],
+      "news_items": [],
+      "history_points": [
+        {
+          "time": "18h25",
+          "wind": 12,
+          "gusts": 22,
+          "temp": 27.7,
+          "hum": 37.0
         }
       ]
     },
@@ -88,7 +176,7 @@
       "dept": "85",
       "url": "/vendee-85/la-roche-sur-yon-22-08-2026-10851/",
       "dateIso": "2026-08-22T16:17:19.165Z",
-      "timeAgo": "Mise à jour il y a 4 minutes",
+      "timeAgo": "Mise à jour il y a 8 minutes",
       "enCours": true,
       "epingle": false,
       "thumbnail": "https://fdfdata.fr/storage/signalements/10851/article/hero_notmark.jpg",
@@ -97,7 +185,7 @@
       "createdIso": "2026-08-22T14:50:53.000Z",
       "createdLabel": "il y a 1 h",
       "updatedIso": "2026-08-22T16:17:19.165Z",
-      "updatedLabel": "il y a 3 min",
+      "updatedLabel": "il y a 7 min",
       "date_signal": "2026-08-22T14:50:53.000Z",
       "date_meta": "22 août 2026 à 16h50 · mise à jour à 18h13",
       "etat_feu": "fixe",
@@ -108,7 +196,7 @@
       "superficie": 0,
       "hero": "https://fdfdata.fr/storage/signalements/10851/article/hero.jpg",
       "region": "Pays de la Loire",
-      "minutes_ago": 90,
+      "minutes_ago": 94,
       "detect_time_fr": "16h50",
       "is_under_1h": false,
       "is_recent": true,
@@ -120,19 +208,19 @@
       "pelicandrome_eta": "16 min",
       "meteociel_station": "La Roche Sur Yon",
       "meteociel_dist": 7.0,
-      "meteociel_time": "2026-08-22 18:10:00+02",
+      "meteociel_time": "2026-08-22 18:20:00+02",
       "weather": {
-        "temp_c": 25.3,
+        "temp_c": 24.8,
         "humidity_pct": 31.0,
-        "wind_speed_kmh": 15,
+        "wind_speed_kmh": 21,
         "wind_gusts_kmh": 33,
-        "wind_origin": "NE",
-        "plume_arrow": "↙️",
-        "plume_dir": "Sud-Ouest",
-        "plume_deg": 225,
+        "wind_origin": "ENE",
+        "plume_arrow": "⬅️",
+        "plume_dir": "Ouest",
+        "plume_deg": 247.5,
         "spread_risk": "🚨 EXTRÊME",
         "spread_risk_color": "#DC2626",
-        "fwi_score": 26.9,
+        "fwi_score": 26.4,
         "is_obs": true
       },
       "downwind_exposure": [
@@ -153,6 +241,13 @@
       ],
       "news_items": [],
       "history_points": [
+        {
+          "time": "18h25",
+          "wind": 21,
+          "gusts": 33,
+          "temp": 24.8,
+          "hum": 31.0
+        },
         {
           "time": "18h20",
           "wind": 15,
@@ -229,13 +324,6 @@
           "gusts": 31,
           "temp": 25.2,
           "hum": 32.0
-        },
-        {
-          "time": "17h10",
-          "wind": 18,
-          "gusts": 31,
-          "temp": 24.9,
-          "hum": 31.0
         }
       ]
     },
@@ -246,16 +334,16 @@
       "dept": "56",
       "url": "/morbihan-56/pleucadeuc-22-08-2026-10838/",
       "dateIso": "2026-08-22T16:16:39.166Z",
-      "timeAgo": "Mise à jour il y a 4 minutes",
+      "timeAgo": "Mise à jour il y a 8 minutes",
       "enCours": true,
       "epingle": false,
       "thumbnail": "https://fdfdata.fr/storage/signalements/10838/article/hero_notmark.jpg",
       "mcCount": 5,
       "mediaCount": 1,
       "createdIso": "2026-08-22T13:23:59.000Z",
-      "createdLabel": "il y a 2 h",
+      "createdLabel": "il y a 3 h",
       "updatedIso": "2026-08-22T16:16:39.166Z",
-      "updatedLabel": "il y a 4 min",
+      "updatedLabel": "il y a 8 min",
       "date_signal": "2026-08-22T13:23:59.000Z",
       "date_meta": "22 août 2026 à 15h23 · mise à jour à 15h51",
       "etat_feu": "attaque",
@@ -266,7 +354,7 @@
       "superficie": 0,
       "hero": "https://fdfdata.fr/storage/signalements/10838/article/hero.jpg",
       "region": "Bretagne",
-      "minutes_ago": 177,
+      "minutes_ago": 181,
       "detect_time_fr": "15h23",
       "is_under_1h": false,
       "is_recent": true,
@@ -278,39 +366,46 @@
       "pelicandrome_eta": "4 min",
       "meteociel_station": "Pleucadeuc",
       "meteociel_dist": 3.3,
-      "meteociel_time": "2026-08-22 18:10:00+02",
+      "meteociel_time": "2026-08-22 18:20:00+02",
       "weather": {
-        "temp_c": 23.7,
-        "humidity_pct": 36.0,
-        "wind_speed_kmh": 10,
-        "wind_gusts_kmh": 19,
-        "wind_origin": "ENE",
+        "temp_c": 23.4,
+        "humidity_pct": 37.0,
+        "wind_speed_kmh": 9,
+        "wind_gusts_kmh": 16,
+        "wind_origin": "E",
         "plume_arrow": "⬅️",
         "plume_dir": "Ouest",
-        "plume_deg": 247.5,
+        "plume_deg": 270,
         "spread_risk": "🔴 ÉLEVÉ",
         "spread_risk_color": "#EA580C",
-        "fwi_score": 12.5,
+        "fwi_score": 10.1,
         "is_obs": true
       },
       "downwind_exposure": [
         {
-          "commune": "Axe Sud-Ouest (0-5 km)",
+          "commune": "Axe Ouest (0-5 km)",
           "dept": "",
           "dist_km": 5.0,
-          "eta_smoke": "16 min",
+          "eta_smoke": "19 min",
           "is_sector": true
         },
         {
-          "commune": "Axe Sud-Ouest (5-15 km)",
+          "commune": "Axe Ouest (5-15 km)",
           "dept": "",
           "dist_km": 15.0,
-          "eta_smoke": "47 min",
+          "eta_smoke": "56 min",
           "is_sector": true
         }
       ],
       "news_items": [],
       "history_points": [
+        {
+          "time": "18h25",
+          "wind": 9,
+          "gusts": 16,
+          "temp": 23.4,
+          "hum": 37.0
+        },
         {
           "time": "18h20",
           "wind": 10,
@@ -387,13 +482,6 @@
           "gusts": 25,
           "temp": 23.3,
           "hum": 39.0
-        },
-        {
-          "time": "17h10",
-          "wind": 9,
-          "gusts": 18,
-          "temp": 23.3,
-          "hum": 38.0
         }
       ]
     },
@@ -404,7 +492,7 @@
       "dept": "42",
       "url": "/loire-42/saint-georges-en-couzan-22-08-2026-10823/",
       "dateIso": "2026-08-22T16:20:50.365Z",
-      "timeAgo": "Mise à jour il y a 1 minute",
+      "timeAgo": "Mise à jour il y a 4 minutes",
       "enCours": true,
       "epingle": false,
       "thumbnail": "https://fdfdata.fr/storage/signalements/10823/article/hero_notmark.jpg",
@@ -413,7 +501,7 @@
       "createdIso": "2026-08-22T12:05:56.000Z",
       "createdLabel": "il y a 4 h",
       "updatedIso": "2026-08-22T16:20:50.365Z",
-      "updatedLabel": "à l'instant",
+      "updatedLabel": "il y a 4 min",
       "date_signal": "2026-08-22T12:05:56.000Z",
       "date_meta": "22 août 2026 à 14h05 · mise à jour à 15h15",
       "etat_feu": "attaque",
@@ -424,7 +512,7 @@
       "superficie": 0,
       "hero": "https://fdfdata.fr/storage/signalements/10823/article/hero.jpg",
       "region": "Auvergne-Rhône-Alpes",
-      "minutes_ago": 255,
+      "minutes_ago": 259,
       "detect_time_fr": "14h05",
       "is_under_1h": false,
       "is_recent": false,
@@ -436,11 +524,11 @@
       "pelicandrome_eta": "22 min",
       "meteociel_station": "St Georges En C",
       "meteociel_dist": 3.6,
-      "meteociel_time": "2026-08-22 18:10:00+02",
+      "meteociel_time": "2026-08-22 18:20:00+02",
       "weather": {
-        "temp_c": 24.0,
+        "temp_c": 24.2,
         "humidity_pct": 45.0,
-        "wind_speed_kmh": 9,
+        "wind_speed_kmh": 10,
         "wind_gusts_kmh": 17,
         "wind_origin": "ENE",
         "plume_arrow": "⬅️",
@@ -448,7 +536,7 @@
         "plume_deg": 247.5,
         "spread_risk": "🔴 ÉLEVÉ",
         "spread_risk_color": "#EA580C",
-        "fwi_score": 11.7,
+        "fwi_score": 11.8,
         "is_obs": true
       },
       "downwind_exposure": [
@@ -469,6 +557,13 @@
       ],
       "news_items": [],
       "history_points": [
+        {
+          "time": "18h25",
+          "wind": 10,
+          "gusts": 17,
+          "temp": 24.2,
+          "hum": 45.0
+        },
         {
           "time": "18h20",
           "wind": 9,
@@ -545,13 +640,6 @@
           "gusts": 23,
           "temp": 24.3,
           "hum": 45.0
-        },
-        {
-          "time": "17h10",
-          "wind": 13,
-          "gusts": 23,
-          "temp": 23.9,
-          "hum": 45.0
         }
       ]
     },
@@ -582,7 +670,7 @@
       "superficie": 0,
       "hero": "https://fdfdata.fr/storage/signalements/10639/article/hero.jpg",
       "region": "Occitanie",
-      "minutes_ago": 4478,
+      "minutes_ago": 4482,
       "detect_time_fr": "15h42",
       "is_under_1h": false,
       "is_recent": false,
@@ -594,31 +682,31 @@
       "pelicandrome_eta": "7 min",
       "meteociel_station": "Saint-laurent-les-bains - Abbaye De Notre-dame-des-neiges",
       "meteociel_dist": 4.9,
-      "meteociel_time": "2026-08-22 18:10:00+02",
+      "meteociel_time": "2026-08-22 18:20:00+02",
       "weather": {
-        "temp_c": 23.4,
-        "humidity_pct": 38.0,
+        "temp_c": 22.4,
+        "humidity_pct": 41.0,
         "wind_speed_kmh": 12,
         "wind_gusts_kmh": 22,
-        "wind_origin": "OSO",
-        "plume_arrow": "➡️",
-        "plume_dir": "Est",
-        "plume_deg": 67.5,
+        "wind_origin": "S",
+        "plume_arrow": "⬆️",
+        "plume_dir": "Nord",
+        "plume_deg": 0,
         "spread_risk": "🟡 MODÉRÉ",
         "spread_risk_color": "#D97706",
-        "fwi_score": 6.8,
+        "fwi_score": 8.7,
         "is_obs": true
       },
       "downwind_exposure": [
         {
-          "commune": "Axe Nord-Est (0-5 km)",
+          "commune": "Axe Nord (0-5 km)",
           "dept": "",
           "dist_km": 5.0,
           "eta_smoke": "14 min",
           "is_sector": true
         },
         {
-          "commune": "Axe Nord-Est (5-15 km)",
+          "commune": "Axe Nord (5-15 km)",
           "dept": "",
           "dist_km": 15.0,
           "eta_smoke": "41 min",
@@ -627,6 +715,13 @@
       ],
       "news_items": [],
       "history_points": [
+        {
+          "time": "18h25",
+          "wind": 12,
+          "gusts": 22,
+          "temp": 22.4,
+          "hum": 41.0
+        },
         {
           "time": "18h20",
           "wind": 12,
@@ -703,13 +798,6 @@
           "gusts": 14,
           "temp": 21.8,
           "hum": 36.0
-        },
-        {
-          "time": "17h10",
-          "wind": 5,
-          "gusts": 14,
-          "temp": 21.8,
-          "hum": 36.0
         }
       ]
     },
@@ -740,7 +828,7 @@
       "superficie": 0,
       "hero": "https://fdfdata.fr/storage/signalements/10213/article/hero.jpg",
       "region": "Grand Est",
-      "minutes_ago": 10394,
+      "minutes_ago": 10399,
       "detect_time_fr": "13h06",
       "is_under_1h": false,
       "is_recent": false,
@@ -752,16 +840,16 @@
       "pelicandrome_eta": "98 min",
       "meteociel_station": "Croix-scaille",
       "meteociel_dist": 11.0,
-      "meteociel_time": "2026-08-22 18:10:00+02",
+      "meteociel_time": "2026-08-22 18:20:00+02",
       "weather": {
         "temp_c": 15.7,
         "humidity_pct": 70.0,
-        "wind_speed_kmh": 11,
-        "wind_gusts_kmh": 19,
-        "wind_origin": "NNE",
-        "plume_arrow": "↙️",
-        "plume_dir": "Sud-Ouest",
-        "plume_deg": 202.5,
+        "wind_speed_kmh": 10,
+        "wind_gusts_kmh": 20,
+        "wind_origin": "N",
+        "plume_arrow": "⬇️",
+        "plume_dir": "Sud",
+        "plume_deg": 180,
         "spread_risk": "🟡 MODÉRÉ",
         "spread_risk_color": "#D97706",
         "fwi_score": 4.9,
@@ -772,19 +860,26 @@
           "commune": "Axe Sud (0-5 km)",
           "dept": "",
           "dist_km": 5.0,
-          "eta_smoke": "16 min",
+          "eta_smoke": "15 min",
           "is_sector": true
         },
         {
           "commune": "Axe Sud (5-15 km)",
           "dept": "",
           "dist_km": 15.0,
-          "eta_smoke": "47 min",
+          "eta_smoke": "45 min",
           "is_sector": true
         }
       ],
       "news_items": [],
       "history_points": [
+        {
+          "time": "18h25",
+          "wind": 10,
+          "gusts": 20,
+          "temp": 15.7,
+          "hum": 70.0
+        },
         {
           "time": "18h20",
           "wind": 11,
@@ -861,13 +956,6 @@
           "gusts": 14,
           "temp": 16.2,
           "hum": 65.0
-        },
-        {
-          "time": "17h10",
-          "wind": 9,
-          "gusts": 15,
-          "temp": 16.2,
-          "hum": 65.0
         }
       ]
     },
@@ -898,7 +986,7 @@
       "superficie": 0,
       "hero": "https://fdfdata.fr/storage/signalements/9878/article/hero.jpg",
       "region": "Nouvelle-Aquitaine",
-      "minutes_ago": 13103,
+      "minutes_ago": 13107,
       "detect_time_fr": "15h58",
       "is_under_1h": false,
       "is_recent": false,
@@ -910,16 +998,16 @@
       "pelicandrome_eta": "5 min",
       "meteociel_station": "Arjuzanx",
       "meteociel_dist": 13.5,
-      "meteociel_time": "2026-08-22 18:10:00+02",
+      "meteociel_time": "2026-08-22 18:20:00+02",
       "weather": {
         "temp_c": 27.5,
         "humidity_pct": 47.0,
-        "wind_speed_kmh": 13,
-        "wind_gusts_kmh": 19,
-        "wind_origin": "ENE",
+        "wind_speed_kmh": 14,
+        "wind_gusts_kmh": 22,
+        "wind_origin": "E",
         "plume_arrow": "⬅️",
         "plume_dir": "Ouest",
-        "plume_deg": 247.5,
+        "plume_deg": 270,
         "spread_risk": "🔴 ÉLEVÉ",
         "spread_risk_color": "#EA580C",
         "fwi_score": 12.9,
@@ -927,22 +1015,29 @@
       },
       "downwind_exposure": [
         {
-          "commune": "Axe Sud-Ouest (0-5 km)",
+          "commune": "Axe Ouest (0-5 km)",
           "dept": "",
           "dist_km": 5.0,
-          "eta_smoke": "16 min",
+          "eta_smoke": "14 min",
           "is_sector": true
         },
         {
-          "commune": "Axe Sud-Ouest (5-15 km)",
+          "commune": "Axe Ouest (5-15 km)",
           "dept": "",
           "dist_km": 15.0,
-          "eta_smoke": "47 min",
+          "eta_smoke": "41 min",
           "is_sector": true
         }
       ],
       "news_items": [],
       "history_points": [
+        {
+          "time": "18h25",
+          "wind": 14,
+          "gusts": 22,
+          "temp": 27.5,
+          "hum": 47.0
+        },
         {
           "time": "18h20",
           "wind": 13,
@@ -1019,13 +1114,6 @@
           "gusts": 22,
           "temp": 27.1,
           "hum": 48.0
-        },
-        {
-          "time": "17h10",
-          "wind": 15,
-          "gusts": 25,
-          "temp": 27.1,
-          "hum": 48.0
         }
       ]
     },
@@ -1056,7 +1144,7 @@
       "superficie": 0,
       "hero": "https://fdfdata.fr/storage/signalements/9662/article/hero.jpg",
       "region": "Bretagne",
-      "minutes_ago": 14628,
+      "minutes_ago": 14632,
       "detect_time_fr": "14h32",
       "is_under_1h": false,
       "is_recent": false,
@@ -1068,11 +1156,11 @@
       "pelicandrome_eta": "10 min",
       "meteociel_station": "Sainte Marie",
       "meteociel_dist": 6.6,
-      "meteociel_time": "2026-08-22 18:10:00+02",
+      "meteociel_time": "2026-08-22 18:20:00+02",
       "weather": {
-        "temp_c": 23.4,
+        "temp_c": 23.5,
         "humidity_pct": 45.0,
-        "wind_speed_kmh": 12,
+        "wind_speed_kmh": 13,
         "wind_gusts_kmh": 21,
         "wind_origin": "ENE",
         "plume_arrow": "⬅️",
@@ -1080,7 +1168,7 @@
         "plume_deg": 247.5,
         "spread_risk": "🔴 ÉLEVÉ",
         "spread_risk_color": "#EA580C",
-        "fwi_score": 11.4,
+        "fwi_score": 11.5,
         "is_obs": true
       },
       "downwind_exposure": [
@@ -1101,6 +1189,13 @@
       ],
       "news_items": [],
       "history_points": [
+        {
+          "time": "18h25",
+          "wind": 13,
+          "gusts": 21,
+          "temp": 23.5,
+          "hum": 45.0
+        },
         {
           "time": "18h20",
           "wind": 12,
@@ -1177,13 +1272,6 @@
           "gusts": 22,
           "temp": 23.6,
           "hum": 45.0
-        },
-        {
-          "time": "17h10",
-          "wind": 11,
-          "gusts": 22,
-          "temp": 23.3,
-          "hum": 45.0
         }
       ]
     },
@@ -1214,7 +1302,7 @@
       "superficie": 0,
       "hero": "https://fdfdata.fr/storage/signalements/8290/article/hero.jpg",
       "region": "Auvergne-Rhône-Alpes",
-      "minutes_ago": 27340,
+      "minutes_ago": 27345,
       "detect_time_fr": "18h40",
       "is_under_1h": false,
       "is_recent": false,
@@ -1226,11 +1314,11 @@
       "pelicandrome_eta": "11 min",
       "meteociel_station": "Bellegarde-en-d",
       "meteociel_dist": 1.6,
-      "meteociel_time": "2026-08-22 18:10:00+02",
+      "meteociel_time": "2026-08-22 18:20:00+02",
       "weather": {
-        "temp_c": 23.2,
+        "temp_c": 23.3,
         "humidity_pct": 45.0,
-        "wind_speed_kmh": 13,
+        "wind_speed_kmh": 12,
         "wind_gusts_kmh": 23,
         "wind_origin": "OSO",
         "plume_arrow": "➡️",
@@ -1238,7 +1326,7 @@
         "plume_deg": 67.5,
         "spread_risk": "🔴 ÉLEVÉ",
         "spread_risk_color": "#EA580C",
-        "fwi_score": 11.3,
+        "fwi_score": 11.4,
         "is_obs": true
       },
       "downwind_exposure": [
@@ -1266,6 +1354,13 @@
         }
       ],
       "history_points": [
+        {
+          "time": "18h25",
+          "wind": 12,
+          "gusts": 23,
+          "temp": 23.3,
+          "hum": 45.0
+        },
         {
           "time": "18h20",
           "wind": 13,
@@ -1342,13 +1437,6 @@
           "gusts": 18,
           "temp": 23.0,
           "hum": 45.0
-        },
-        {
-          "time": "17h10",
-          "wind": 10,
-          "gusts": 19,
-          "temp": 23.0,
-          "hum": 45.0
         }
       ]
     },
@@ -1379,7 +1467,7 @@
       "superficie": 0,
       "hero": "https://fdfdata.fr/storage/signalements/4681/article/hero.jpg",
       "region": "Nouvelle-Aquitaine",
-      "minutes_ago": 43350,
+      "minutes_ago": 43354,
       "detect_time_fr": "15h51",
       "is_under_1h": false,
       "is_recent": false,
@@ -1391,19 +1479,19 @@
       "pelicandrome_eta": "10 min",
       "meteociel_station": "Biscarrosse",
       "meteociel_dist": 9.6,
-      "meteociel_time": "2026-08-22 18:10:00+02",
+      "meteociel_time": "2026-08-22 18:20:00+02",
       "weather": {
         "temp_c": 28.3,
         "humidity_pct": 32.0,
-        "wind_speed_kmh": 12,
-        "wind_gusts_kmh": 20,
+        "wind_speed_kmh": 15,
+        "wind_gusts_kmh": 27,
         "wind_origin": "ENE",
         "plume_arrow": "⬅️",
         "plume_dir": "Ouest",
         "plume_deg": 247.5,
-        "spread_risk": "🔴 ÉLEVÉ",
-        "spread_risk_color": "#EA580C",
-        "fwi_score": 17.7,
+        "spread_risk": "🚨 EXTRÊME",
+        "spread_risk_color": "#DC2626",
+        "fwi_score": 23.9,
         "is_obs": true
       },
       "downwind_exposure": [
@@ -1411,19 +1499,26 @@
           "commune": "Axe Sud-Ouest (0-5 km)",
           "dept": "",
           "dist_km": 5.0,
-          "eta_smoke": "15 min",
+          "eta_smoke": "11 min",
           "is_sector": true
         },
         {
           "commune": "Axe Sud-Ouest (5-15 km)",
           "dept": "",
           "dist_km": 15.0,
-          "eta_smoke": "45 min",
+          "eta_smoke": "33 min",
           "is_sector": true
         }
       ],
       "news_items": [],
       "history_points": [
+        {
+          "time": "18h25",
+          "wind": 15,
+          "gusts": 27,
+          "temp": 28.3,
+          "hum": 32.0
+        },
         {
           "time": "18h20",
           "wind": 12,
@@ -1500,13 +1595,6 @@
           "gusts": 31,
           "temp": 28.5,
           "hum": 31.0
-        },
-        {
-          "time": "17h10",
-          "wind": 14,
-          "gusts": 31,
-          "temp": 28.4,
-          "hum": 31.0
         }
       ]
     },
@@ -1517,7 +1605,7 @@
       "dept": "33",
       "url": "/gironde-33/saumos-22-07-2026-4367/",
       "dateIso": "2026-08-22T16:16:00.288Z",
-      "timeAgo": "Mise à jour il y a 5 minutes",
+      "timeAgo": "Mise à jour il y a 9 minutes",
       "enCours": true,
       "epingle": false,
       "thumbnail": "/medias/4367/saumos-22-07-2026-4367-w300.webp",
@@ -1526,7 +1614,7 @@
       "createdIso": "2026-07-22T10:27:48.000Z",
       "createdLabel": "il y a 1 mois",
       "updatedIso": "2026-08-22T16:16:00.288Z",
-      "updatedLabel": "il y a 4 min",
+      "updatedLabel": "il y a 8 min",
       "date_signal": "2026-07-22T10:27:48.000Z",
       "date_meta": "22 juillet 2026 à 12h27 · mise à jour à 00h40",
       "etat_feu": "maitrise",
@@ -1537,7 +1625,7 @@
       "superficie": 0,
       "hero": "/medias/4367/hero.jpg",
       "region": "Nouvelle-Aquitaine",
-      "minutes_ago": 44993,
+      "minutes_ago": 44997,
       "detect_time_fr": "12h27",
       "is_under_1h": false,
       "is_recent": false,
@@ -1549,16 +1637,16 @@
       "pelicandrome_eta": "5 min",
       "meteociel_station": "Lacanau",
       "meteociel_dist": 14.3,
-      "meteociel_time": "2026-08-22 18:10:00+02",
+      "meteociel_time": "2026-08-22 18:20:00+02",
       "weather": {
         "temp_c": 28.0,
         "humidity_pct": 45.0,
-        "wind_speed_kmh": 13,
-        "wind_gusts_kmh": 26,
-        "wind_origin": "N",
-        "plume_arrow": "⬇️",
-        "plume_dir": "Sud",
-        "plume_deg": 180,
+        "wind_speed_kmh": 8,
+        "wind_gusts_kmh": 19,
+        "wind_origin": "NE",
+        "plume_arrow": "↙️",
+        "plume_dir": "Sud-Ouest",
+        "plume_deg": 225,
         "spread_risk": "🔴 ÉLEVÉ",
         "spread_risk_color": "#EA580C",
         "fwi_score": 13.7,
@@ -1566,22 +1654,29 @@
       },
       "downwind_exposure": [
         {
-          "commune": "Axe Sud (0-5 km)",
+          "commune": "Axe Sud-Ouest (0-5 km)",
           "dept": "",
           "dist_km": 5.0,
-          "eta_smoke": "12 min",
+          "eta_smoke": "16 min",
           "is_sector": true
         },
         {
-          "commune": "Axe Sud (5-15 km)",
+          "commune": "Axe Sud-Ouest (5-15 km)",
           "dept": "",
           "dist_km": 15.0,
-          "eta_smoke": "35 min",
+          "eta_smoke": "47 min",
           "is_sector": true
         }
       ],
       "news_items": [],
       "history_points": [
+        {
+          "time": "18h25",
+          "wind": 8,
+          "gusts": 19,
+          "temp": 28.0,
+          "hum": 45.0
+        },
         {
           "time": "18h20",
           "wind": 13,
@@ -1658,13 +1753,6 @@
           "gusts": 15,
           "temp": 27.6,
           "hum": 45.0
-        },
-        {
-          "time": "17h10",
-          "wind": 6,
-          "gusts": 18,
-          "temp": 27.6,
-          "hum": 45.0
         }
       ]
     },
@@ -1695,7 +1783,7 @@
       "superficie": 0,
       "hero": "/medias/3070/hero.jpg",
       "region": "Pays de la Loire",
-      "minutes_ago": 59015,
+      "minutes_ago": 59020,
       "detect_time_fr": "18h45",
       "is_under_1h": false,
       "is_recent": false,
@@ -1707,39 +1795,46 @@
       "pelicandrome_eta": "35 min",
       "meteociel_station": "Le Mans",
       "meteociel_dist": 4.0,
-      "meteociel_time": "2026-08-22 18:10:00+02",
+      "meteociel_time": "2026-08-22 18:20:00+02",
       "weather": {
-        "temp_c": 24.4,
-        "humidity_pct": 36.0,
-        "wind_speed_kmh": 11,
-        "wind_gusts_kmh": 22,
-        "wind_origin": "NE",
+        "temp_c": 24.3,
+        "humidity_pct": 35.0,
+        "wind_speed_kmh": 12,
+        "wind_gusts_kmh": 23,
+        "wind_origin": "NNE",
         "plume_arrow": "↙️",
         "plume_dir": "Sud-Ouest",
-        "plume_deg": 225,
+        "plume_deg": 202.5,
         "spread_risk": "🔴 ÉLEVÉ",
         "spread_risk_color": "#EA580C",
-        "fwi_score": 14.9,
+        "fwi_score": 16.0,
         "is_obs": true
       },
       "downwind_exposure": [
         {
-          "commune": "Axe Sud-Ouest (0-5 km)",
+          "commune": "Axe Sud (0-5 km)",
           "dept": "",
           "dist_km": 5.0,
-          "eta_smoke": "14 min",
+          "eta_smoke": "13 min",
           "is_sector": true
         },
         {
-          "commune": "Axe Sud-Ouest (5-15 km)",
+          "commune": "Axe Sud (5-15 km)",
           "dept": "",
           "dist_km": 15.0,
-          "eta_smoke": "41 min",
+          "eta_smoke": "39 min",
           "is_sector": true
         }
       ],
       "news_items": [],
       "history_points": [
+        {
+          "time": "18h25",
+          "wind": 12,
+          "gusts": 23,
+          "temp": 24.3,
+          "hum": 35.0
+        },
         {
           "time": "18h20",
           "wind": 11,
@@ -1816,13 +1911,6 @@
           "gusts": 26,
           "temp": 24.0,
           "hum": 35.0
-        },
-        {
-          "time": "17h10",
-          "wind": 13,
-          "gusts": 23,
-          "temp": 24.0,
-          "hum": 35.0
         }
       ]
     },
@@ -1833,7 +1921,7 @@
       "dept": "77",
       "url": "/seine-et-marne-77/acheres-la-foret-12-07-2026-3035/",
       "dateIso": "2026-08-22T16:16:35.514Z",
-      "timeAgo": "Mise à jour il y a 4 minutes",
+      "timeAgo": "Mise à jour il y a 8 minutes",
       "enCours": true,
       "epingle": false,
       "thumbnail": "/medias/3035/acheres-la-foret-12-07-2026-3035-w300.webp",
@@ -1842,7 +1930,7 @@
       "createdIso": "2026-07-12T15:22:57.000Z",
       "createdLabel": "il y a 1 mois",
       "updatedIso": "2026-08-22T16:16:35.514Z",
-      "updatedLabel": "il y a 4 min",
+      "updatedLabel": "il y a 8 min",
       "date_signal": "2026-07-12T15:22:57.000Z",
       "date_meta": "12 juillet 2026 à 17h22 · mise à jour à 09h16",
       "etat_feu": "fixe",
@@ -1853,7 +1941,7 @@
       "superficie": 0,
       "hero": "/medias/3035/hero.jpg",
       "region": "Île-de-France",
-      "minutes_ago": 59098,
+      "minutes_ago": 59102,
       "detect_time_fr": "17h22",
       "is_under_1h": false,
       "is_recent": false,
@@ -1865,9 +1953,9 @@
       "pelicandrome_eta": "57 min",
       "meteociel_station": "Fontainebleau Sapc",
       "meteociel_dist": 3.5,
-      "meteociel_time": "2026-08-22 18:10:00+02",
+      "meteociel_time": "2026-08-22 18:20:00+02",
       "weather": {
-        "temp_c": 23.8,
+        "temp_c": 23.9,
         "humidity_pct": 45.0,
         "wind_speed_kmh": 12,
         "wind_gusts_kmh": 22,
@@ -1877,7 +1965,7 @@
         "plume_deg": 157.5,
         "spread_risk": "🔴 ÉLEVÉ",
         "spread_risk_color": "#EA580C",
-        "fwi_score": 11.6,
+        "fwi_score": 11.7,
         "is_obs": true
       },
       "downwind_exposure": [
@@ -1898,6 +1986,13 @@
       ],
       "news_items": [],
       "history_points": [
+        {
+          "time": "18h25",
+          "wind": 12,
+          "gusts": 22,
+          "temp": 23.9,
+          "hum": 45.0
+        },
         {
           "time": "18h20",
           "wind": 12,
@@ -1974,13 +2069,6 @@
           "gusts": 22,
           "temp": 23.4,
           "hum": 45.0
-        },
-        {
-          "time": "17h10",
-          "wind": 12,
-          "gusts": 22,
-          "temp": 23.4,
-          "hum": 45.0
         }
       ]
     },
@@ -2011,7 +2099,7 @@
       "superficie": 0,
       "hero": "/medias/2957/hero.jpg",
       "region": "Nouvelle-Aquitaine",
-      "minutes_ago": 59297,
+      "minutes_ago": 59301,
       "detect_time_fr": "14h03",
       "is_under_1h": false,
       "is_recent": false,
@@ -2023,19 +2111,19 @@
       "pelicandrome_eta": "9 min",
       "meteociel_station": "Montemboeuf",
       "meteociel_dist": 8.9,
-      "meteociel_time": "2026-08-22 18:10:00+02",
+      "meteociel_time": "2026-08-22 18:20:00+02",
       "weather": {
-        "temp_c": 24.9,
-        "humidity_pct": 29.0,
-        "wind_speed_kmh": 8,
-        "wind_gusts_kmh": 15,
+        "temp_c": 25.0,
+        "humidity_pct": 30.0,
+        "wind_speed_kmh": 9,
+        "wind_gusts_kmh": 16,
         "wind_origin": "ENE",
         "plume_arrow": "⬅️",
         "plume_dir": "Ouest",
         "plume_deg": 247.5,
         "spread_risk": "🔴 ÉLEVÉ",
         "spread_risk_color": "#EA580C",
-        "fwi_score": 12.9,
+        "fwi_score": 13.3,
         "is_obs": true
       },
       "downwind_exposure": [
@@ -2043,14 +2131,14 @@
           "commune": "Axe Sud-Ouest (0-5 km)",
           "dept": "",
           "dist_km": 5.0,
-          "eta_smoke": "20 min",
+          "eta_smoke": "19 min",
           "is_sector": true
         },
         {
           "commune": "Axe Sud-Ouest (5-15 km)",
           "dept": "",
           "dist_km": 15.0,
-          "eta_smoke": "60 min",
+          "eta_smoke": "56 min",
           "is_sector": true
         }
       ],
@@ -2063,6 +2151,13 @@
         }
       ],
       "history_points": [
+        {
+          "time": "18h25",
+          "wind": 9,
+          "gusts": 16,
+          "temp": 25.0,
+          "hum": 30.0
+        },
         {
           "time": "18h20",
           "wind": 8,
@@ -2139,13 +2234,6 @@
           "gusts": 22,
           "temp": 25.2,
           "hum": 28.0
-        },
-        {
-          "time": "17h10",
-          "wind": 8,
-          "gusts": 22,
-          "temp": 25.2,
-          "hum": 29.0
         }
       ]
     },
@@ -2176,7 +2264,7 @@
       "superficie": 0,
       "hero": "/medias/2943/hero.jpg",
       "region": "Occitanie",
-      "minutes_ago": 59413,
+      "minutes_ago": 59417,
       "detect_time_fr": "12h07",
       "is_under_1h": false,
       "is_recent": false,
@@ -2188,9 +2276,9 @@
       "pelicandrome_eta": "4 min",
       "meteociel_station": "Fanjeaux Sapc",
       "meteociel_dist": 1.5,
-      "meteociel_time": "2026-08-22 18:10:00+02",
+      "meteociel_time": "2026-08-22 18:20:00+02",
       "weather": {
-        "temp_c": 28.8,
+        "temp_c": 29.0,
         "humidity_pct": 45.0,
         "wind_speed_kmh": 6,
         "wind_gusts_kmh": 16,
@@ -2200,7 +2288,7 @@
         "plume_deg": 202.5,
         "spread_risk": "🔴 ÉLEVÉ",
         "spread_risk_color": "#EA580C",
-        "fwi_score": 14.1,
+        "fwi_score": 14.2,
         "is_obs": true
       },
       "downwind_exposure": [
@@ -2221,6 +2309,13 @@
       ],
       "news_items": [],
       "history_points": [
+        {
+          "time": "18h25",
+          "wind": 6,
+          "gusts": 16,
+          "temp": 29.0,
+          "hum": 45.0
+        },
         {
           "time": "18h20",
           "wind": 6,
@@ -2297,13 +2392,6 @@
           "gusts": 15,
           "temp": 29.2,
           "hum": 45.0
-        },
-        {
-          "time": "17h10",
-          "wind": 7,
-          "gusts": 15,
-          "temp": 29.3,
-          "hum": 45.0
         }
       ]
     },
@@ -2334,7 +2422,7 @@
       "superficie": 0,
       "hero": "/medias/2900/hero.jpg",
       "region": "PACA",
-      "minutes_ago": 60328,
+      "minutes_ago": 60332,
       "detect_time_fr": "20h52",
       "is_under_1h": false,
       "is_recent": false,
@@ -2346,19 +2434,19 @@
       "pelicandrome_eta": "9 min",
       "meteociel_station": "Isle Sur Sorgue",
       "meteociel_dist": 11.1,
-      "meteociel_time": "2026-08-22 18:10:00+02",
+      "meteociel_time": "2026-08-22 18:20:00+02",
       "weather": {
-        "temp_c": 29.8,
+        "temp_c": 29.4,
         "humidity_pct": 45.0,
         "wind_speed_kmh": 15,
-        "wind_gusts_kmh": 25,
+        "wind_gusts_kmh": 24,
         "wind_origin": "NNO",
         "plume_arrow": "⬇️",
         "plume_dir": "Sud",
         "plume_deg": 157.5,
         "spread_risk": "🔴 ÉLEVÉ",
         "spread_risk_color": "#EA580C",
-        "fwi_score": 14.6,
+        "fwi_score": 14.4,
         "is_obs": true
       },
       "downwind_exposure": [
@@ -2373,12 +2461,19 @@
           "commune": "Axe Sud (5-15 km)",
           "dept": "",
           "dist_km": 15.0,
-          "eta_smoke": "36 min",
+          "eta_smoke": "38 min",
           "is_sector": true
         }
       ],
       "news_items": [],
       "history_points": [
+        {
+          "time": "18h25",
+          "wind": 15,
+          "gusts": 24,
+          "temp": 29.4,
+          "hum": 45.0
+        },
         {
           "time": "18h20",
           "wind": 15,
@@ -2455,13 +2550,6 @@
           "gusts": 21,
           "temp": 29.5,
           "hum": 45.0
-        },
-        {
-          "time": "17h10",
-          "wind": 11,
-          "gusts": 21,
-          "temp": 29.8,
-          "hum": 45.0
         }
       ]
     },
@@ -2492,7 +2580,7 @@
       "superficie": 0,
       "hero": "/medias/2884/hero.jpg",
       "region": "Île-de-France",
-      "minutes_ago": 60400,
+      "minutes_ago": 60404,
       "detect_time_fr": "19h40",
       "is_under_1h": false,
       "is_recent": false,
@@ -2504,19 +2592,19 @@
       "pelicandrome_eta": "60 min",
       "meteociel_station": "Melun",
       "meteociel_dist": 5.6,
-      "meteociel_time": "2026-08-22 18:10:00+02",
+      "meteociel_time": "2026-08-22 18:20:00+02",
       "weather": {
         "temp_c": 24.0,
         "humidity_pct": 36.0,
-        "wind_speed_kmh": 16,
-        "wind_gusts_kmh": 23,
+        "wind_speed_kmh": 11,
+        "wind_gusts_kmh": 19,
         "wind_origin": "N",
         "plume_arrow": "⬇️",
         "plume_dir": "Sud",
         "plume_deg": 180,
         "spread_risk": "🔴 ÉLEVÉ",
         "spread_risk_color": "#EA580C",
-        "fwi_score": 15.3,
+        "fwi_score": 12.7,
         "is_obs": true
       },
       "downwind_exposure": [
@@ -2524,12 +2612,19 @@
           "commune": "Fontainebleau",
           "dept": "77",
           "dist_km": 20.4,
-          "eta_smoke": "53 min",
+          "eta_smoke": "64 min",
           "angle_diff": 1.4174477519727589
         }
       ],
       "news_items": [],
       "history_points": [
+        {
+          "time": "18h25",
+          "wind": 11,
+          "gusts": 19,
+          "temp": 24.0,
+          "hum": 36.0
+        },
         {
           "time": "18h20",
           "wind": 16,
@@ -2606,171 +2701,6 @@
           "gusts": 18,
           "temp": 24.1,
           "hum": 34.0
-        },
-        {
-          "time": "17h10",
-          "wind": 9,
-          "gusts": 14,
-          "temp": 24.3,
-          "hum": 33.0
-        }
-      ]
-    },
-    {
-      "id": 2931,
-      "title": "Incendie à Aizac (07) : le feu est éteint",
-      "commune": "Aizac",
-      "dept": "07",
-      "url": "/ardeche-07/vals-les-bains-11-07-2026-2862/",
-      "dateIso": "2026-07-11T16:18:55.000Z",
-      "timeAgo": "il y a 1 mois",
-      "enCours": false,
-      "epingle": false,
-      "thumbnail": "/medias/2862/vals-les-bains-11-07-2026-2862-w300.webp",
-      "mcCount": 0,
-      "mediaCount": 0,
-      "createdIso": "2026-07-11T16:18:55.000Z",
-      "createdLabel": "il y a 1 mois",
-      "updatedIso": "2026-11-07T17:48:00.000Z",
-      "updatedLabel": "à l'instant",
-      "date_signal": "2026-07-11T16:18:55.000Z",
-      "date_meta": "11 juillet 2026 à 18h18 · mise à jour à 18h48",
-      "etat_feu": "eteint",
-      "lat": 44.708508,
-      "lon": 4.337311,
-      "avions": 0,
-      "helico": 0,
-      "superficie": 0,
-      "hero": "/medias/2862/hero.jpg",
-      "region": "Auvergne-Rhône-Alpes",
-      "minutes_ago": 60482,
-      "detect_time_fr": "18h18",
-      "is_under_1h": false,
-      "is_recent": false,
-      "scale_label": "💧 FEU ÉTEINT",
-      "scale_color": "#64748B",
-      "marker_size": 22,
-      "pelicandrome_name": "Aubenas",
-      "pelicandrome_dist": 12.5,
-      "pelicandrome_eta": "2 min",
-      "meteociel_station": "Antraigues",
-      "meteociel_dist": 1.7,
-      "meteociel_time": "2026-08-22 18:10:00+02",
-      "weather": {
-        "temp_c": 26.2,
-        "humidity_pct": 45.0,
-        "wind_speed_kmh": 14,
-        "wind_gusts_kmh": 19,
-        "wind_origin": "S",
-        "plume_arrow": "⬆️",
-        "plume_dir": "Nord",
-        "plume_deg": 0,
-        "spread_risk": "🔴 ÉLEVÉ",
-        "spread_risk_color": "#EA580C",
-        "fwi_score": 12.8,
-        "is_obs": true
-      },
-      "downwind_exposure": [
-        {
-          "commune": "Axe Nord (0-5 km)",
-          "dept": "",
-          "dist_km": 5.0,
-          "eta_smoke": "16 min",
-          "is_sector": true
-        },
-        {
-          "commune": "Axe Nord (5-15 km)",
-          "dept": "",
-          "dist_km": 15.0,
-          "eta_smoke": "47 min",
-          "is_sector": true
-        }
-      ],
-      "news_items": [],
-      "history_points": [
-        {
-          "time": "18h20",
-          "wind": 14,
-          "gusts": 19,
-          "temp": 26.2,
-          "hum": 45.0
-        },
-        {
-          "time": "18h10",
-          "wind": 14,
-          "gusts": 21,
-          "temp": 26.5,
-          "hum": 45.0
-        },
-        {
-          "time": "18h05",
-          "wind": 15,
-          "gusts": 26,
-          "temp": 26.4,
-          "hum": 45.0
-        },
-        {
-          "time": "17h55",
-          "wind": 14,
-          "gusts": 25,
-          "temp": 27.0,
-          "hum": 45.0
-        },
-        {
-          "time": "17h45",
-          "wind": 14,
-          "gusts": 25,
-          "temp": 27.0,
-          "hum": 45.0
-        },
-        {
-          "time": "17h40",
-          "wind": 13,
-          "gusts": 24,
-          "temp": 27.3,
-          "hum": 45.0
-        },
-        {
-          "time": "17h35",
-          "wind": 16,
-          "gusts": 24,
-          "temp": 27.6,
-          "hum": 45.0
-        },
-        {
-          "time": "17h30",
-          "wind": 20,
-          "gusts": 26,
-          "temp": 27.6,
-          "hum": 45.0
-        },
-        {
-          "time": "17h25",
-          "wind": 19,
-          "gusts": 26,
-          "temp": 27.8,
-          "hum": 45.0
-        },
-        {
-          "time": "17h20",
-          "wind": 19,
-          "gusts": 26,
-          "temp": 27.8,
-          "hum": 45.0
-        },
-        {
-          "time": "17h15",
-          "wind": 18,
-          "gusts": 26,
-          "temp": 27.8,
-          "hum": 45.0
-        },
-        {
-          "time": "17h10",
-          "wind": 19,
-          "gusts": 28,
-          "temp": 27.8,
-          "hum": 45.0
         }
       ]
     },
@@ -2801,7 +2731,7 @@
       "superficie": 0,
       "hero": "/medias/2812/hero.jpg",
       "region": "Grand Est",
-      "minutes_ago": 60742,
+      "minutes_ago": 60747,
       "detect_time_fr": "13h58",
       "is_under_1h": false,
       "is_recent": false,
@@ -2813,19 +2743,19 @@
       "pelicandrome_eta": "63 min",
       "meteociel_station": "St-ciergues",
       "meteociel_dist": 4.6,
-      "meteociel_time": "2026-08-22 18:10:00+02",
+      "meteociel_time": "2026-08-22 18:20:00+02",
       "weather": {
-        "temp_c": 21.3,
+        "temp_c": 21.4,
         "humidity_pct": 45.0,
-        "wind_speed_kmh": 8,
-        "wind_gusts_kmh": 14,
+        "wind_speed_kmh": 5,
+        "wind_gusts_kmh": 12,
         "wind_origin": "NNE",
         "plume_arrow": "↙️",
         "plume_dir": "Sud-Ouest",
         "plume_deg": 202.5,
         "spread_risk": "🔴 ÉLEVÉ",
         "spread_risk_color": "#EA580C",
-        "fwi_score": 10.4,
+        "fwi_score": 10.5,
         "is_obs": true
       },
       "downwind_exposure": [
@@ -2833,19 +2763,26 @@
           "commune": "Axe Sud (0-5 km)",
           "dept": "",
           "dist_km": 5.0,
-          "eta_smoke": "21 min",
+          "eta_smoke": "25 min",
           "is_sector": true
         },
         {
           "commune": "Axe Sud (5-15 km)",
           "dept": "",
           "dist_km": 15.0,
-          "eta_smoke": "64 min",
+          "eta_smoke": "75 min",
           "is_sector": true
         }
       ],
       "news_items": [],
       "history_points": [
+        {
+          "time": "18h25",
+          "wind": 5,
+          "gusts": 12,
+          "temp": 21.4,
+          "hum": 45.0
+        },
         {
           "time": "18h20",
           "wind": 8,
@@ -2922,13 +2859,6 @@
           "gusts": 12,
           "temp": 23.0,
           "hum": 45.0
-        },
-        {
-          "time": "17h10",
-          "wind": 6,
-          "gusts": 13,
-          "temp": 22.7,
-          "hum": 45.0
         }
       ]
     },
@@ -2959,7 +2889,7 @@
       "superficie": 0,
       "hero": "/medias/2638/hero.jpg",
       "region": "Corse",
-      "minutes_ago": 62169,
+      "minutes_ago": 62173,
       "detect_time_fr": "14h11",
       "is_under_1h": false,
       "is_recent": false,
@@ -2971,19 +2901,19 @@
       "pelicandrome_eta": "3 min",
       "meteociel_station": "Oletta",
       "meteociel_dist": 1.8,
-      "meteociel_time": "2026-08-22 18:10:00+02",
+      "meteociel_time": "2026-08-22 18:20:00+02",
       "weather": {
-        "temp_c": 28.7,
-        "humidity_pct": 44.0,
+        "temp_c": 28.5,
+        "humidity_pct": 45.0,
         "wind_speed_kmh": 19,
-        "wind_gusts_kmh": 32,
+        "wind_gusts_kmh": 30,
         "wind_origin": "NE",
         "plume_arrow": "↙️",
         "plume_dir": "Sud-Ouest",
         "plume_deg": 225,
-        "spread_risk": "🚨 EXTRÊME",
-        "spread_risk_color": "#DC2626",
-        "fwi_score": 20.9,
+        "spread_risk": "🔴 ÉLEVÉ",
+        "spread_risk_color": "#EA580C",
+        "fwi_score": 19.0,
         "is_obs": true
       },
       "downwind_exposure": [
@@ -2991,19 +2921,26 @@
           "commune": "Axe Sud-Ouest (0-5 km)",
           "dept": "",
           "dist_km": 5.0,
-          "eta_smoke": "9 min",
+          "eta_smoke": "10 min",
           "is_sector": true
         },
         {
           "commune": "Axe Sud-Ouest (5-15 km)",
           "dept": "",
           "dist_km": 15.0,
-          "eta_smoke": "28 min",
+          "eta_smoke": "30 min",
           "is_sector": true
         }
       ],
       "news_items": [],
       "history_points": [
+        {
+          "time": "18h25",
+          "wind": 19,
+          "gusts": 30,
+          "temp": 28.5,
+          "hum": 45.0
+        },
         {
           "time": "18h20",
           "wind": 19,
@@ -3080,13 +3017,6 @@
           "gusts": 39,
           "temp": 29.1,
           "hum": 51.0
-        },
-        {
-          "time": "17h10",
-          "wind": 22,
-          "gusts": 34,
-          "temp": 29.2,
-          "hum": 52.0
         }
       ]
     }
@@ -3147,6 +3077,12 @@
       "link": "https://news.google.com/rss/articles/CBMi6gFBVV95cUxQdGx6Y1NEQ0cwR3ZETXYtbTNZQS15elJ4dzdfNDNpUGt1Zkp5SGdZRk1LYVFHeUdzQU12N3ppZV9LM3ZBN2F5YzgxVU83ODJydEVJc01rdmZ0N2d3M2xmNDdvTzJiSmJiNjBKVXBzUkp3RXR1QlN0S3N6c1pFY1p0QU92TlFUeWwwamFnM0REdE9hVWtiMHZIQ0dqclJ1aWgtNzM1SHJpWVE3MHMzQTd1QmNkcjdLT3Qya01iRlFWNFRPQ1loNXRRQnB5V1ZCQU95OWpSekhpU0laQTNzYm1ZQ2pYTms2R0VNY2c?oc=5"
     },
     {
+      "title": "Feux de forêt: la planification d’urgence devrait prendre en compte les handicapés",
+      "source": "L’actualité",
+      "date": "Sat, 22 Aug 2026 16:09:09 GMT",
+      "link": "https://news.google.com/rss/articles/CBMitgFBVV95cUxNWk5xUkVhaGRwN0JpT2ZXc2E3RlNNaHhFTFpGYjZHc3BvUm5uLU9Od1JMZm9RSGIxRTRKT3A0dUg2Y3hFQU1UaDc3ZTJ4STJGXzlkQ0lQMTBQYlB1VG45WEdRSGRLY3RuQzhIeWFlbmltUzU2eGwtekdNa29QazdhWk5tZW4xQXJLa29kZl8tRDBMUDlMSDRzeExEQ2E2Z0xVeTNVWFdfeEZOSVZjTGtfME1SLXZFUQ?oc=5"
+    },
+    {
       "title": "Une belle réussite pour le retour du brevet national JSP à Nogent-le-Rotrou : \"on veut que ça reste ici\"",
       "source": "Actu.fr",
       "date": "Sat, 22 Aug 2026 13:34:15 GMT",
@@ -3169,12 +3105,6 @@
       "source": "letarnlibre.com",
       "date": "Sat, 22 Aug 2026 10:00:00 GMT",
       "link": "https://news.google.com/rss/articles/CBMixwFBVV95cUxNdVZlQUJxSnJUYmhQUlV5cGFOOGJDVUg2bXoyczlHaVNxTTc5by13anJiSTU2dWhSZ3hXZXZXdUdIUUhmQ0RQbjZUNk8teEsxZ0dNVWdnWXU0cnhBeEVpbnRIS3p4VS1KYm1TdmtvQ3N4a1dsb0RCR2kwVXdtbERIN2dXUmRZaGdodXJDUWFlaDdDZjdyZUM3YTJhbFRzdHVCQUV3ZnE3WWVMVVdNcnJiQUNDVHBmRFV5MVZZcUc1cnQ2QjBmY3Nj?oc=5"
-    },
-    {
-      "title": "Indonésie : 1.500 soldats vont être déployés pour lutter contre les incendies à Bornéo",
-      "source": "Europe 1",
-      "date": "Sat, 22 Aug 2026 13:10:00 GMT",
-      "link": "https://news.google.com/rss/articles/CBMixwFBVV95cUxQNFowSDVYT3FtVlhiVHdaazJSdnVmZnM1VTcySC1ldV8wa1p0M3lxSUFCaXZLa01xZVlzb2VmblJXMUhjbjRIb2x1ZDk3RnpzWWZXMk92NVZCeUlXRnRPYkg3c2NjMV9rMUFYblozUGltRjdWaExQbGJrbjd5M2tmWmFuUnFTdGtNWFV2d2p6OVdqVVQ4ZnNzWHk5SXQ2N2JScFFqSlVfc0t0aGYxdXpTLTdFREFwNWZJOEJqV05FaGlpRzFEVnM00gHMAUFVX3lxTFBvV1VacXc1NHd4MTNxTC1fRWxXb1ZYWUFGMGVoQ2ZZOTVXS2ZDajBuc21WYTE5b1JmQ0JHaHB5Vk41MjhIaG5YZXpuaVdGU0dtTjMxSUY0MFcwdEJYNTdXdUgyUGpkVnc0UlQ3ZXlzZDFaQXRkTmpBUzRhTnpMZlhpMHVneDB4SUNiS0FQdzhpOVkxa1Z2UmluOFVjbW5keTl6R2tDdFYtWlhLbWFuNVE5eTAtNTlkUEV6SnBtTG9RQjBUVExLSlZYQWhJRg?oc=5"
     },
     {
       "title": "Un incendie se déclare dans un poulailler de 500 m2 dans le sud de l’Ille-et-Vilaine : 26 pompiers mobilisés",
